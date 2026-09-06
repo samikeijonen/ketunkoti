@@ -1,0 +1,22 @@
+{
+	"name": "ketunkoti-features",
+	"version": "1.0.0",
+	"description": "Editor UI for Ketun koti features.",
+	"author": "Sami Keijonen",
+	"license": "GPL-2.0-or-later",
+	"private": true,
+	"main": "build/index.js",
+	"engines": {
+		"node": ">=20.10.0"
+	},
+	"scripts": {
+		"build": "wp-scripts build",
+		"start": "wp-scripts start",
+		"format": "wp-scripts format",
+		"lint:js": "wp-scripts lint-js"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30",
+		"typescript": "^5.9.3"
+	}
+}

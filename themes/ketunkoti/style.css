@@ -1,0 +1,229 @@
+/*
+Theme Name: Ketun koti
+Theme URI: https://ketunkoti.fi
+Author: Sami Keijonen
+Author URI: https://ketunkoti.fi
+Version: 1.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: ketunkoti
+*/
+
+/*
+ * IMPORTANT: This file is only served on the frontend when `SCRIPT_DEBUG` is enabled;
+ * in most instances, the `style.min.css` file will be served. It is not recommended that you
+ * use the Theme File Editor to modify this stylesheet. Instead, add the necessary style
+ * overrides via "Additional CSS" in the Site Editor.
+ */
+
+/*
+ * Smooth scrolling for in-page anchor links.
+ *
+ * Opt in with `no-preference` rather than switching it off under `reduce`, so
+ * browsers that do not support the query fall back to an instant jump.
+ *
+ * The skip link is excluded on purpose: it is a keyboard bypass, and animating
+ * it makes a user wait to reach the content they asked to jump to.
+ */
+:root {
+	/*
+	 * Breathing room above an anchor target, so it does not sit flush against
+	 * the top of the viewport. Deliberately outside the motion query below:
+	 * this is spacing, not animation, so it applies to everyone. If the header
+	 * is ever made sticky, add its height to this value.
+	 */
+	scroll-padding-top: var(--wp--preset--spacing--50);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	:root {
+		scroll-behavior: smooth;
+	}
+
+	:root:has(:target#wp--skip-link--target) {
+		scroll-behavior: auto;
+	}
+}
+
+/*
+ * Link styles
+ * https://github.com/WordPress/gutenberg/issues/42319
+ */
+a {
+	text-decoration-thickness: 1px !important;
+	text-underline-offset: .1em;
+}
+
+/* Focus styles */
+:where(.wp-site-blocks *:focus) {
+	outline-width: 2px;
+	outline-style: solid;
+}
+
+/* Increase the bottom margin on submenus, so that the outline is visible. */
+.wp-block-navigation .wp-block-navigation-submenu .wp-block-navigation-item:not(:last-child) {
+	margin-bottom: 3px;
+}
+
+/* Increase the outline offset on the parent menu items, so that the outline does not touch the text. */
+.wp-block-navigation .wp-block-navigation-item .wp-block-navigation-item__content {
+	outline-offset: 4px;
+}
+
+/* Remove outline offset from the submenus, otherwise the outline is visible outside the submenu container. */
+.wp-block-navigation .wp-block-navigation-item ul.wp-block-navigation__submenu-container .wp-block-navigation-item__content {
+	outline-offset: 0;
+}
+
+/*
+ * Progressive enhancement to reduce widows and orphans
+ * https://github.com/WordPress/gutenberg/issues/55190
+ */
+h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
+	text-wrap: pretty;
+}
+
+/*
+ * Change the position of the more block on the front, by making it a block level element.
+ * https://github.com/WordPress/gutenberg/issues/65934
+*/
+.more-link {
+	display: block;
+}
+
+/*
+ * Prevents unnecessary scrollbars while handling long lines of preformatted text.
+ * https://core.trac.wordpress.org/ticket/63875
+ */
+:where(pre) {
+	overflow-x: auto;
+}
+
+/*
+ * Home cards
+ *
+ * Used by the `ketunkoti/homes-grid` pattern. Everything that maps to a block
+ * support - border, radius, background, padding, min-height, flex direction -
+ * is set on the blocks themselves in the pattern. Only what has no block
+ * equivalent lives here.
+ */
+.home-card {
+	position: relative;
+	/* Clips the featured image to the card's rounded corners. */
+	overflow: hidden;
+	transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.home-card:hover {
+	box-shadow: 0 6px 20px color-mix(in srgb, var(--wp--preset--color--contrast) 12%, transparent);
+	transform: translateY(-2px);
+}
+
+/*
+ * Stretches the title link across the whole card, so the entire card is
+ * clickable while only one link is exposed to assistive technology.
+ */
+.home-card__title a::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+}
+
+/*
+ * Cormorant Garamond defaults to old-style figures, which makes prices sit at
+ * uneven heights. Lining figures keep the digits aligned and scannable.
+ */
+.home-card__price,
+.home-details__value {
+	font-variant-numeric: lining-nums;
+}
+
+/*
+ * Moves the focus indicator from the stretched link onto the card itself, so
+ * the ring outlines what the user is actually activating. Guarded by @supports
+ * so browsers without `:has()` keep the link's native outline instead.
+ */
+@supports selector(:has(*)) {
+	.home-card__title a:focus-visible {
+		outline: none;
+	}
+
+	.home-card:has(.home-card__title a:focus-visible) {
+		outline: 2px solid var(--wp--preset--color--contrast);
+		outline-offset: 3px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.home-card {
+		transition: none;
+	}
+
+	.home-card:hover {
+		transform: none;
+	}
+}
+
+/*
+ * Form controls
+ *
+ * Their resting appearance - border, background, padding, typography - is set
+ * in theme.json via the `textInput` and `select` elements. Only what theme.json
+ * cannot express lives here: `textInput` accepts no pseudo-selectors, so the
+ * focus state has to be written by hand.
+ */
+:where(textarea, select, input:where([type="email"], [type="number"], [type="password"], [type="search"], [type="text"], [type="tel"], [type="url"])):focus-visible {
+	outline: 2px solid var(--wp--preset--color--accent-4);
+	outline-offset: 2px;
+}
+
+/*
+ * Contact Form 7
+ *
+ * Contact Form 7 wraps every field in a paragraph and relies on a `<br>` inside
+ * the label for the line break, so the layout has to be re-established here.
+ * These are plugin specific class names with no theme.json equivalent.
+ */
+.wpcf7-form p {
+	margin-block: 0 var(--wp--preset--spacing--30);
+}
+
+.wpcf7-form label {
+	display: block;
+	font-weight: 700;
+}
+
+/* The controls are sized by a `size`/`cols` attribute, which ignores the column width. */
+.wpcf7-form :where(input:not([type="submit"]), textarea, select) {
+	width: 100%;
+}
+
+.wpcf7-form textarea {
+	display: block;
+	field-sizing: content;
+	min-height: 8lh;
+}
+
+/* Validation messages. */
+.wpcf7-not-valid-tip {
+	margin-block-start: var(--wp--preset--spacing--20);
+	font-size: var(--wp--preset--font-size--small);
+}
+
+.wpcf7-form .wpcf7-response-output {
+	margin-inline: 0;
+	padding: var(--wp--preset--spacing--30);
+	font-size: var(--wp--preset--font-size--small);
+}
+
+/*
+ * Home details
+ *
+ * Used by the `ketunkoti/home-details` pattern. The panel, grid and spacing are
+ * set on the blocks themselves; only the icon sizing needs CSS, because the
+ * icon block's width support sets the SVG width but not its height.
+ */
+.home-details__icon svg {
+	height: auto;
+	flex-shrink: 0;
+}

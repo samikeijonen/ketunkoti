@@ -1,0 +1,12 @@
+/**
+ * Editor styles for the "home" meta fields panel.
+ *
+ * WordPress 7.1 control components carry no bottom margin of their own, so the
+ * spacing between them is owned here. Done in CSS rather than with the
+ * experimental VStack component, which `@wordpress/no-unsafe-wp-apis` rejects.
+ */
+
+.ketunkoti-home-details {
+	display: grid;
+	gap: 16px;
+}

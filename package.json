@@ -1,0 +1,33 @@
+{
+	"name": "ketunkoti-site",
+	"version": "1.0.0",
+	"description": "Ketun koti site: theme and custom plugins managed as npm workspaces.",
+	"author": "Sami Keijonen",
+	"license": "GPL-2.0-or-later",
+	"private": true,
+	"homepage": "https://ketunkoti.fi/",
+	"engines": {
+		"node": ">=20.10.0",
+		"npm": ">=10.2.3"
+	},
+	"workspaces": [
+		"themes/*",
+		"plugins/*"
+	],
+	"scripts": {
+		"build": "npm run build --workspaces --if-present",
+		"build:theme": "npm run build --workspace=themes/ketunkoti",
+		"build:plugins": "npm run build --workspace=plugins/ketunkoti-features",
+		"watch": "run-p --print-label \"watch:*\"",
+		"watch:theme": "npm run watch --workspace=themes/ketunkoti",
+		"watch:plugins": "npm run start --workspace=plugins/ketunkoti-features",
+		"format": "npm run format --workspaces --if-present",
+		"lint:js": "npm run lint:js --workspaces --if-present",
+		"start": "wp-env start",
+		"stop": "wp-env stop"
+	},
+	"devDependencies": {
+		"@wordpress/env": "^10.34.0",
+		"npm-run-all2": "^8.0.4"
+	}
+}
