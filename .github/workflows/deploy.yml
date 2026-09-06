@@ -1,0 +1,136 @@
+name: Deploy to production
+
+# Deploys the theme and the custom plugin to the server over SSH whenever
+# something lands on main, which includes merged pull requests.
+#
+# Required repository secrets:
+#   SSH_HOST         Server hostname, for example ketunkoti.fi
+#   SSH_USER         SSH user to connect as
+#   SSH_PORT         SSH port (optional, defaults to 22)
+#   SSH_PRIVATE_KEY  Full contents of the deploy private key file, including
+#                    the BEGIN and END lines. Must have no passphrase, since
+#                    the runner cannot type one. Use a key created for this
+#                    deploy only, never a personal key.
+#   SSH_KNOWN_HOSTS  Output of: ssh-keyscan -p <port> <host>
+#   DEPLOY_PATH      Absolute path to wp-content on the server, no trailing slash
+#
+# The deploy writes only inside DEPLOY_PATH/themes/ketunkoti and
+# DEPLOY_PATH/plugins/ketunkoti-features. Nothing else on the server is touched.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Show what would change without transferring anything'
+        type: boolean
+        default: false
+
+# Never let two deploys write to the server at the same time. Queue instead of
+# cancelling, so a run that is already uploading is allowed to finish.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and sync
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out the merged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build theme and plugin assets
+        run: npm run build
+
+      # A missing secret would otherwise expand to an empty string and send
+      # rsync --delete at the wrong path. Fail loudly instead.
+      - name: Verify deployment secrets are present
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          missing=''
+          for name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_KNOWN_HOSTS DEPLOY_PATH; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secret(s):$missing"
+            exit 1
+          fi
+          case "$DEPLOY_PATH" in
+            /*) ;;
+            *) echo "::error::DEPLOY_PATH must be an absolute path"; exit 1 ;;
+          esac
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned host key rather than StrictHostKeyChecking=no, so a swapped
+          # server key aborts the deploy instead of trusting it silently.
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Sync theme and plugin
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          RSYNC_FLAGS='-rlptz --delete --human-readable --itemize-changes'
+          if [ "${DRY_RUN:-false}" = 'true' ]; then
+            echo '::notice::Dry run - no files will be transferred'
+            RSYNC_FLAGS="$RSYNC_FLAGS --dry-run"
+          fi
+
+          # Trailing slashes are load bearing: "src/" copies the contents of
+          # src into the destination rather than nesting src inside it.
+          sync() {
+            local source="$1"
+            local target="$2"
+            echo "--- $source -> $target"
+            rsync $RSYNC_FLAGS \
+              --exclude='.git*' \
+              --exclude='node_modules/' \
+              --exclude='.DS_Store' \
+              -e "ssh -p ${SSH_PORT} -i ${HOME}/.ssh/deploy_key -o UserKnownHostsFile=${HOME}/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
+              "$source" "${SSH_USER}@${SSH_HOST}:${target}"
+          }
+
+          sync 'themes/ketunkoti/' "${DEPLOY_PATH}/themes/ketunkoti/"
+          sync 'plugins/ketunkoti-features/' "${DEPLOY_PATH}/plugins/ketunkoti-features/"
+
+      - name: Remove the deploy key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
