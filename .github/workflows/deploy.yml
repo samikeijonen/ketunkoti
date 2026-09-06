@@ -45,10 +45,10 @@ jobs:
 
     steps:
       - name: Check out the merged commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -79,9 +79,14 @@ jobs:
             echo "::error::Missing required secret(s):$missing"
             exit 1
           fi
+          # rsync over SSH resolves "~/x" and bare "x" against the login
+          # directory, so those are valid. Only refuse values that would send
+          # --delete somewhere catastrophic.
           case "$DEPLOY_PATH" in
-            /*) ;;
-            *) echo "::error::DEPLOY_PATH must be an absolute path"; exit 1 ;;
+            /|//|'~'|'~/')
+              echo "::error::DEPLOY_PATH points at the filesystem root or the bare home directory"
+              exit 1
+              ;;
           esac
 
       - name: Configure SSH
@@ -107,6 +112,10 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
+
+          # A trailing slash here would produce "path//themes/..."; harmless on
+          # POSIX but confusing in logs, so normalise it away.
+          DEPLOY_PATH="${DEPLOY_PATH%/}"
 
           RSYNC_FLAGS='-rlptz --delete --human-readable --itemize-changes'
           if [ "${DRY_RUN:-false}" = 'true' ]; then
