@@ -103,6 +103,31 @@ jobs:
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      # rsync would otherwise fail with an opaque "Host key verification
+      # failed" and exit 255. Check the entry up front and say what is wrong.
+      - name: Verify the host key matches the target host
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+
+          # known_hosts identifies non-default ports as "[host]:port".
+          lookup="$SSH_HOST"
+          if [ "$SSH_PORT" != '22' ]; then
+            lookup="[${SSH_HOST}]:${SSH_PORT}"
+          fi
+
+          echo 'Key types present in SSH_KNOWN_HOSTS:'
+          awk '{ print "  - " $2 }' "$HOME/.ssh/known_hosts" | sort -u
+
+          if ! ssh-keygen -F "$lookup" -f "$HOME/.ssh/known_hosts" > /dev/null; then
+            echo '::error::SSH_KNOWN_HOSTS has no entry for the host this workflow connects to. The host name in the secret must match SSH_HOST exactly - an entry for the IP will not match a host name, and vice versa. Regenerate it with: ssh-keyscan -p <port> <the exact SSH_HOST value>'
+            exit 1
+          fi
+
+          echo 'Host key entry found for the target host.'
+
       - name: Sync theme and plugin
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
