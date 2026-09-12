@@ -188,13 +188,19 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 	margin-block: 0 var(--wp--preset--spacing--30);
 }
 
-.wpcf7-form label {
+.wpcf7-form label,
+.embeddable-buttondown-form label {
 	display: block;
 	font-weight: 700;
 }
 
+.buttondown-submit {
+	margin-top: var(--wp--preset--spacing--20);
+}
+
 /* The controls are sized by a `size`/`cols` attribute, which ignores the column width. */
-.wpcf7-form :where(input:not([type="submit"]), textarea, select) {
+.wpcf7-form :where(input:not([type="submit"]), textarea, select),
+.embeddable-buttondown-form :where(input:not([type="submit"]), textarea, select) {
 	width: 100%;
 }
 
