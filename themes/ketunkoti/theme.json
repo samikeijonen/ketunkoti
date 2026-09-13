@@ -233,8 +233,8 @@
 		"spacing": {
 			"blockGap": "1.5rem",
 			"padding": {
-				"left": "var:preset|spacing|50",
-				"right": "var:preset|spacing|50"
+				"left": "var:preset|spacing|30",
+				"right": "var:preset|spacing|30"
 			}
 		},
 		"typography": {

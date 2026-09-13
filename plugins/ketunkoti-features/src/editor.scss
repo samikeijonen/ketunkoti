@@ -10,3 +10,67 @@
 	display: grid;
 	gap: 16px;
 }
+
+/**
+ * Read-only vuokratuotto readout in the investment panel.
+ *
+ * Presented as a labelled figure rather than a disabled control, so it does not
+ * read as something the editor is meant to type into. The value is derived from
+ * the rent, the debt-free price and the maintenance charge above it.
+ */
+.ketunkoti-home-details__yield {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 0;
+	padding: 12px;
+	border-radius: 2px;
+	background: #f0f0f0;
+}
+
+.ketunkoti-home-details__yield-label {
+	color: #757575;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.ketunkoti-home-details__yield-value {
+	font-size: 16px;
+	font-variant-numeric: tabular-nums;
+}
+
+.ketunkoti-home-details__yield-help {
+	margin: 0;
+	color: #757575;
+	font-size: 12px;
+	font-style: normal;
+}
+
+/**
+ * Availability date control.
+ *
+ * The toggle fills the panel width so it reads as a field rather than as a
+ * loose button, matching the text and number controls above it.
+ */
+.ketunkoti-home-details__date {
+	display: block;
+
+	> .components-button {
+		justify-content: flex-start;
+		width: 100%;
+		height: 36px;
+		padding: 0 12px;
+		border: 1px solid #949494;
+		border-radius: 2px;
+	}
+}
+
+.ketunkoti-home-details__date-popover {
+	display: grid;
+	gap: 8px;
+	justify-items: start;
+	padding: 8px;
+}
