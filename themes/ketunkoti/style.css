@@ -201,12 +201,13 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 /* The controls are sized by a `size`/`cols` attribute, which ignores the column width. */
 .wpcf7-form :where(input:not([type="submit"]), textarea, select),
 .embeddable-buttondown-form :where(input:not([type="submit"]), textarea, select) {
+	box-sizing: border-box;
 	width: 100%;
 }
 
 .wpcf7-form textarea {
+	box-sizing: border-box;
 	display: block;
-	field-sizing: content;
 	min-height: 8lh;
 }
 

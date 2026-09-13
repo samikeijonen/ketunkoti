@@ -26,9 +26,18 @@ const BINDINGS_SOURCE = 'ketunkoti/home-details';
  * Keyed by the binding key, valued by the taxonomy it reads.
  */
 const TAXONOMY_FIELDS = [
-    'home_city'  => 'home-city',
-    'home_rooms' => 'home-rooms',
+    'home_city'    => 'home-city',
+    'home_rooms'   => 'home-rooms',
+    'home_purpose' => PURPOSE_TAXONOMY,
 ];
+
+/**
+ * Binding keys that are derived rather than stored.
+ *
+ * These have no post meta row of their own, so they must be resolved before the
+ * meta lookup in get_binding_value(), which returns early on a missing value.
+ */
+const COMPUTED_FIELDS = [ 'home_rental_yield' ];
 
 /**
  * Registers the block bindings source for the "home" meta fields.
@@ -69,6 +78,108 @@ function get_term_names( int $post_id, string $taxonomy ): ?string {
 }
 
 /**
+ * Formats a whole euro amount.
+ *
+ * Used for prices and deposits, which are quoted in round euros. Zero stands in
+ * for "nothing entered", so it yields null rather than "0 €".
+ *
+ * @param mixed  $value  Raw meta value.
+ * @param string $format Translated sprintf format taking one %s, for example "%s €".
+ * @return string|null Formatted amount, or null when there is nothing to show.
+ */
+function format_price( $value, string $format ): ?string {
+    // round() rather than a bare (int) cast: truncating would render an entered
+    // 1250,90 as 1250, quietly losing the euro rather than the cents.
+    $price = (int) round( (float) $value );
+
+    if ( $price <= 0 ) {
+        return null;
+    }
+
+    return sprintf( $format, number_format_i18n( $price ) );
+}
+
+/**
+ * Formats a recurring charge that may carry cents.
+ *
+ * @param mixed  $value  Raw meta value.
+ * @param string $format Translated sprintf format taking one %s, for example "%s €/kk".
+ * @return string|null Formatted charge, or null when there is nothing to show.
+ */
+function format_charge( $value, string $format ): ?string {
+    $charge = (float) $value;
+
+    if ( $charge <= 0 ) {
+        return null;
+    }
+
+    return sprintf( $format, number_format_i18n( $charge, 2 ) );
+}
+
+/**
+ * Formats the availability date.
+ *
+ * This is the one field where an empty value carries meaning: a home with no
+ * date set is available now, so it renders as text rather than as nothing.
+ *
+ * The date is formatted straight off the parsed object rather than through
+ * wp_date(), which would apply the site timezone to a value that has no time of
+ * day and could shift it across midnight.
+ *
+ * @param mixed $value Raw meta value, an ISO `YYYY-MM-DD` string.
+ * @return string Finnish formatted date, or the "available now" label.
+ */
+function format_availability( $value ): string {
+    $date   = trim( (string) $value );
+    $parsed = '' === $date ? false : \DateTimeImmutable::createFromFormat( 'Y-m-d', $date );
+
+    if ( false === $parsed ) {
+        return __( 'Heti vapaa', 'ketunkoti-features' );
+    }
+
+    return $parsed->format( 'j.n.Y' );
+}
+
+/**
+ * Calculates a home's net rental yield as a formatted percentage.
+ *
+ * The Finnish "vuokratuotto":
+ *
+ *     ((vuokra - hoitovastike) * 12) / velaton hinta * 100
+ *
+ * Two amounts are deliberately left out. Paaomavastike is not subtracted
+ * because the denominator is the debt-free price, which already covers the
+ * flat's share of the taloyhtio debt; subtracting the charge that services that
+ * debt would count it twice. Vesimaksu is not subtracted because the tenant
+ * pays it on top of the rent, so it is not a cost to the owner.
+ *
+ * A negative result is returned as it stands. It means the maintenance charge
+ * exceeds the rent, which is real information about the listing.
+ *
+ * Keep in sync with the same calculation in `src/index.js`, which renders the
+ * live figure in the editor sidebar.
+ *
+ * @param int $post_id Post to calculate for.
+ * @return string|null Formatted percentage, or null when the inputs are missing.
+ */
+function get_rental_yield( int $post_id ): ?string {
+    $rent  = (float) get_post_meta( $post_id, 'home_rent', true );
+    $price = (float) get_post_meta( $post_id, 'home_debt_free_price', true );
+
+    // Without a rent and a price there is no yield to state, and dividing by a
+    // zero price would be a fatal error rather than a missing value.
+    if ( $rent <= 0 || $price <= 0 ) {
+        return null;
+    }
+
+    $maintenance = (float) get_post_meta( $post_id, 'home_maintenance_charge', true );
+    $yield       = ( ( $rent - $maintenance ) * 12 ) / $price * 100;
+
+    // Non-breaking space so the number never wraps away from its percent sign.
+    return number_format_i18n( $yield, 1 ) . "\u{00A0}%";
+}
+
+/**
  * Returns a display-formatted meta value for a bound block attribute.
  *
  * The post ID comes from the block's context where available, falling back to
@@ -101,7 +212,19 @@ function get_binding_value( array $source_args, $block_instance = null ): ?strin
         return get_term_names( $post_id, TAXONOMY_FIELDS[ $key ] );
     }
 
+    // Derived values have no meta row to read, so they resolve before the
+    // lookup below.
+    if ( in_array( $key, COMPUTED_FIELDS, true ) ) {
+        return 'home_rental_yield' === $key ? get_rental_yield( $post_id ) : null;
+    }
+
     $value = get_post_meta( $post_id, $key, true );
+
+    // The availability date is the one field where an empty value is meaningful
+    // rather than absent, so it is formatted before the early return below.
+    if ( 'home_available_from' === $key ) {
+        return format_availability( $value );
+    }
 
     if ( '' === $value || null === $value ) {
         return null;
@@ -132,32 +255,29 @@ function get_binding_value( array $source_args, $block_instance = null ): ?strin
         case 'home_floor':
         case 'home_address':
         case 'home_room_layout':
+        case 'home_other_charges':
             // Free text fields are shown as entered.
             return (string) $value;
 
         case 'home_maintenance_charge':
         case 'home_capital_charge':
-            $charge = (float) $value;
-
-            // Zero stands in for "no charge entered", so render nothing.
-            if ( $charge <= 0 ) {
-                return null;
-            }
-
             /* translators: %s: Monthly charge in euros, for example "285,50". */
-            return sprintf( __( '%s €/kk', 'ketunkoti-features' ), number_format_i18n( $charge, 2 ) );
+            return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
+
+        case 'home_water_charge':
+            /* translators: %s: Water charge in euros per person per month, for example "25,00". */
+            return format_charge( $value, __( '%s €/hlö/kk', 'ketunkoti-features' ) );
+
+        case 'home_rent':
+            // Rents are quoted in round euros, unlike the vastike charges above.
+            /* translators: %s: Monthly rent in euros, for example "1 250". */
+            return format_price( $value, __( '%s €/kk', 'ketunkoti-features' ) );
 
         case 'home_debt_free_price':
         case 'home_selling_price':
-            $price = (int) $value;
-
-            // Zero stands in for "no price entered", so render nothing.
-            if ( $price <= 0 ) {
-                return null;
-            }
-
-            /* translators: %s: Price in euros, for example "285 000". */
-            return sprintf( __( '%s €', 'ketunkoti-features' ), number_format_i18n( $price ) );
+        case 'home_deposit':
+            /* translators: %s: Amount in euros, for example "285 000". */
+            return format_price( $value, __( '%s €', 'ketunkoti-features' ) );
 
         default:
             return null;

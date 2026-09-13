@@ -13,6 +13,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Taxonomy holding the listing purpose.
+ *
+ * The terms themselves are editorial content, deliberately not seeded from code.
+ * Nothing here branches on a specific term, so fixing a vocabulary in PHP would
+ * buy nothing and cost something: seeded terms are database rows, so the name
+ * would be frozen in whichever locale happened to be active at activation, and
+ * renaming a term afterwards would leave it with a slug that no longer matches.
+ */
+const PURPOSE_TAXONOMY = 'home-purpose';
+
+/**
  * Returns the shared arguments used by every taxonomy in this plugin.
  *
  * The taxonomies are not public, so they get no pretty term archives. They are
@@ -161,6 +172,21 @@ function register_taxonomies() {
                 __( 'Huoneiden lukumäärä', 'ketunkoti-features' )
             ),
             __( 'Kodin huoneiden lukumäärä.', 'ketunkoti-features' )
+        )
+    );
+
+    // Listing purpose. Hierarchical only so that the editor renders a checkbox
+    // list; the vocabulary is flat. The tag style input a non-hierarchical
+    // taxonomy would give invites typo'd duplicates of a fixed three term set.
+    register_taxonomy(
+        PURPOSE_TAXONOMY,
+        [ 'home' ],
+        get_shared_taxonomy_args(
+            get_taxonomy_labels(
+                __( 'Käyttötarkoitukset', 'ketunkoti-features' ),
+                __( 'Käyttötarkoitus', 'ketunkoti-features' )
+            ),
+            __( 'Onko kohde myynnissä, vuokrattavana vai sijoitusasunto.', 'ketunkoti-features' )
         )
     );
 }

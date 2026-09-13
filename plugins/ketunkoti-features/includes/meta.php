@@ -73,6 +73,38 @@ function sanitize_year( $value ): int {
 }
 
 /**
+ * Sanitizes an availability date.
+ *
+ * Dates are stored as plain ISO `YYYY-MM-DD` strings so they sort correctly as
+ * text and need no timezone handling. Anything that is not a real calendar date
+ * collapses to an empty string, which the bindings callback renders as
+ * "Heti vapaa": an empty value means the home is available now rather than
+ * meaning the field was left unfilled.
+ *
+ * The round trip through format() is what rejects impossible dates such as
+ * "2026-02-31", which createFromFormat() would otherwise silently roll over
+ * into the following month.
+ *
+ * @param mixed $value Raw meta value.
+ * @return string Sanitized ISO date, or an empty string.
+ */
+function sanitize_date( $value ): string {
+    $date = trim( (string) $value );
+
+    if ( '' === $date ) {
+        return '';
+    }
+
+    $parsed = \DateTimeImmutable::createFromFormat( 'Y-m-d', $date );
+
+    if ( false === $parsed || $parsed->format( 'Y-m-d' ) !== $date ) {
+        return '';
+    }
+
+    return $date;
+}
+
+/**
  * Registers the meta fields for the "home" post type.
  *
  * Runs late on `init` so the post type it attaches to is already registered.
@@ -217,6 +249,85 @@ function register_meta_fields() {
             'single'            => true,
             'show_in_rest'      => true,
             'sanitize_callback' => 'sanitize_text_field',
+            'auth_callback'     => __NAMESPACE__ . '\meta_auth_callback',
+        ]
+    );
+
+    // Monthly rent in euros. Read by rentals as the asking rent and by
+    // investments as the income side of the vuokratuotto calculation.
+    register_post_meta(
+        'home',
+        'home_rent',
+        [
+            'type'              => 'number',
+            'label'             => __( 'Vuokra', 'ketunkoti-features' ),
+            'description'       => __( 'Kodin vuokra euroina kuukaudessa.', 'ketunkoti-features' ),
+            'single'            => true,
+            'show_in_rest'      => true,
+            'sanitize_callback' => __NAMESPACE__ . '\sanitize_positive_number',
+            'auth_callback'     => __NAMESPACE__ . '\meta_auth_callback',
+        ]
+    );
+
+    // Rental deposit in euros, commonly one to three months' rent.
+    register_post_meta(
+        'home',
+        'home_deposit',
+        [
+            'type'              => 'number',
+            'label'             => __( 'Vakuus', 'ketunkoti-features' ),
+            'description'       => __( 'Vuokravakuus euroina.', 'ketunkoti-features' ),
+            'single'            => true,
+            'show_in_rest'      => true,
+            'sanitize_callback' => __NAMESPACE__ . '\sanitize_positive_number',
+            'auth_callback'     => __NAMESPACE__ . '\meta_auth_callback',
+        ]
+    );
+
+    // Water charge in euros per person per month, the usual Finnish billing
+    // basis. Being per person, it cannot be added to a flat monthly total.
+    register_post_meta(
+        'home',
+        'home_water_charge',
+        [
+            'type'              => 'number',
+            'label'             => __( 'Vesimaksu', 'ketunkoti-features' ),
+            'description'       => __( 'Vesimaksu euroina henkilöltä kuukaudessa.', 'ketunkoti-features' ),
+            'single'            => true,
+            'show_in_rest'      => true,
+            'sanitize_callback' => __NAMESPACE__ . '\sanitize_positive_number',
+            'auth_callback'     => __NAMESPACE__ . '\meta_auth_callback',
+        ]
+    );
+
+    // Other recurring costs. Free text rather than a number so the charge can
+    // name itself, for example "autopaikka 25 €/kk".
+    register_post_meta(
+        'home',
+        'home_other_charges',
+        [
+            'type'              => 'string',
+            'label'             => __( 'Muut kulut', 'ketunkoti-features' ),
+            'description'       => __( 'Muut kuukausikulut, esimerkiksi "autopaikka 25 €/kk".', 'ketunkoti-features' ),
+            'single'            => true,
+            'show_in_rest'      => true,
+            'sanitize_callback' => 'sanitize_text_field',
+            'auth_callback'     => __NAMESPACE__ . '\meta_auth_callback',
+        ]
+    );
+
+    // Date the home becomes available, as an ISO `YYYY-MM-DD` string. Empty
+    // means available immediately, not missing.
+    register_post_meta(
+        'home',
+        'home_available_from',
+        [
+            'type'              => 'string',
+            'label'             => __( 'Vapautuu', 'ketunkoti-features' ),
+            'description'       => __( 'Päivämäärä jolloin koti vapautuu.', 'ketunkoti-features' ),
+            'single'            => true,
+            'show_in_rest'      => true,
+            'sanitize_callback' => __NAMESPACE__ . '\sanitize_date',
             'auth_callback'     => __NAMESPACE__ . '\meta_auth_callback',
         ]
     );
