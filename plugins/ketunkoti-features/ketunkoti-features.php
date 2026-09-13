@@ -55,15 +55,11 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/bindings.php';
  * own; they are registered here anyway so the flush stays correct if one of
  * them is later given a rewrite slug.
  *
- * The purpose terms are seeded after the taxonomy exists, since wp_insert_term()
- * fails on an unregistered taxonomy.
- *
  * @return void
  */
 function activate() {
     register_post_types();
     register_taxonomies();
-    seed_purpose_terms();
     flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\activate' );

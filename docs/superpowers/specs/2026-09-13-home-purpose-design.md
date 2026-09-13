@@ -54,22 +54,28 @@ defaults fit as they are, so neither helper changes.
 
 Labels: Käyttötarkoitukset / Käyttötarkoitus.
 
-Terms, seeded on activation:
-
-| Name | Slug |
-|---|---|
-| Myynnissä | `myynnissa` |
-| Vuokrattavana | `vuokrattavana` |
-| Sijoitusasunto | `sijoitusasunto` |
-
 `hierarchical => true`, matching the other taxonomies. Not for nesting: that flag
 is what produces a checkbox list in the editor. A flat taxonomy would give the
-tag-style token input, which is wrong for a fixed three-term vocabulary and
-invites typo'd duplicates.
+tag-style token input, which is wrong for a small fixed vocabulary and invites
+typo'd duplicates.
 
-The terms are seeded in `activate()` with `wp_insert_term()` guarded by
-`term_exists()`. The slugs are a contract: the sidebar and the grid patterns both
-branch on them, and a hand-typed term would silently break that branching.
+### Terms are editorial, not seeded
+
+An earlier version of this design fixed three terms in code (`myynnissa`,
+`vuokrattavana`, `sijoitusasunto`) and created them on activation, on the
+grounds that the sidebar and the listing patterns would both branch on those
+slugs. Neither consumer exists: the sidebar shows every panel unconditionally,
+and a listing page picks its term through the Query Loop UI rather than through
+code.
+
+With no consumer, seeding is worse than doing nothing. Terms are database rows,
+so a name passed through `__()` is frozen in whichever locale was active at
+activation and cannot follow a later language switch. Renaming the term after
+the fact leaves a slug that still reads `myynnissa` while the name says
+something else, which is more misleading than an honest auto-generated slug.
+
+So the plugin registers the taxonomy and stops there. Editors create the terms
+they need, name them as they like, and pick them in the Query Loop.
 
 ### New meta fields
 
@@ -237,15 +243,15 @@ Two siblings, each with its Query Loop pre-filtered by `taxQuery`:
 - `homes-grid-rentals` -- card shows `home_rent`
 - `homes-grid-investments` -- card shows `home_rental_yield`
 
-The term ID for `taxQuery` is looked up by slug at render time:
+Each grid picks its term through the Query Loop UI, not through code. Since the
+terms are editorial rather than seeded, a pattern cannot assume any particular
+slug exists, and a hardcoded term ID would be worse still: IDs differ between
+local, staging and production, so a literal would silently return zero results
+after deploy.
 
-```php
-$term = get_term_by( 'slug', 'vuokrattavana', 'home-purpose' );
-```
-
-Never hardcoded. Term IDs differ between local, staging and production databases,
-so a literal ID would silently return zero results after deploy. This is why the
-terms are seeded with fixed slugs.
+That makes a per-purpose grid pattern a thin thing -- a Query Loop whose term the
+editor sets once on the page. Whether that earns a registered pattern at all, or
+is simply built on the page, is a decision for whoever picks this up.
 
 ### Listing pages
 
@@ -255,7 +261,6 @@ matching grid pattern inserted. No rewrite rules, and the taxonomies keep
 
 ## Files touched
 
-- `plugins/ketunkoti-features/ketunkoti-features.php` -- seed terms in `activate()`
 - `plugins/ketunkoti-features/includes/taxonomies.php` -- register `home-purpose`
 - `plugins/ketunkoti-features/includes/meta.php` -- five fields, `sanitize_date()`
 - `plugins/ketunkoti-features/includes/bindings.php` -- `COMPUTED_FIELDS`,
