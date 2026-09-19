@@ -111,9 +111,8 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 	position: relative;
 	/*
 	 * Exposed as a custom property so `.home-card__status` can derive its own
-	 * radius from it below. Keep this in sync with the "radius":"12px" border
-	 * attribute set on the `home-card` group in the `homes-grid` pattern (and
-	 * on `.home-details`, which shares the same radius for visual consistency).
+	 * radius from it below. Keep this in sync with the "radius":"8px" border
+	 * attribute set on the `home-card` group in the `homes-grid` pattern.
 	 */
 	--card-radius: 8px;
 	/* Clips the featured image to the card's rounded corners. */
@@ -161,7 +160,7 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 .home-card__status {
 	--status-inset: 4px;
 
-	position: absolute;
+	position: absolute !important;
 	top: var(--status-inset);
 	left: var(--status-inset);
 	margin: 0;

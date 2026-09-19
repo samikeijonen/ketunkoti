@@ -7,12 +7,24 @@
  */
 
 /**
- * Enqueues editor-style.css in the editors.
+ * Loads the main stylesheet in the block editor too.
+ *
+ * The editor used to load a small, hand-curated `assets/css/editor-style.css`
+ * instead - every rule that needed editor/frontend parity (the status badge's
+ * positioning being the latest) had to be copied there by hand and kept in
+ * sync manually, which is exactly the kind of thing that quietly drifts out of
+ * date. Loading the real compiled stylesheet removes that second copy
+ * entirely: there is only one file to edit, and the editor canvas now matches
+ * the frontend for anything CSS can express in the first place. Mirrors the
+ * same `SCRIPT_DEBUG` suffix logic as `ketunkoti_enqueue_styles()` below, so
+ * both always load the same file.
  *
  * @return void
  */
 function ketunkoti_editor_style() {
-	add_editor_style( 'assets/css/editor-style.css' );
+	$suffix = SCRIPT_DEBUG ? '' : '.min';
+
+	add_editor_style( 'style' . $suffix . '.css' );
 }
 add_action( 'after_setup_theme', 'ketunkoti_editor_style' );
 
