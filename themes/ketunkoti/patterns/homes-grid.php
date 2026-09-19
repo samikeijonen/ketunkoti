@@ -5,7 +5,7 @@
  * Categories: query, posts
  * Block Types: core/query
  * Viewport width: 1400
- * Description: A grid of home cards showing the featured image, location, title, living area and selling price.
+ * Description: A grid of home cards showing the featured image, status, location, title, living area and selling price.
  *
  * @package Ketunkoti
  */
@@ -14,9 +14,13 @@
 <!-- wp:query {"queryId":0,"query":{"perPage":12,"pages":0,"offset":0,"postType":"home","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":false},"align":"wide","layout":{"type":"default"}} -->
 <div class="wp-block-query alignwide">
 	<!-- wp:post-template {"style":{"spacing":{"blockGap":"var:preset|spacing|50"}},"layout":{"type":"grid","minimumColumnWidth":"22rem"}} -->
-		<!-- wp:group {"className":"home-card","style":{"spacing":{"blockGap":"0"},"border":{"width":"1px","radius":"6px"},"dimensions":{"minHeight":"100%"}},"borderColor":"accent-6","backgroundColor":"accent-5","layout":{"type":"flex","orientation":"vertical","justifyContent":"stretch"}} -->
-		<div class="wp-block-group home-card has-border-color has-accent-6-border-color has-accent-5-background-color has-background" style="border-width:1px;border-radius:6px;min-height:100%">
+		<!-- wp:group {"className":"home-card","style":{"spacing":{"blockGap":"0"},"border":{"width":"1px","radius":"8px"},"dimensions":{"minHeight":"100%"}},"borderColor":"accent-6","backgroundColor":"accent-5","layout":{"type":"flex","orientation":"vertical","justifyContent":"stretch"}} -->
+		<div class="wp-block-group home-card has-border-color has-accent-6-border-color has-accent-5-background-color has-background" style="border-width:1px;border-radius:8px;min-height:100%">
 			<!-- wp:post-featured-image {"isLink":false,"aspectRatio":"4/3","className":"home-card__image","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} /-->
+
+			<!-- wp:paragraph {"className":"home-card__status","fontSize":"small","textColor":"contrast","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em"}},"metadata":{"bindings":{"content":{"source":"ketunkoti/home-details","args":{"key":"home_status"}}}}} -->
+			<p class="home-card__status has-contrast-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em">&#8212;</p>
+			<!-- /wp:paragraph -->
 
 			<!-- wp:group {"className":"home-card__body","style":{"layout":{"selfStretch":"fill"},"spacing":{"blockGap":"var:preset|spacing|20","padding":{"top":"var:preset|spacing|40","right":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|40"}}},"layout":{"type":"flex","orientation":"vertical","justifyContent":"stretch"}} -->
 			<div class="wp-block-group home-card__body" style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)">
@@ -32,7 +36,7 @@
 					<p class="home-card__area has-accent-4-color has-text-color has-small-font-size">&#8212;</p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:paragraph {"className":"home-card__price","fontSize":"medium","fontFamily":"cormorant-garamond","style":{"typography":{"fontWeight":"600"}},"metadata":{"bindings":{"content":{"source":"ketunkoti/home-details","args":{"key":"home_selling_price"}}}}} -->
+					<!-- wp:paragraph {"className":"home-card__price","fontSize":"medium","fontFamily":"cormorant-garamond","style":{"typography":{"fontWeight":"600"}},"metadata":{"bindings":{"content":{"source":"ketunkoti/home-pricing","args":{"key":"home_selling_price"}}}}} -->
 					<p class="home-card__price has-cormorant-garamond-font-family has-medium-font-size" style="font-weight:600">&#8212;</p>
 					<!-- /wp:paragraph -->
 				</div>

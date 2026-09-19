@@ -109,6 +109,13 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
  */
 .home-card {
 	position: relative;
+	/*
+	 * Exposed as a custom property so `.home-card__status` can derive its own
+	 * radius from it below. Keep this in sync with the "radius":"12px" border
+	 * attribute set on the `home-card` group in the `homes-grid` pattern (and
+	 * on `.home-details`, which shares the same radius for visual consistency).
+	 */
+	--card-radius: 8px;
 	/* Clips the featured image to the card's rounded corners. */
 	overflow: hidden;
 	transition: transform .2s ease, box-shadow .2s ease;
@@ -117,6 +124,53 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 .home-card:hover {
 	box-shadow: 0 6px 20px color-mix(in srgb, var(--wp--preset--color--contrast) 12%, transparent);
 	transform: translateY(-2px);
+}
+
+/*
+ * Status badge, overlaid on the top-left corner of the featured image.
+ *
+ * One flat style for every status term for now - Vapaa, Varattu, Myyty and
+ * Vuokrattu all look the same. Colour-coding per term can come later; see the
+ * `home-status` taxonomy, which is deliberately not wired to specific term
+ * names anywhere in this codebase.
+ *
+ * Positioned here rather than through a block support: `.home-card` already
+ * provides the `position: relative` an absolutely placed child needs, and
+ * "float over the previous sibling" has no block support equivalent.
+ *
+ * The background is translucent rather than solid Cream, because the badge
+ * sits on top of an arbitrary listing photo rather than a fixed surface.
+ * `backdrop-filter` softens whatever is behind it so the text stays readable
+ * over busy photos too; unsupported browsers just keep the tinted background,
+ * which is still legible on its own.
+ *
+ * The top-left radius is derived from `.home-card`'s own radius rather than
+ * copied, per the "relative rounded corners" technique:
+ * https://piccalil.li/blog/relative-rounded-corners/
+ * The formula there is `padding + inner-radius = outer-radius`, so the inner
+ * radius is `outer-radius - padding`. With the card's 12px radius, the inset
+ * below has to stay under 12px or there is no positive radius left to give -
+ * `max()` only guards the case where it does not (or the card radius
+ * changes), rather than being the expected result day to day.
+ *
+ * Only the top-left and bottom-right corners are rounded, giving the badge a
+ * cut-corner tag shape. Top-left is the one that is actually concentric with
+ * the card's corner underneath it; bottom-right mirrors it for symmetry and
+ * carries no such relationship of its own.
+ */
+.home-card__status {
+	--status-inset: 4px;
+
+	position: absolute;
+	top: var(--status-inset);
+	left: var(--status-inset);
+	margin: 0;
+	padding: 0.35em 0.9em;
+	border-top-left-radius: max(0px, var(--card-radius) - var(--status-inset));
+	border-bottom-right-radius: max(0px, var(--card-radius) - var(--status-inset));
+	background-color: color-mix(in srgb, var(--wp--preset--color--accent-5) 50%, transparent);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
 }
 
 /*
