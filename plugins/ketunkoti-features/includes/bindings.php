@@ -16,9 +16,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Name of the block bindings source registered by this plugin.
+ * Names of the block bindings sources registered by this plugin.
+ *
+ * Split into several sources - rather than one - purely so the "connect to a
+ * field" picker in the editor groups them under separate headings, matching
+ * the sidebar's "Kodin tiedot" / "Hinnat ja vastikkeet" / "Vuokratiedot" /
+ * "Sijoituslaskelma" panels: WordPress's bindings UI only ever groups by
+ * registered source name, with no sub-category within a single source. All
+ * four share the same get_value_callback() below, since it already resolves
+ * any key generically regardless of which source name reached it.
  */
-const BINDINGS_SOURCE = 'ketunkoti/home-details';
+const BINDINGS_SOURCE           = 'ketunkoti/home-details';
+const PRICING_BINDINGS_SOURCE   = 'ketunkoti/home-pricing';
+const RENTAL_BINDINGS_SOURCE    = 'ketunkoti/home-rental';
+const INVESTMENT_BINDINGS_SOURCE = 'ketunkoti/home-investment';
 
 /**
  * Binding keys that read a taxonomy rather than post meta.
@@ -29,6 +40,7 @@ const TAXONOMY_FIELDS = [
     'home_city'    => 'home-city',
     'home_rooms'   => 'home-rooms',
     'home_purpose' => PURPOSE_TAXONOMY,
+    'home_status'  => 'home-status',
 ];
 
 /**
@@ -49,6 +61,33 @@ function register_bindings() {
         BINDINGS_SOURCE,
         [
             'label'              => __( 'Kodin tiedot', 'ketunkoti-features' ),
+            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+            'uses_context'       => [ 'postId', 'postType' ],
+        ]
+    );
+
+    register_block_bindings_source(
+        PRICING_BINDINGS_SOURCE,
+        [
+            'label'              => __( 'Hinnat ja vastikkeet', 'ketunkoti-features' ),
+            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+            'uses_context'       => [ 'postId', 'postType' ],
+        ]
+    );
+
+    register_block_bindings_source(
+        RENTAL_BINDINGS_SOURCE,
+        [
+            'label'              => __( 'Vuokratiedot', 'ketunkoti-features' ),
+            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+            'uses_context'       => [ 'postId', 'postType' ],
+        ]
+    );
+
+    register_block_bindings_source(
+        INVESTMENT_BINDINGS_SOURCE,
+        [
+            'label'              => __( 'Sijoituslaskelma', 'ketunkoti-features' ),
             'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
             'uses_context'       => [ 'postId', 'postType' ],
         ]

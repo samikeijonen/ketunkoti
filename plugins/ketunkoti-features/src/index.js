@@ -31,9 +31,18 @@ import './editor.scss';
 const POST_TYPE = 'home';
 
 /**
- * Block bindings source name. Must match the PHP registration.
+ * Block bindings source names. Must match the PHP registration.
+ *
+ * Split into several sources - rather than one - purely so the "connect to a
+ * field" picker groups them under separate headings, matching the sidebar's
+ * panels below. All four resolve through the same getValues() function, since
+ * it already reads any key generically regardless of which source name
+ * reached it.
  */
 const BINDINGS_SOURCE = 'ketunkoti/home-details';
+const PRICING_BINDINGS_SOURCE = 'ketunkoti/home-pricing';
+const RENTAL_BINDINGS_SOURCE = 'ketunkoti/home-rental';
+const INVESTMENT_BINDINGS_SOURCE = 'ketunkoti/home-investment';
 
 /**
  * Field keys exposed through the bindings source.
@@ -60,6 +69,7 @@ const FIELDS = {
 	city: 'home_city',
 	rooms: 'home_rooms',
 	purpose: 'home_purpose',
+	status: 'home_status',
 };
 
 /**
@@ -92,6 +102,7 @@ const TAXONOMY_FIELDS = {
 	[ FIELDS.city ]: 'home-city',
 	[ FIELDS.rooms ]: 'home-rooms',
 	[ FIELDS.purpose ]: PURPOSE_TAXONOMY,
+	[ FIELDS.status ]: 'home-status',
 };
 
 /**
@@ -277,51 +288,59 @@ const resolveField = ( select, record, key ) => {
 };
 
 /**
- * Registers the bindings source in the editor so the fields are selectable in
- * the bindings UI. Values are resolved server side by the PHP callback.
+ * Resolves bound values for the editor preview, shared by every source below.
+ *
+ * Required even though the front end is rendered by the PHP callback: the
+ * bindings UI calls this without checking that it exists, so a source
+ * without it throws when the fields list is opened. All four sources share
+ * this one implementation, since it already resolves any key generically
+ * regardless of which source name reached it.
+ *
+ * @param {Object}   options          Source options.
+ * @param {Function} options.select   Data registry select function.
+ * @param {Object}   options.context  Block context, carries postId/postType.
+ * @param {Object}   options.bindings Bindings keyed by block attribute.
+ * @return {Object} Values keyed by block attribute.
+ */
+const getValues = ( { select, context, bindings } ) => {
+	const { postType, postId } = context || {};
+
+	const record =
+		postType && postId
+			? select( coreStore ).getEditedEntityRecord(
+					'postType',
+					postType,
+					postId
+			  )
+			: undefined;
+
+	const values = {};
+
+	for ( const [ attribute, binding ] of Object.entries( bindings || {} ) ) {
+		values[ attribute ] = resolveField(
+			select,
+			record,
+			binding?.args?.key
+		);
+	}
+
+	return values;
+};
+
+/**
+ * Registers the bindings sources in the editor so the fields are selectable
+ * in the bindings UI. Values are resolved server side by the PHP callback.
+ *
+ * Split into four sources - rather than one - purely so the "connect to a
+ * field" picker groups them under separate headings, matching the sidebar's
+ * "Kodin tiedot" / "Hinnat ja vastikkeet" / "Vuokratiedot" / "Sijoituslaskelma"
+ * panels above: WordPress's bindings UI only ever groups by registered source
+ * name, with no sub-category within a single source.
  */
 registerBlockBindingsSource( {
 	name: BINDINGS_SOURCE,
 	label: __( 'Kodin tiedot', 'ketunkoti-features' ),
-	/**
-	 * Resolves bound values for the editor preview.
-	 *
-	 * Required even though the front end is rendered by the PHP callback: the
-	 * bindings UI calls this without checking that it exists, so a source
-	 * without it throws when the fields list is opened.
-	 *
-	 * @param {Object}   options          Source options.
-	 * @param {Function} options.select   Data registry select function.
-	 * @param {Object}   options.context  Block context, carries postId/postType.
-	 * @param {Object}   options.bindings Bindings keyed by block attribute.
-	 * @return {Object} Values keyed by block attribute.
-	 */
-	getValues( { select, context, bindings } ) {
-		const { postType, postId } = context || {};
-
-		const record =
-			postType && postId
-				? select( coreStore ).getEditedEntityRecord(
-						'postType',
-						postType,
-						postId
-				  )
-				: undefined;
-
-		const values = {};
-
-		for ( const [ attribute, binding ] of Object.entries(
-			bindings || {}
-		) ) {
-			values[ attribute ] = resolveField(
-				select,
-				record,
-				binding?.args?.key
-			);
-		}
-
-		return values;
-	},
+	getValues,
 	getFieldsList() {
 		return [
 			{
@@ -329,6 +348,56 @@ registerBlockBindingsSource( {
 				type: 'string',
 				args: { key: FIELDS.area },
 			},
+			{
+				label: __( 'Osoite', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.address },
+			},
+			{
+				label: __( 'Kerros', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.floor },
+			},
+			{
+				label: __( 'Rakennusvuosi', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.yearBuilt },
+			},
+			{
+				label: __( 'Huoneistoselitelmä', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.roomLayout },
+			},
+			{
+				label: __( 'Sijainti', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.city },
+			},
+			{
+				label: __( 'Huoneiden lukumäärä', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.rooms },
+			},
+			{
+				label: __( 'Käyttötarkoitus', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.purpose },
+			},
+			{
+				label: __( 'Status', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.status },
+			},
+		];
+	},
+} );
+
+registerBlockBindingsSource( {
+	name: PRICING_BINDINGS_SOURCE,
+	label: __( 'Hinnat ja vastikkeet', 'ketunkoti-features' ),
+	getValues,
+	getFieldsList() {
+		return [
 			{
 				label: __( 'Velaton hinta', 'ketunkoti-features' ),
 				type: 'string',
@@ -349,36 +418,16 @@ registerBlockBindingsSource( {
 				type: 'string',
 				args: { key: FIELDS.capitalCharge },
 			},
-			{
-				label: __( 'Kerros', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.floor },
-			},
-			{
-				label: __( 'Osoite', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.address },
-			},
-			{
-				label: __( 'Rakennusvuosi', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.yearBuilt },
-			},
-			{
-				label: __( 'Huoneistoselitelmä', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.roomLayout },
-			},
-			{
-				label: __( 'Huoneiden lukumäärä', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.rooms },
-			},
-			{
-				label: __( 'Sijainti', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.city },
-			},
+		];
+	},
+} );
+
+registerBlockBindingsSource( {
+	name: RENTAL_BINDINGS_SOURCE,
+	label: __( 'Vuokratiedot', 'ketunkoti-features' ),
+	getValues,
+	getFieldsList() {
+		return [
 			{
 				label: __( 'Vuokra', 'ketunkoti-features' ),
 				type: 'string',
@@ -404,15 +453,20 @@ registerBlockBindingsSource( {
 				type: 'string',
 				args: { key: FIELDS.availableFrom },
 			},
+		];
+	},
+} );
+
+registerBlockBindingsSource( {
+	name: INVESTMENT_BINDINGS_SOURCE,
+	label: __( 'Sijoituslaskelma', 'ketunkoti-features' ),
+	getValues,
+	getFieldsList() {
+		return [
 			{
 				label: __( 'Vuokratuotto', 'ketunkoti-features' ),
 				type: 'string',
 				args: { key: FIELDS.rentalYield },
-			},
-			{
-				label: __( 'Käyttötarkoitus', 'ketunkoti-features' ),
-				type: 'string',
-				args: { key: FIELDS.purpose },
 			},
 		];
 	},
