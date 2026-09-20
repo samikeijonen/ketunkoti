@@ -248,7 +248,7 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 }
 
 .buttondown-submit {
-	margin-top: var(--wp--preset--spacing--20);
+	margin-top: var(--wp--preset--spacing--30);
 }
 
 /* The controls are sized by a `size`/`cols` attribute, which ignores the column width. */
@@ -270,7 +270,8 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 	font-size: var(--wp--preset--font-size--small);
 }
 
-.wpcf7-form .wpcf7-response-output {
+.wpcf7 form .wpcf7-response-output {
+	border-color: var(--wp--preset--color--accent-4) !important;
 	margin-inline: 0;
 	padding: var(--wp--preset--spacing--30);
 	font-size: var(--wp--preset--font-size--small);

@@ -58,39 +58,54 @@
 			"defaultSpacingSizes": false,
 			"spacingSizes": [
 				{
-					"name": "Tiny",
-					"size": "10px",
+					"name": "3XS",
+					"size": "clamp(4px, 3.66px + 0.0943vw, 5px)",
+					"slug": "10"
+				},
+				{
+					"name": "2XS",
+					"size": "clamp(8px, 7.32px + 0.1887vw, 10px)",
 					"slug": "20"
 				},
 				{
-					"name": "X-Small",
-					"size": "20px",
+					"name": "XS",
+					"size": "clamp(12px, 10.98px + 0.283vw, 15px)",
+					"slug": "25"
+				},
+				{
+					"name": "S",
+					"size": "clamp(16px, 14.64px + 0.3774vw, 20px)",
 					"slug": "30"
 				},
 				{
-					"name": "Small",
-					"size": "30px",
+					"name": "M",
+					"size": "clamp(24px, 21.96px + 0.566vw, 30px)",
 					"slug": "40"
 				},
 				{
-					"name": "Regular",
-					"size": "clamp(30px, 5vw, 50px)",
+					"name": "L",
+					"size": "clamp(32px, 29.28px + 0.7547vw, 40px)",
 					"slug": "50"
 				},
 				{
-					"name": "Large",
-					"size": "clamp(30px, 7vw, 70px)",
+					"name": "XL",
+					"size": "clamp(48px, 43.92px + 1.1321vw, 60px)",
 					"slug": "60"
 				},
 				{
-					"name": "X-Large",
-					"size": "clamp(50px, 7vw, 90px)",
+					"name": "2XL",
+					"size": "clamp(64px, 58.57px + 1.5094vw, 80px)",
 					"slug": "70"
 				},
 				{
-					"name": "XX-Large",
-					"size": "clamp(70px, 10vw, 140px)",
+					"name": "3XL",
+					"size": "clamp(128px, 117.13px + 3.0189vw, 160px)",
 					"slug": "80"
+				},
+				{
+					"name": "S - 2XL",
+					"size": "clamp(16px, -5.74px + 6.0377vw, 80px)",
+					"slug": "90"
 				}
 			],
 			"units": [
@@ -231,10 +246,10 @@
 			"text": "var:preset|color|contrast"
 		},
 		"spacing": {
-			"blockGap": "1.5rem",
+			"blockGap": "1.5em",
 			"padding": {
-				"left": "var:preset|spacing|30",
-				"right": "var:preset|spacing|30"
+				"left": "var:preset|spacing|90",
+				"right": "var:preset|spacing|90"
 			}
 		},
 		"typography": {
