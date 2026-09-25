@@ -58,62 +58,62 @@
 			"defaultSpacingSizes": false,
 			"spacingSizes": [
 				{
-					"name": "3XS",
+					"name": "3XS (0.125rem → 0.25rem)",
 					"size": "clamp(0.125rem, 0.0825rem + 0.1887vw, 0.25rem)",
 					"slug": "10"
 				},
 				{
-					"name": "2XS",
+					"name": "2XS (0.25rem → 0.5rem)",
 					"size": "clamp(0.25rem, 0.1651rem + 0.3774vw, 0.5rem)",
 					"slug": "20"
 				},
 				{
-					"name": "XS",
+					"name": "XS (0.375rem → 0.75rem)",
 					"size": "clamp(0.375rem, 0.2476rem + 0.566vw, 0.75rem)",
 					"slug": "25"
 				},
 				{
-					"name": "S",
+					"name": "S (0.5rem → 1rem)",
 					"size": "clamp(0.5rem, 0.3302rem + 0.7547vw, 1rem)",
 					"slug": "30"
 				},
 				{
-					"name": "M",
+					"name": "M (0.75rem → 1.5rem)",
 					"size": "clamp(0.75rem, 0.4953rem + 1.1321vw, 1.5rem)",
 					"slug": "40"
 				},
 				{
-					"name": "L",
+					"name": "L (1rem → 2rem)",
 					"size": "clamp(1rem, 0.6604rem + 1.5094vw, 2rem)",
 					"slug": "50"
 				},
 				{
-					"name": "XL",
+					"name": "XL (1.5rem → 3rem)",
 					"size": "clamp(1.5rem, 0.9906rem + 2.2642vw, 3rem)",
 					"slug": "60"
 				},
 				{
-					"name": "2XL",
+					"name": "2XL (2rem → 4rem)",
 					"size": "clamp(2rem, 1.3208rem + 3.0189vw, 4rem)",
 					"slug": "70"
 				},
 				{
-					"name": "3XL",
+					"name": "3XL (4rem → 8rem)",
 					"size": "clamp(4rem, 2.6415rem + 6.0377vw, 8rem)",
 					"slug": "80"
 				},
 				{
-					"name": "4XL",
+					"name": "4XL (6rem → 12rem)",
 					"size": "clamp(6rem, 3.9623rem + 9.0566vw, 12rem)",
 					"slug": "90"
 				},
 				{
-					"name": "L - 2XL",
+					"name": "L - 2XL (1rem → 4rem)",
 					"size": "clamp(1rem, -0.0189rem + 4.5283vw, 4rem)",
 					"slug": "l-2xl"
 				},
 				{
-					"name": "XL - L",
+					"name": "XL - L (1.5rem → 2rem)",
 					"size": "clamp(1.5rem, 1.3302rem + 0.7547vw, 2rem)",
 					"slug": "xl-l"
 				}
