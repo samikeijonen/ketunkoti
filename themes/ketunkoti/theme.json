@@ -258,8 +258,8 @@
 		"spacing": {
 			"blockGap": "var:preset|spacing|xl-l",
 			"padding": {
-				"left": "var:preset|spacing|l-2xl",
-				"right": "var:preset|spacing|l-2xl"
+				"left": "var:preset|spacing|l-2-xl",
+				"right": "var:preset|spacing|l-2-xl"
 			}
 		},
 		"typography": {
