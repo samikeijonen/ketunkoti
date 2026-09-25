@@ -59,53 +59,63 @@
 			"spacingSizes": [
 				{
 					"name": "3XS",
-					"size": "clamp(4px, 3.66px + 0.0943vw, 5px)",
+					"size": "clamp(0.125rem, 0.0825rem + 0.1887vw, 0.25rem)",
 					"slug": "10"
 				},
 				{
 					"name": "2XS",
-					"size": "clamp(8px, 7.32px + 0.1887vw, 10px)",
+					"size": "clamp(0.25rem, 0.1651rem + 0.3774vw, 0.5rem)",
 					"slug": "20"
 				},
 				{
 					"name": "XS",
-					"size": "clamp(12px, 10.98px + 0.283vw, 15px)",
+					"size": "clamp(0.375rem, 0.2476rem + 0.566vw, 0.75rem)",
 					"slug": "25"
 				},
 				{
 					"name": "S",
-					"size": "clamp(16px, 14.64px + 0.3774vw, 20px)",
+					"size": "clamp(0.5rem, 0.3302rem + 0.7547vw, 1rem)",
 					"slug": "30"
 				},
 				{
 					"name": "M",
-					"size": "clamp(24px, 21.96px + 0.566vw, 30px)",
+					"size": "clamp(0.75rem, 0.4953rem + 1.1321vw, 1.5rem)",
 					"slug": "40"
 				},
 				{
 					"name": "L",
-					"size": "clamp(32px, 29.28px + 0.7547vw, 40px)",
+					"size": "clamp(1rem, 0.6604rem + 1.5094vw, 2rem)",
 					"slug": "50"
 				},
 				{
 					"name": "XL",
-					"size": "clamp(48px, 43.92px + 1.1321vw, 60px)",
+					"size": "clamp(1.5rem, 0.9906rem + 2.2642vw, 3rem)",
 					"slug": "60"
 				},
 				{
 					"name": "2XL",
-					"size": "clamp(64px, 58.57px + 1.5094vw, 80px)",
+					"size": "clamp(2rem, 1.3208rem + 3.0189vw, 4rem)",
 					"slug": "70"
 				},
 				{
 					"name": "3XL",
-					"size": "clamp(128px, 117.13px + 3.0189vw, 160px)",
+					"size": "clamp(4rem, 2.6415rem + 6.0377vw, 8rem)",
 					"slug": "80"
 				},
 				{
-					"name": "S - 2XL",
-					"size": "clamp(16px, -5.74px + 6.0377vw, 80px)",
+					"name": "4XL",
+					"size": "clamp(6rem, 3.9623rem + 9.0566vw, 12rem)",
 					"slug": "90"
+				},
+				{
+					"name": "L - 2XL",
+					"size": "clamp(1rem, -0.0189rem + 4.5283vw, 4rem)",
+					"slug": "l-2xl"
+				},
+				{
+					"name": "XL - L",
+					"size": "clamp(1.5rem, 1.3302rem + 0.7547vw, 2rem)",
+					"slug": "xl-l"
 				}
 			],
 			"units": [
@@ -246,10 +256,10 @@
 			"text": "var:preset|color|contrast"
 		},
 		"spacing": {
-			"blockGap": "1.5em",
+			"blockGap": "var:preset|spacing|xl-l",
 			"padding": {
-				"left": "var:preset|spacing|90",
-				"right": "var:preset|spacing|90"
+				"left": "var:preset|spacing|l-2xl",
+				"right": "var:preset|spacing|l-2xl"
 			}
 		},
 		"typography": {
@@ -432,6 +442,9 @@
 				"typography": {
 					"fontSize": "var:preset|font-size|medium"
 				}
+			},
+			"core/post-content": {
+				"css": "& > .wp-block-heading:not(:first-child) { margin-block-start: 1.5em; }"
 			},
 			"core/post-date": {
 				"color":{
