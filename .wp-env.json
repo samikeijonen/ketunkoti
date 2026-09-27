@@ -1,6 +1,6 @@
 {
 	"core": null,
-	"themes": [ "./themes/ketunkoti" ],
+	"themes": [ "./themes/ketunkoti", "./themes/foxventures" ],
 	"plugins": [ "./plugins/ketunkoti-features" ],
 	"config": {
 		"WP_DEBUG": true,
