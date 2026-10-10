@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Ketun koti">
+	<defs>
+		<clipPath id="kk-right"><rect x="50" width="50" height="100"/></clipPath>
+		<mask id="kk-head"><path fill="#fff" d="M14 46 Q8 24 14 4 Q30 12 42 30 H58 Q70 12 86 4 Q92 24 86 46 Q90 60 76 70 Q62 82 50 92 Q38 82 24 70 Q10 60 14 46 Z"/></mask>
+	</defs>
+	<path fill="#B58A63" fill-rule="evenodd" stroke="#B58A63" stroke-width="6" stroke-linejoin="round" d="M14 46 Q8 24 14 4 Q30 12 42 30 H58 Q70 12 86 4 Q92 24 86 46 Q90 60 76 70 Q62 82 50 92 Q38 82 24 70 Q10 60 14 46 Z M40.5 50 V39.5 L50 31 L59.5 39.5 V50 Z"/>
+	<path fill="#A27A55" fill-rule="evenodd" stroke="#A27A55" stroke-width="6" stroke-linejoin="round" clip-path="url(#kk-right)" d="M14 46 Q8 24 14 4 Q30 12 42 30 H58 Q70 12 86 4 Q92 24 86 46 Q90 60 76 70 Q62 82 50 92 Q38 82 24 70 Q10 60 14 46 Z M40.5 50 V39.5 L50 31 L59.5 39.5 V50 Z"/>
+	<path fill="#5C4632" d="M19 40 Q15 24 18 12 Q29 18 37 30 Z M81 40 Q85 24 82 12 Q71 18 63 30 Z"/>
+	<path fill="#F5EFE2" mask="url(#kk-head)" d="M14 60 Q30 62 42 70 Q50 66 58 70 Q70 62 86 60 Q78 74 64 82 Q56 88 50 94 Q44 88 36 82 Q22 74 14 60 Z"/>
+	<path fill="none" stroke="#2E2419" stroke-width="3.5" stroke-linecap="round" d="M27 54 Q33 48 39 54 M61 54 Q67 48 73 54"/>
+	<path fill="#2E2419" d="M41 71 Q50 67 59 71 Q58 80 50 83 Q42 80 41 71 Z"/>
+</svg>
