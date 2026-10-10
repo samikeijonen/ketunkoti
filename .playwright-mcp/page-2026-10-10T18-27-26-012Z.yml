@@ -1,0 +1,30 @@
+- generic [ref=e2]:
+  - text:            
+  - generic:
+    - generic [ref=e3]:
+      - navigation "Toolbar":
+        - menu:
+          - group [ref=e4]:
+            - menuitem "About WordPress" [ref=e5] [cursor=pointer]
+          - group [ref=e8]:
+            - menuitem "ketunkoti" [ref=e9] [cursor=pointer]
+          - group [ref=e10]:
+            - menuitem "1 update available" [ref=e11] [cursor=pointer]:
+              - generic [aria-hidden] [ref=e13]: "1"
+          - group [ref=e15]:
+            - menuitem "⌘K Open command palette" [ref=e16] [cursor=pointer]:
+              - generic [ref=e18]:
+                - text: ⌘K
+                - generic [ref=e19]: Open command palette
+          - group [ref=e20]:
+            - menuitem "0 Comments in moderation" [ref=e21] [cursor=pointer]:
+              - generic [aria-hidden] [ref=e23]: "0"
+          - group [ref=e25]:
+            - menuitem "New" [ref=e26] [cursor=pointer]
+          - group [ref=e29]:
+            - menuitem "View Page" [ref=e30] [cursor=pointer]
+        - menu [ref=e31]:
+          - group [ref=e32]:
+            - menuitem "Howdy, admin" [ref=e33] [cursor=pointer]
+    - main:
+      - heading "Edit Page" [level=1] [ref=e34]
