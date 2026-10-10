@@ -51,7 +51,7 @@
 			]
 		},
 		"layout": {
-			"contentSize": "645px",
+			"contentSize": "675px",
 			"wideSize": "1420px"
 		},
 		"spacing": {
@@ -158,7 +158,7 @@
 				},
 				{
 					"fluid": {
-						"max": "2.5rem",
+						"max": "2.25rem",
 						"min": "1.5rem"
 					},
 					"name": "Extra Large",

@@ -1,0 +1,111 @@
+- generic [active] [ref=f7e1]:
+  - link "Skip to content" [ref=f7e2] [cursor=pointer]:
+    - /url: "#wp--skip-link--target"
+  - generic [ref=f7e3]:
+    - banner [ref=f7e4]:
+      - generic [ref=f7e7]:
+        - paragraph [ref=f7e8]:
+          - link "ketunkoti" [ref=f7e9] [cursor=pointer]:
+            - /url: http://localhost:8888
+        - navigation [ref=f7e11]:
+          - list [ref=f7e16]:
+            - listitem [ref=f7e17]:
+              - link "Kodit (demo)" [ref=f7e18] [cursor=pointer]:
+                - /url: http://localhost:8888/kodit-demo/
+            - listitem [ref=f7e19]:
+              - link "Sample Page" [ref=f7e20] [cursor=pointer]:
+                - /url: http://localhost:8888/sample-page/
+            - listitem [ref=f7e21]:
+              - link "Ketun koti" [ref=f7e22] [cursor=pointer]:
+                - /url: http://localhost:8888/
+    - main [ref=f7e23]:
+      - generic [ref=f7e24]:
+        - heading "Usein kysytyt kysymykset" [level=1] [ref=f7e25]
+        - paragraph [ref=f7e26]: Oikeasti ei ole kysytty vielä mitään mutta ennakoidaan sen verran, että keksitään kysymyksiä itse.
+        - group [ref=f7e27]:
+          - generic [ref=f7e28]:
+            - heading [level=3] [ref=f7e29]:
+              - button "Mikä ihmeen Ketun koti?" [ref=f7e30] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f7e32]: +
+            - region "Mikä ihmeen Ketun koti?":
+              - paragraph [ref=f7e33]: Ketun koti on ensinnäkin hieno nimi, olenhan sen ihan itse keksinyt.
+              - paragraph [ref=f7e34]: Ketun koti myy kauniita koteja sekä asuntosijoittajille että omaksi kodiksi. Vielä Ketun koti ei ole kiinteistönvälitykseen keskittyvä yritys mutta voimme kyllä auttaa kodin myymisessä (valokuvaus, markkinointi jne).
+          - generic [ref=f7e35]:
+            - heading [level=3] [ref=f7e36]:
+              - button "Kuka on Ketun kodin takana?" [ref=f7e37] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f7e39]: +
+            - region "Kuka on Ketun kodin takana?":
+              - paragraph [ref=f7e40]: Ketun kodin takana ei yllättäen olekaan nainen! Vaan minä, Sami Keijonen. Ymmärrän pettymyksen.
+              - figure [ref=f7e41]:
+                - img "Sami kuuntelee musiikkia silmät kiinni Ilosaarirokissa, katse kohti taivasta ja nyrkki ilmassa. Kuva on mustavalkoinen." [ref=f7e42]
+              - paragraph [ref=f7e43]: Olen entinen matematiikan opettaja (ja apulaisrehtori ja Espoon kesälukion rehtori) ja siirryin pikkuhiljaa yrittäjäksi verkkosivustojen maailmaan.
+              - paragraph [ref=f7e44]: Asuntosijoittaminen ja vuokranantajuus alkoi vuonna 2022 ja muodostui osaksi yrittäjyyttä. On sen verran mukavaa hommaa.
+          - generic [ref=f7e45]:
+            - heading [level=3] [ref=f7e46]:
+              - button "Kuka on Ketun kodin takana?" [ref=f7e47] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f7e49]: +
+            - region "Kuka on Ketun kodin takana?":
+              - paragraph [ref=f7e50]: Ketun kodin takana ei yllättäen olekaan nainen! Vaan minä, Sami Keijonen. Ymmärrän pettymyksen.
+              - figure [ref=f7e51]:
+                - img "Sami kuuntelee musiikkia silmät kiinni Ilosaarirokissa, katse kohti taivasta ja nyrkki ilmassa. Kuva on mustavalkoinen." [ref=f7e52]
+              - paragraph [ref=f7e53]: Olen entinen matematiikan opettaja (ja apulaisrehtori ja Espoon kesälukion rehtori) ja siirryin pikkuhiljaa yrittäjäksi verkkosivustojen maailmaan.
+              - paragraph [ref=f7e54]: Asuntosijoittaminen ja vuokranantajuus alkoi vuonna 2022 ja muodostui osaksi yrittäjyyttä. On sen verran mukavaa hommaa.
+          - generic [ref=f7e55]:
+            - heading [level=3] [ref=f7e56]:
+              - button "Kuka on Ketun kodin takana?" [ref=f7e57] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f7e59]: +
+            - region "Kuka on Ketun kodin takana?":
+              - paragraph [ref=f7e60]: Ketun kodin takana ei yllättäen olekaan nainen! Vaan minä, Sami Keijonen. Ymmärrän pettymyksen.
+              - figure [ref=f7e61]:
+                - img "Sami kuuntelee musiikkia silmät kiinni Ilosaarirokissa, katse kohti taivasta ja nyrkki ilmassa. Kuva on mustavalkoinen." [ref=f7e62]
+              - paragraph [ref=f7e63]: Olen entinen matematiikan opettaja (ja apulaisrehtori ja Espoon kesälukion rehtori) ja siirryin pikkuhiljaa yrittäjäksi verkkosivustojen maailmaan.
+              - paragraph [ref=f7e64]: Asuntosijoittaminen ja vuokranantajuus alkoi vuonna 2022 ja muodostui osaksi yrittäjyyttä. On sen verran mukavaa hommaa.
+          - generic [ref=f7e65]:
+            - heading [level=3] [ref=f7e66]:
+              - button [ref=f7e67] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f7e68]: +
+            - region:
+              - paragraph
+          - generic [ref=f7e69]:
+            - heading [level=3] [ref=f7e70]:
+              - button [ref=f7e71] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f7e72]: +
+            - region:
+              - paragraph
+    - contentinfo [ref=f7e73]:
+      - generic [ref=f7e75]:
+        - generic [ref=f7e76]:
+          - generic [ref=f7e77]:
+            - heading "Tilaa Ketun kodit" [level=2] [ref=f7e78]
+            - link "Tilaamaan" [ref=f7e81] [cursor=pointer]:
+              - /url: https://ketunkoti.fi/tilaa-ketun-kodit/
+          - generic [ref=f7e82]:
+            - heading "Linkit" [level=2] [ref=f7e83]
+            - navigation "Valikko" [ref=f7e85]:
+              - list [ref=f7e86]:
+                - listitem [ref=f7e87]:
+                  - link "Kodit (demo)" [ref=f7e88] [cursor=pointer]:
+                    - /url: http://localhost:8888/kodit-demo/
+                - listitem [ref=f7e89]:
+                  - link "Sample Page" [ref=f7e90] [cursor=pointer]:
+                    - /url: http://localhost:8888/sample-page/
+                - listitem [ref=f7e91]:
+                  - link "Ketun koti" [ref=f7e92] [cursor=pointer]:
+                    - /url: http://localhost:8888/
+          - generic [ref=f7e93]:
+            - heading "Seuraa somessa" [level=2] [ref=f7e94]
+            - list [ref=f7e95]:
+              - listitem [ref=f7e96]:
+                - link "Instagram" [ref=f7e97] [cursor=pointer]:
+                  - /url: https://www.instagram.com/ketunkoti.fi
+              - listitem [ref=f7e101]:
+                - link "YouTube" [ref=f7e102] [cursor=pointer]:
+                  - /url: https://www.youtube.com/@ketunkoti
+          - generic [ref=f7e106]:
+            - heading "Info" [level=2] [ref=f7e107]
+            - paragraph [ref=f7e108]: "Ketun kotiY-tunnus: 2227257-6Verkkolaskuosoite: 003722272576Operaattori: Maventa (003721291126)"
+        - generic [ref=f7e109]:
+          - paragraph [ref=f7e110]: "@ketunkoti"
+          - paragraph [ref=f7e111]:
+            - link "Tietosuojaseloste" [ref=f7e112] [cursor=pointer]:
+              - /url: https://ketunkoti.fi/tietosuojaselosta/
