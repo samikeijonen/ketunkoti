@@ -24,6 +24,7 @@ import { useEntityProp, store as coreStore } from '@wordpress/core-data';
 import { registerBlockBindingsSource } from '@wordpress/blocks';
 
 import './editor.scss';
+import './faq-schema';
 
 /**
  * Post type these fields belong to.

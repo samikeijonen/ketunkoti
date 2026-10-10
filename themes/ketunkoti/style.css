@@ -288,3 +288,115 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 	height: auto;
 	flex-shrink: 0;
 }
+
+/*
+ * Accordion chevron icon
+ *
+ * Core saves a literal "+" into the toggle icon and rotates it 45deg when the
+ * item is open. Hide the glyph with `-webkit-text-fill-color` (which keeps
+ * `currentColor` intact), draw a chevron with a mask filled in the text
+ * colour, and flip it instead of rotating. Core's existing `transform`
+ * transition animates the flip and already respects reduced motion.
+ *
+ * Core sizes the icon in `em`, so it grows with the heading; a fixed `rem`
+ * size keeps it at 24px while still following the user's font size setting.
+ */
+.wp-block-accordion-heading__toggle-icon {
+	width: 1.5rem;
+	height: 1.5rem;
+	flex-shrink: 0;
+	-webkit-text-fill-color: transparent;
+	background-color: currentColor;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%23000'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.wp-block-accordion .wp-block-accordion-item.is-open > .wp-block-accordion-heading .wp-block-accordion-heading__toggle-icon {
+	transform: rotate(180deg);
+}
+
+/* Forced colours replace backgrounds, which would hide the masked chevron. */
+@media (forced-colors: active) {
+	.wp-block-accordion-heading__toggle-icon {
+		forced-color-adjust: none;
+		background-color: ButtonText;
+	}
+}
+
+/*
+ * Accordion open and close animation
+ *
+ * Browsers that can transition to `height: auto` (`interpolate-size`, Chrome
+ * and Edge) animate the panel height. Firefox makes the item a two-row grid
+ * and animates the panel row between `0fr` and `1fr` (core already
+ * transitions `grid-template-rows` on the item). Chrome and Safari size a
+ * grid item with a row below `1fr` inconsistently, so the panel and the
+ * content below it drift apart; Safari only fades the panel in instead.
+ *
+ * The closed state is keyed to the item's `is-open` class, which core toggles
+ * in the editor as well as on the front, rather than the panel's `hidden`
+ * attribute: the server renders the class, but `hidden` is only added once
+ * the Interactivity API hydrates, which would animate every closed panel shut
+ * on page load.
+ *
+ * Core hides a closed panel with `hidden="until-found"` (`content-visibility:
+ * hidden`). Where the panel slides shut, transitioning that with
+ * `allow-discrete` keeps the content rendered until the animation ends.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	/*
+	 * `min-height: 0` lets the grid row shrink below the panel's content
+	 * height. The clip margin leaves room for focus outlines inside an open
+	 * panel.
+	 */
+	.wp-block-accordion-panel {
+		min-height: 0;
+		overflow: clip;
+		overflow-clip-margin: 4px;
+		transition-property: opacity;
+		transition-duration: 0.3s;
+		transition-timing-function: ease-out;
+	}
+
+	.wp-block-accordion-item:not(.is-open) > .wp-block-accordion-panel {
+		opacity: 0;
+		padding-block: 0;
+		margin-block-start: 0;
+	}
+
+	@supports (interpolate-size: allow-keywords) {
+		.wp-block-accordion {
+			interpolate-size: allow-keywords;
+		}
+
+		.wp-block-accordion-panel {
+			transition-property: height, opacity, padding-block, margin-block-start, content-visibility;
+			transition-behavior: allow-discrete;
+		}
+
+		.wp-block-accordion-item:not(.is-open) > .wp-block-accordion-panel {
+			height: 0;
+		}
+	}
+
+	/*
+	 * Firefox only. `min-content` rather than `auto` for the heading row, so
+	 * a row below `1fr` never hands its leftover space to the heading.
+	 */
+	@supports not (interpolate-size: allow-keywords) {
+		@supports (-moz-appearance: none) {
+			.wp-block-accordion-item {
+				display: grid;
+				grid-template-rows: min-content 0fr;
+			}
+
+			.wp-block-accordion-item.is-open {
+				grid-template-rows: min-content 1fr;
+			}
+
+			.wp-block-accordion-panel {
+				transition-property: opacity, padding-block, margin-block-start, content-visibility;
+				transition-behavior: allow-discrete;
+			}
+		}
+	}
+}
