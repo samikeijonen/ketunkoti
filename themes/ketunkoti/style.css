@@ -3,7 +3,7 @@ Theme Name: Ketun koti
 Theme URI: https://ketunkoti.fi
 Author: Sami Keijonen
 Author URI: https://ketunkoti.fi
-Version: 1.0
+Version: 1.1
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: ketunkoti
@@ -73,6 +73,280 @@ a {
 /* Remove outline offset from the submenus, otherwise the outline is visible outside the submenu container. */
 .wp-block-navigation .wp-block-navigation-item ul.wp-block-navigation__submenu-container .wp-block-navigation-item__content {
 	outline-offset: 0;
+}
+
+/*
+ * Move the overlay menu breakpoint from core's hardcoded 600px to 960px.
+ *
+ * Core shows the full menu from 600px up, but the header menu (links plus the
+ * button) only fits on one line next to the logo from about 940px up, so in
+ * between it wrapped onto two or three lines. Between 600px and 959px, keep the
+ * menu collapsed behind the open button, exactly as core does below 600px.
+ * Menus set to never collapse (`overlayMenu: never`) render no open button or
+ * responsive container, so they are not affected.
+ */
+@media (min-width: 600px) and (max-width: 959px) {
+	.wp-block-navigation .wp-block-navigation__responsive-container:not(.hidden-by-default):not(.is-menu-open) {
+		display: none;
+	}
+
+	.wp-block-navigation .wp-block-navigation__responsive-container-open:not(.always-shown) {
+		display: flex;
+	}
+}
+
+/*
+ * Overlay menu: staggered entrance for the top level items.
+ *
+ * When the overlay opens, each top level link (and the button after the
+ * links) fades in and drifts up 0.5rem, one after another, matching the
+ * mobile menu on foxnet.fi. The short initial delay lets the overlay itself
+ * fade in first. Core switches the overlay from `display: none` to `flex` on
+ * open, so a keyframe animation replays on every open. `both` holds the hidden
+ * start frame during each item's delay, so later items do not flash in before
+ * their turn. Closing stays instant, as core removes the overlay immediately.
+ */
+@keyframes ketunkoti-overlay-item-in {
+	from {
+		opacity: 0;
+		transform: translateY(0.5rem);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > .wp-block-navigation-item,
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__responsive-container-content > .wp-block-buttons {
+		animation: ketunkoti-overlay-item-in 0.4s cubic-bezier(0.48, 0.43, 0.56, 0.82) both;
+		animation-delay: calc(0.2s + var(--overlay-item-index, 0) * 0.05s);
+	}
+
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > .wp-block-navigation-item:nth-child(2) {
+		--overlay-item-index: 1;
+	}
+
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > .wp-block-navigation-item:nth-child(3) {
+		--overlay-item-index: 2;
+	}
+
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > .wp-block-navigation-item:nth-child(4) {
+		--overlay-item-index: 3;
+	}
+
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > .wp-block-navigation-item:nth-child(n+5) {
+		--overlay-item-index: 4;
+	}
+
+	/* The button comes after the links, so it enters last. */
+	.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__responsive-container-content > .wp-block-buttons {
+		--overlay-item-index: 5;
+	}
+}
+
+/*
+ * Signup form (synced block "Tilaa Ketun kodit", Buttondown embed).
+ *
+ * Label above, then the email field and button on one row once there is room
+ * for both, stacked full width on narrow screens. The surrounding
+ * `.launch-signup.is-centered` group centres the whole form (front page hero);
+ * elsewhere it sits at the start of the content column.
+ */
+.ketunkoti-signup {
+	max-width: 34rem;
+}
+
+/* Shrinks to its text, so the peeking fox on the right never sits on it. */
+.ketunkoti-signup__label {
+	display: inline-block;
+	margin-bottom: var(--wp--preset--spacing--20);
+	font-weight: 600;
+}
+
+/* Positioning context for the peeking fox. */
+.ketunkoti-signup__row {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--preset--spacing--20);
+}
+
+/* `min-width: 0` lets a long autofilled address shrink instead of overflowing. */
+.ketunkoti-signup__input {
+	flex: 1 1 14rem;
+	min-width: 0;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--wp--preset--color--contrast);
+	border-radius: 0;
+	background-color: var(--wp--preset--color--accent-5);
+	color: var(--wp--preset--color--contrast);
+	font: inherit;
+}
+
+.ketunkoti-signup__input:focus-visible {
+	outline: 2px solid var(--wp--preset--color--contrast);
+	outline-offset: 2px;
+}
+
+.ketunkoti-signup__submit {
+	flex: 1 0 auto;
+	cursor: pointer;
+}
+
+.ketunkoti-signup__note {
+	margin-top: var(--wp--preset--spacing--20);
+	font-size: var(--wp--preset--font-size--small);
+}
+
+/*
+ * Peeking fox (inline SVG inside the form).
+ *
+ * The fox sits on the top right edge of the row: above the button when field
+ * and button share a row, above the field when they are stacked. Its paws
+ * reach 12% into the row, as if gripping the edge. The head is clipped at that
+ * edge inside the SVG, so it can duck out of sight behind it.
+ *
+ * The fox reacts to the form:
+ * - email field focused: ears perk up and eyes open (listening),
+ * - valid address typed: happy closed eyes again, plus a hop (see motion),
+ * - button hovered or focused: the head rises a little.
+ */
+.ketunkoti-signup__fox {
+	position: absolute;
+	right: 1.5rem;
+	bottom: 100%;
+	z-index: 1;
+	width: clamp(4rem, 12vw, 5.5rem);
+	height: auto;
+	aspect-ratio: 1;
+	overflow: visible;
+	transform: translateY(12%);
+	pointer-events: none;
+}
+
+.ketunkoti-signup__fox .fox__eyes-open {
+	opacity: 0;
+}
+
+.ketunkoti-signup__fox .fox__ear {
+	transform-box: fill-box;
+}
+
+.ketunkoti-signup__fox .fox__ear--left {
+	transform-origin: 70% 100%;
+}
+
+.ketunkoti-signup__fox .fox__ear--right {
+	transform-origin: 30% 100%;
+}
+
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__eyes-open {
+	opacity: 1;
+}
+
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__eyes-closed {
+	opacity: 0;
+}
+
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__ear--left {
+	transform: translateY(-2px) rotate(-10deg);
+}
+
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__ear--right {
+	transform: translateY(-2px) rotate(10deg);
+}
+
+/* Same specificity as the focus rules above, so these win by coming later. */
+.ketunkoti-signup:has(.ketunkoti-signup__input:valid) .fox__eyes-open {
+	opacity: 0;
+}
+
+.ketunkoti-signup:has(.ketunkoti-signup__input:valid) .fox__eyes-closed {
+	opacity: 1;
+}
+
+.ketunkoti-signup:has(.ketunkoti-signup__submit:hover, .ketunkoti-signup__submit:focus-visible) .fox__head {
+	translate: 0 -8px;
+}
+
+/*
+ * Fox motion: one pop-up on load, a hop when the address becomes valid, and
+ * smooth state changes. Nothing loops. With reduced motion the states above
+ * still change, just without animation.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	@keyframes ketunkoti-fox-pop {
+		from {
+			transform: translateY(86px);
+		}
+
+		to {
+			transform: none;
+		}
+	}
+
+	@keyframes ketunkoti-fox-hop {
+		0%,
+		70%,
+		100% {
+			transform: none;
+		}
+
+		40% {
+			transform: translateY(-10px);
+		}
+
+		85% {
+			transform: translateY(-3px);
+		}
+	}
+
+	.ketunkoti-signup__fox .fox__head {
+		animation: ketunkoti-fox-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+		transition: translate 0.25s ease-out;
+	}
+
+	.ketunkoti-signup:has(.ketunkoti-signup__input:valid) .fox__head {
+		animation: ketunkoti-fox-hop 0.5s ease-out;
+	}
+
+	.ketunkoti-signup__fox .fox__ear {
+		transition: transform 0.2s ease-out;
+	}
+
+	.ketunkoti-signup__fox .fox__eyes-open,
+	.ketunkoti-signup__fox .fox__eyes-closed {
+		transition: opacity 0.15s ease-out;
+	}
+}
+
+/*
+ * Launch front page (avajaiset).
+ *
+ * Hero: the signup group is as wide as the form, centred under the lead.
+ */
+.launch-signup {
+	max-width: 34rem;
+}
+
+.launch-signup.is-centered {
+	margin-inline: auto;
+}
+
+/* The photo fills the wide column instead of stopping at its file width. */
+.launch-image .wp-block-image img {
+	width: 100%;
+}
+
+/* Reason cards: the same surface as the home cards. */
+.launch-card {
+	padding: var(--wp--preset--spacing--40);
+	border: 1px solid var(--wp--preset--color--accent-6);
+	border-radius: 8px;
+	background-color: var(--wp--preset--color--accent-5);
 }
 
 /*
