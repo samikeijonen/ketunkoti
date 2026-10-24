@@ -134,10 +134,11 @@ peeking over the top right edge of the field/button row:
 Behaviour (CSS only, nothing loops):
 
 1. Page load: the head pops up from behind the edge once.
-2. Email field focused: ears perk up and eyes open (listening).
+2. Email field focused, or button hovered or focused: ears perk up and eyes
+   open (listening).
 3. Valid address typed (`:has(input:valid)`): the head hops once and the eyes
-   return to happy arcs.
-4. Button hovered or focused: the head rises a little.
+   return to happy arcs, also while the button is hovered.
+4. Button hovered or focused: the head also rises a little.
 
 With `prefers-reduced-motion: reduce` the state changes (eyes, ears, raised
 head) still apply, without animation. Because the fox lives in the synced

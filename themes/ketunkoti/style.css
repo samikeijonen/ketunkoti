@@ -210,9 +210,10 @@ a {
  * edge inside the SVG, so it can duck out of sight behind it.
  *
  * The fox reacts to the form:
- * - email field focused: ears perk up and eyes open (listening),
+ * - email field focused, or button hovered or focused: ears perk up and eyes
+ *   open (listening),
  * - valid address typed: happy closed eyes again, plus a hop (see motion),
- * - button hovered or focused: the head rises a little.
+ * - button hovered or focused: the head also rises a little.
  */
 .ketunkoti-signup__fox {
 	position: absolute;
@@ -243,19 +244,19 @@ a {
 	transform-origin: 30% 100%;
 }
 
-.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__eyes-open {
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus, .ketunkoti-signup__submit:hover, .ketunkoti-signup__submit:focus-visible) .fox__eyes-open {
 	opacity: 1;
 }
 
-.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__eyes-closed {
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus, .ketunkoti-signup__submit:hover, .ketunkoti-signup__submit:focus-visible) .fox__eyes-closed {
 	opacity: 0;
 }
 
-.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__ear--left {
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus, .ketunkoti-signup__submit:hover, .ketunkoti-signup__submit:focus-visible) .fox__ear--left {
 	transform: translateY(-2px) rotate(-10deg);
 }
 
-.ketunkoti-signup:has(.ketunkoti-signup__input:focus) .fox__ear--right {
+.ketunkoti-signup:has(.ketunkoti-signup__input:focus, .ketunkoti-signup__submit:hover, .ketunkoti-signup__submit:focus-visible) .fox__ear--right {
 	transform: translateY(-2px) rotate(10deg);
 }
 
