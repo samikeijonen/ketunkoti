@@ -2,7 +2,7 @@
 /**
  * Block bindings registration.
  *
- * Exposes the "home" meta fields to core blocks so their values can be output
+ * Exposes the home listing meta fields (`home` and `rental` post types) to core blocks so their values can be output
  * from templates and patterns without custom blocks or shortcodes.
  *
  * @package Ketunkoti\Features
@@ -41,6 +41,7 @@ const TAXONOMY_FIELDS = [
     'home_rooms'   => 'home-rooms',
     'home_purpose' => PURPOSE_TAXONOMY,
     'home_status'  => 'home-status',
+    'home_plot'    => 'home-plot',
 ];
 
 /**
@@ -48,8 +49,9 @@ const TAXONOMY_FIELDS = [
  *
  * These have no post meta row of their own, so they must be resolved before the
  * meta lookup in get_binding_value(), which returns early on a missing value.
+ * Kassavirta and oman pääoman tuotto are calculated in `investment.php`.
  */
-const COMPUTED_FIELDS = [ 'home_rental_yield' ];
+const COMPUTED_FIELDS = [ 'home_rental_yield', 'home_cash_flow', 'home_equity_return' ];
 
 /**
  * Registers the block bindings source for the "home" meta fields.
@@ -156,6 +158,48 @@ function format_charge( $value, string $format ): ?string {
 }
 
 /**
+ * Formats the water charge according to how it is billed.
+ *
+ * @param mixed  $value Raw meta value, euros.
+ * @param string $basis "person" or '' (per person), "month" or "consumption".
+ * @return string|null Formatted charge, or null when not set.
+ */
+function format_water_charge( $value, string $basis ): ?string {
+    switch ( $basis ) {
+        case 'month':
+            /* translators: %s: Water charge in euros per month, for example "20,00". */
+            return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
+
+        case 'consumption':
+            /* translators: %s: Monthly water charge advance in euros, for example "20,00". */
+            return format_charge( $value, __( '%s €/kk, kulutuksen mukaan', 'ketunkoti-features' ) );
+
+        default:
+            /* translators: %s: Water charge in euros per person per month, for example "25,00". */
+            return format_charge( $value, __( '%s €/hlö/kk', 'ketunkoti-features' ) );
+    }
+}
+
+/**
+ * Formats a stored yes/no answer.
+ *
+ * @param mixed $value Raw meta value, "yes" or "no".
+ * @return string|null "Kyllä" or "Ei", or null when not stated.
+ */
+function format_yes_no( $value ): ?string {
+    switch ( $value ) {
+        case 'yes':
+            return __( 'Kyllä', 'ketunkoti-features' );
+
+        case 'no':
+            return __( 'Ei', 'ketunkoti-features' );
+
+        default:
+            return null;
+    }
+}
+
+/**
  * Formats the availability date.
  *
  * This is the one field where an empty value carries meaning: a home with no
@@ -214,8 +258,40 @@ function get_rental_yield( int $post_id ): ?string {
     $maintenance = (float) get_post_meta( $post_id, 'home_maintenance_charge', true );
     $yield       = ( ( $rent - $maintenance ) * 12 ) / $price * 100;
 
-    // Non-breaking space so the number never wraps away from its percent sign.
-    return number_format_i18n( $yield, 1 ) . "\u{00A0}%";
+    return format_percentage( $yield );
+}
+
+/**
+ * Returns a home's monthly cash flow, formatted.
+ *
+ * @param int $post_id Post to calculate for.
+ * @return string|null Formatted cash flow, or null without a rent.
+ */
+function get_cash_flow( int $post_id ): ?string {
+    $inputs    = get_investment_inputs( $post_id );
+    $cash_flow = calculate_cash_flow( $inputs['rent'], $inputs['maintenance'], $inputs['capital'] );
+
+    return null === $cash_flow ? null : format_cash_flow( $cash_flow );
+}
+
+/**
+ * Returns a home's first year return on equity, formatted.
+ *
+ * @param int $post_id Post to calculate for.
+ * @return string|null Formatted percentage, or null when the inputs are not enough.
+ */
+function get_equity_return( int $post_id ): ?string {
+    $inputs        = get_investment_inputs( $post_id );
+    $equity_return = calculate_equity_return(
+        $inputs['rent'],
+        $inputs['maintenance'],
+        $inputs['capital'],
+        $inputs['selling_price'],
+        $inputs['debt_free_price'],
+        $inputs['interest_rate']
+    );
+
+    return null === $equity_return ? null : format_percentage( $equity_return );
 }
 
 /**
@@ -254,7 +330,12 @@ function get_binding_value( array $source_args, $block_instance = null ): ?strin
     // Derived values have no meta row to read, so they resolve before the
     // lookup below.
     if ( in_array( $key, COMPUTED_FIELDS, true ) ) {
-        return 'home_rental_yield' === $key ? get_rental_yield( $post_id ) : null;
+        return match ( $key ) {
+            'home_rental_yield'  => get_rental_yield( $post_id ),
+            'home_cash_flow'     => get_cash_flow( $post_id ),
+            'home_equity_return' => get_equity_return( $post_id ),
+            default              => null,
+        };
     }
 
     $value = get_post_meta( $post_id, $key, true );
@@ -295,6 +376,8 @@ function get_binding_value( array $source_args, $block_instance = null ): ?strin
         case 'home_address':
         case 'home_room_layout':
         case 'home_other_charges':
+        case 'home_pets':
+        case 'home_lease_type':
             // Free text fields are shown as entered.
             return (string) $value;
 
@@ -304,8 +387,10 @@ function get_binding_value( array $source_args, $block_instance = null ): ?strin
             return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
 
         case 'home_water_charge':
-            /* translators: %s: Water charge in euros per person per month, for example "25,00". */
-            return format_charge( $value, __( '%s €/hlö/kk', 'ketunkoti-features' ) );
+            return format_water_charge( $value, (string) get_post_meta( $post_id, 'home_water_charge_basis', true ) );
+
+        case 'home_elevator':
+            return format_yes_no( $value );
 
         case 'home_rent':
             // Rents are quoted in round euros, unlike the vastike charges above.
@@ -317,6 +402,11 @@ function get_binding_value( array $source_args, $block_instance = null ): ?strin
         case 'home_deposit':
             /* translators: %s: Amount in euros, for example "285 000". */
             return format_price( $value, __( '%s €', 'ketunkoti-features' ) );
+
+        case 'home_loan_interest':
+            $rate = (float) $value;
+
+            return $rate > 0 ? format_interest_rate( $rate ) : null;
 
         default:
             return null;

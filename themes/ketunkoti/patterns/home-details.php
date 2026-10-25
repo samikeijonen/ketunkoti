@@ -5,7 +5,7 @@
  * Categories: text
  * Post Types: home
  * Viewport width: 1400
- * Description: Key facts for a home - selling price, debt free price, living area and location - each with an icon.
+ * Description: Key facts for a home - selling price, debt free price, living area, location and plot - each with an icon.
  *
  * @package Ketunkoti
  */
@@ -39,8 +39,8 @@ $ketunkoti_home_detail = static function ( string $icon, string $label, string $
 			<p class="home-details__label has-accent-4-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em"><?php echo esc_html( $label ); ?></p>
 			<!-- /wp:paragraph -->
 
-			<!-- wp:paragraph {"className":"home-details__value","fontSize":"medium","fontFamily":"cormorant-garamond","style":{"typography":{"fontWeight":"600"}},"metadata":{"bindings":{"content":{"source":"<?php echo esc_attr( $source ); ?>","args":{"key":"<?php echo esc_attr( $key ); ?>"}}}}} -->
-			<p class="home-details__value has-cormorant-garamond-font-family has-medium-font-size" style="font-weight:600">&#8212;</p>
+			<!-- wp:paragraph {"className":"home-details__value","fontSize":"medium","style":{"typography":{"fontWeight":"600"}},"metadata":{"bindings":{"content":{"source":"<?php echo esc_attr( $source ); ?>","args":{"key":"<?php echo esc_attr( $key ); ?>"}}}}} -->
+			<p class="home-details__value has-medium-font-size" style="font-weight:600">&#8212;</p>
 			<!-- /wp:paragraph -->
 		</div>
 		<!-- /wp:group -->
@@ -57,6 +57,7 @@ $ketunkoti_home_detail = static function ( string $icon, string $label, string $
 	$ketunkoti_home_detail( 'core/receipt', __( 'Velaton hinta', 'ketunkoti' ), 'home_debt_free_price', 'ketunkoti/home-pricing' );
 	$ketunkoti_home_detail( 'core/block-table', __( 'Asuinpinta-ala', 'ketunkoti' ), 'home_area' );
 	$ketunkoti_home_detail( 'core/map-marker', __( 'Sijainti', 'ketunkoti' ), 'home_city' );
+	$ketunkoti_home_detail( 'core/home', __( 'Tontti', 'ketunkoti' ), 'home_plot' );
 	?>
 </div>
 <!-- /wp:group -->

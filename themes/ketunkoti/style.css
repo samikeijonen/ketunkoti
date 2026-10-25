@@ -3,7 +3,7 @@ Theme Name: Ketun koti
 Theme URI: https://ketunkoti.fi
 Author: Sami Keijonen
 Author URI: https://ketunkoti.fi
-Version: 1.1
+Version: 1.2
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: ketunkoti
@@ -458,8 +458,10 @@ h1, h2, h3, h4, h5, h6, blockquote, caption, figcaption, p {
 }
 
 /*
- * Cormorant Garamond defaults to old-style figures, which makes prices sit at
- * uneven heights. Lining figures keep the digits aligned and scannable.
+ * Numbers use the body font rather than the heading font, so prices and
+ * figures read plainly. Lining figures keep the digits aligned and scannable
+ * even where older content still sets Cormorant Garamond, which defaults to
+ * old-style figures.
  */
 .home-card__price,
 .home-details__value {

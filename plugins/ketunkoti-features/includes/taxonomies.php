@@ -124,7 +124,7 @@ function register_taxonomies() {
     // Location.
     register_taxonomy(
         'home-city',
-        [ 'home' ],
+        [ 'home', 'rental' ],
         get_shared_taxonomy_args(
             get_taxonomy_labels(
                 __( 'Sijainnit', 'ketunkoti-features' ),
@@ -134,10 +134,11 @@ function register_taxonomies() {
         )
     );
 
-    // Status.
+    // Status. Shared with rentals on purpose: the status badge and the
+    // `home_status` binding then work for "Vuokrattu" with no extra code.
     register_taxonomy(
         'home-status',
-        [ 'home' ],
+        [ 'home', 'rental' ],
         get_shared_taxonomy_args(
             get_taxonomy_labels(
                 __( 'Status', 'ketunkoti-features' ),
@@ -150,7 +151,7 @@ function register_taxonomies() {
     // Type.
     register_taxonomy(
         'home-type',
-        [ 'home' ],
+        [ 'home', 'rental' ],
         get_shared_taxonomy_args(
             get_taxonomy_labels(
                 __( 'Tyypit', 'ketunkoti-features' ),
@@ -165,13 +166,28 @@ function register_taxonomies() {
     // `home_room_layout` meta field.
     register_taxonomy(
         'home-rooms',
-        [ 'home' ],
+        [ 'home', 'rental' ],
         get_shared_taxonomy_args(
             get_taxonomy_labels(
                 __( 'Huoneiden lukumäärät', 'ketunkoti-features' ),
                 __( 'Huoneiden lukumäärä', 'ketunkoti-features' )
             ),
             __( 'Kodin huoneiden lukumäärä.', 'ketunkoti-features' )
+        )
+    );
+
+    // Plot ownership, for example oma tontti or vuokratontti. Homes for sale
+    // only: it matters to buyers, both investors and owner-occupiers, but not
+    // to tenants.
+    register_taxonomy(
+        'home-plot',
+        [ 'home' ],
+        get_shared_taxonomy_args(
+            get_taxonomy_labels(
+                __( 'Tontit', 'ketunkoti-features' ),
+                __( 'Tontti', 'ketunkoti-features' )
+            ),
+            __( 'Onko tontti oma vai vuokrattu.', 'ketunkoti-features' )
         )
     );
 

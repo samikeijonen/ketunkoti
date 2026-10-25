@@ -17,6 +17,7 @@ import {
 	Button,
 	DatePicker,
 	Dropdown,
+	SelectControl,
 	TextControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
@@ -25,11 +26,24 @@ import { registerBlockBindingsSource } from '@wordpress/blocks';
 
 import './editor.scss';
 import './faq-schema';
+import {
+	calculateCashFlow,
+	calculateEquityReturn,
+	calculateRentalYield,
+	formatCashFlow,
+	formatInterestRate,
+	formatPercentage,
+} from './investment';
 
 /**
- * Post type these fields belong to.
+ * Post type of homes for sale, investments included.
  */
-const POST_TYPE = 'home';
+const SALE_POST_TYPE = 'home';
+
+/**
+ * Post type of homes let to tenants.
+ */
+const RENTAL_POST_TYPE = 'rental';
 
 /**
  * Block bindings source names. Must match the PHP registration.
@@ -66,11 +80,19 @@ const FIELDS = {
 	waterCharge: 'home_water_charge',
 	otherCharges: 'home_other_charges',
 	availableFrom: 'home_available_from',
+	loanInterest: 'home_loan_interest',
+	pets: 'home_pets',
+	leaseType: 'home_lease_type',
+	waterChargeBasis: 'home_water_charge_basis',
+	elevator: 'home_elevator',
 	rentalYield: 'home_rental_yield',
+	cashFlow: 'home_cash_flow',
+	equityReturn: 'home_equity_return',
 	city: 'home_city',
 	rooms: 'home_rooms',
 	purpose: 'home_purpose',
 	status: 'home_status',
+	plot: 'home_plot',
 };
 
 /**
@@ -89,6 +111,8 @@ const TEXT_FIELDS = [
 	FIELDS.address,
 	FIELDS.roomLayout,
 	FIELDS.otherCharges,
+	FIELDS.pets,
+	FIELDS.leaseType,
 ];
 
 /**
@@ -104,6 +128,27 @@ const TAXONOMY_FIELDS = {
 	[ FIELDS.rooms ]: 'home-rooms',
 	[ FIELDS.purpose ]: PURPOSE_TAXONOMY,
 	[ FIELDS.status ]: 'home-status',
+	[ FIELDS.plot ]: 'home-plot',
+};
+
+/**
+ * Display units for the water charge, keyed by `home_water_charge_basis`.
+ *
+ * Mirrors format_water_charge() in `includes/bindings.php`. An empty basis
+ * means per person, the default.
+ */
+const WATER_CHARGE_UNITS = {
+	person: __( '€/hlö/kk', 'ketunkoti-features' ),
+	month: __( '€/kk', 'ketunkoti-features' ),
+	consumption: __( '€/kk, kulutuksen mukaan', 'ketunkoti-features' ),
+};
+
+/**
+ * Display labels for yes/no fields. Mirrors format_yes_no() in PHP.
+ */
+const YES_NO_LABELS = {
+	yes: __( 'Kyllä', 'ketunkoti-features' ),
+	no: __( 'Ei', 'ketunkoti-features' ),
 };
 
 /**
@@ -127,36 +172,78 @@ const formatNumber = ( value, decimals = 0 ) => {
 };
 
 /**
- * Calculates the net rental yield, the Finnish "vuokratuotto".
- *
- *     ((vuokra - hoitovastike) * 12) / velaton hinta * 100
- *
- * Paaomavastike is deliberately not subtracted: the denominator is the
- * debt-free price, which already covers the flat's share of the taloyhtio debt,
- * so subtracting the charge that services that debt would count it twice.
- * Vesimaksu is not subtracted either, as the tenant pays it on top of the rent.
- *
- * Keep in sync with get_rental_yield() in `includes/bindings.php`, which stays
- * authoritative for the front end. This copy exists so the sidebar can show the
- * figure live, before the post is saved.
+ * Reads a numeric meta value, treating anything unset as 0.
  *
  * @param {Object} meta Post meta object.
- * @return {number|undefined} Yield percentage, or undefined when inputs are missing.
+ * @param {string} key  Meta key.
+ * @return {number} The value, or 0.
  */
-const calculateRentalYield = ( meta ) => {
-	const rent = Number( meta?.[ FIELDS.rent ] );
-	const price = Number( meta?.[ FIELDS.debtFreePrice ] );
+const metaNumber = ( meta, key ) => Number( meta?.[ key ] ) || 0;
 
-	// Without a rent and a price there is no yield, and a zero price would
-	// divide to Infinity rather than read as a missing value.
-	if ( ! ( rent > 0 ) || ! ( price > 0 ) ) {
-		return undefined;
-	}
+/**
+ * Calculates every investment figure from a post's meta.
+ *
+ * The arithmetic lives in `investment.js`, the twin of `includes/investment.php`.
+ * The interest rate stays undefined when not entered, because "no rate" and
+ * "0 %" mean different things to the oman pääoman tuotto calculation.
+ *
+ * @param {Object} meta Post meta object.
+ * @return {Object} rentalYield, cashFlow, equityReturn and loanInterest, each a number or undefined.
+ */
+const getInvestmentFigures = ( meta ) => {
+	const rent = metaNumber( meta, FIELDS.rent );
+	const maintenance = metaNumber( meta, FIELDS.maintenanceCharge );
+	const capital = metaNumber( meta, FIELDS.capitalCharge );
+	const loanInterest = metaNumber( meta, FIELDS.loanInterest ) || undefined;
 
-	const maintenance = Number( meta?.[ FIELDS.maintenanceCharge ] ) || 0;
-
-	return ( ( ( rent - maintenance ) * 12 ) / price ) * 100;
+	return {
+		rentalYield: calculateRentalYield(
+			rent,
+			maintenance,
+			metaNumber( meta, FIELDS.debtFreePrice )
+		),
+		cashFlow: calculateCashFlow( rent, maintenance, capital ),
+		equityReturn: calculateEquityReturn( {
+			rent,
+			maintenance,
+			capital,
+			sellingPrice: metaNumber( meta, FIELDS.sellingPrice ),
+			debtFreePrice: metaNumber( meta, FIELDS.debtFreePrice ),
+			annualRatePercent: loanInterest,
+		} ),
+		loanInterest,
+	};
 };
+
+/**
+ * Formats one investment figure for display, or returns undefined when unset.
+ *
+ * @param {string} key  Field key, one of the computed keys or the loan interest.
+ * @param {Object} meta Post meta object.
+ * @return {string|undefined} Formatted figure.
+ */
+const formatInvestmentFigure = ( key, meta ) => {
+	const figures = getInvestmentFigures( meta );
+	const formatters = {
+		[ FIELDS.rentalYield ]: [ figures.rentalYield, formatPercentage ],
+		[ FIELDS.cashFlow ]: [ figures.cashFlow, formatCashFlow ],
+		[ FIELDS.equityReturn ]: [ figures.equityReturn, formatPercentage ],
+		[ FIELDS.loanInterest ]: [ figures.loanInterest, formatInterestRate ],
+	};
+	const [ value, format ] = formatters[ key ];
+
+	return undefined === value ? undefined : format( value, formatNumber );
+};
+
+/**
+ * Field keys rendered through formatInvestmentFigure().
+ */
+const INVESTMENT_FIELDS = [
+	FIELDS.rentalYield,
+	FIELDS.cashFlow,
+	FIELDS.equityReturn,
+	FIELDS.loanInterest,
+];
 
 /**
  * Normalises a DatePicker value to the stored ISO `YYYY-MM-DD` form.
@@ -240,16 +327,16 @@ const resolveField = ( select, record, key ) => {
 
 	// Derived and "empty means something" fields resolve before the numeric
 	// handling below, which would read them as unset.
-	if ( FIELDS.rentalYield === key ) {
-		const rentalYield = calculateRentalYield( record.meta );
-
-		return undefined === rentalYield
-			? undefined
-			: `${ formatNumber( rentalYield, 1 ) }\u00a0%`;
+	if ( INVESTMENT_FIELDS.includes( key ) ) {
+		return formatInvestmentFigure( key, record.meta );
 	}
 
 	if ( FIELDS.availableFrom === key ) {
 		return formatAvailability( record.meta?.[ key ] );
+	}
+
+	if ( FIELDS.elevator === key ) {
+		return YES_NO_LABELS[ record.meta?.[ key ] ];
 	}
 
 	if ( TEXT_FIELDS.includes( key ) ) {
@@ -272,7 +359,10 @@ const resolveField = ( select, record, key ) => {
 	}
 
 	if ( FIELDS.waterCharge === key ) {
-		return `${ formatNumber( value, 2 ) } €/hlö/kk`;
+		const basis = record.meta?.[ FIELDS.waterChargeBasis ];
+		const unit = WATER_CHARGE_UNITS[ basis ] || WATER_CHARGE_UNITS.person;
+
+		return `${ formatNumber( value, 2 ) } ${ unit }`;
 	}
 
 	// Rents are quoted in round euros, unlike the vastike charges.
@@ -389,6 +479,11 @@ registerBlockBindingsSource( {
 				type: 'string',
 				args: { key: FIELDS.status },
 			},
+			{
+				label: __( 'Tontti', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.plot },
+			},
 		];
 	},
 } );
@@ -454,6 +549,21 @@ registerBlockBindingsSource( {
 				type: 'string',
 				args: { key: FIELDS.availableFrom },
 			},
+			{
+				label: __( 'Lemmikit', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.pets },
+			},
+			{
+				label: __( 'Vuokrasopimus', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.leaseType },
+			},
+			{
+				label: __( 'Hissi', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.elevator },
+			},
 		];
 	},
 } );
@@ -468,6 +578,21 @@ registerBlockBindingsSource( {
 				label: __( 'Vuokratuotto', 'ketunkoti-features' ),
 				type: 'string',
 				args: { key: FIELDS.rentalYield },
+			},
+			{
+				label: __( 'Kassavirta', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.cashFlow },
+			},
+			{
+				label: __( 'Oman pääoman tuotto', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.equityReturn },
+			},
+			{
+				label: __( 'Taloyhtiölainan korko', 'ketunkoti-features' ),
+				type: 'string',
+				args: { key: FIELDS.loanInterest },
 			},
 		];
 	},
@@ -489,16 +614,24 @@ const toNumber = ( value, isFloat = false ) => {
 		return 0;
 	}
 
-	const parsed = isFloat ? parseFloat( value ) : parseInt( value, 10 );
+	// Accept a Finnish decimal comma ("4,3") as well as a dot.
+	const normalised = String( value ).replace( ',', '.' );
+	const parsed = isFloat
+		? parseFloat( normalised )
+		: parseInt( normalised, 10 );
 
 	return Number.isFinite( parsed ) && parsed > 0 ? parsed : 0;
 };
 
 /**
- * Document settings panels holding the "home" meta fields.
+ * Document settings panels holding the home listing meta fields.
  *
- * The fields are grouped into panels by subject, and every panel always
- * renders. Showing or hiding them based on the selected purpose was tried and
+ * The fields are grouped into panels by subject. Which panels render depends
+ * on the post type only: rentals get "Kodin tiedot" and "Vuokratiedot", homes
+ * for sale get all four. The post type is known synchronously and a rental
+ * never has the sale fields registered, so neither problem below applies.
+ *
+ * Panels never depend on a term. Showing or hiding them based on the selected purpose was tried and
  * rejected: the terms arrive asynchronously, so panels would appear and then
  * vanish a moment after load, and a hidden field still holds its value, which
  * makes "removed from the editor" look like "removed from the site" when it is
@@ -522,10 +655,12 @@ const HomeDetailsPanels = () => {
 		postId
 	);
 
-	// Only relevant for the "home" post type.
-	if ( POST_TYPE !== postType ) {
+	// Only relevant for the home listing post types.
+	if ( SALE_POST_TYPE !== postType && RENTAL_POST_TYPE !== postType ) {
 		return null;
 	}
+
+	const isRental = RENTAL_POST_TYPE === postType;
 
 	/**
 	 * Writes a single meta key, preserving the rest of the meta object.
@@ -582,6 +717,25 @@ const HomeDetailsPanels = () => {
 	);
 
 	/**
+	 * Builds a select control bound to a string meta key.
+	 *
+	 * @param {string}   metaKey Meta key to edit.
+	 * @param {string}   label   Visible label, already translated.
+	 * @param {Object[]} options Options as { label, value }.
+	 * @return {JSX.Element} The control.
+	 */
+	const selectField = ( metaKey, label, options ) => (
+		<SelectControl
+			__next40pxDefaultSize
+			__nextHasNoMarginBottom
+			label={ label }
+			value={ meta?.[ metaKey ] || '' }
+			options={ options }
+			onChange={ ( value ) => updateMeta( metaKey, value ) }
+		/>
+	);
+
+	/**
 	 * Builds the availability control.
 	 *
 	 * A core DatePicker in a dropdown rather than an `<input type="date">`,
@@ -601,10 +755,17 @@ const HomeDetailsPanels = () => {
 			<BaseControl
 				id="ketunkoti-home-available-from"
 				label={ __( 'Vapautuu', 'ketunkoti-features' ) }
-				help={ __(
-					'Tyhjä tarkoittaa, että koti on heti vapaa.',
-					'ketunkoti-features'
-				) }
+				help={
+					isRental
+						? __(
+								'Tyhjä = heti vapaa. Kun koti on vuokrattu, lisää päivä tai poista rivi sivulta.',
+								'ketunkoti-features'
+						  )
+						: __(
+								'Tyhjä tarkoittaa, että koti on heti vapaa.',
+								'ketunkoti-features'
+						  )
+				}
 			>
 				<Dropdown
 					className="ketunkoti-home-details__date"
@@ -656,7 +817,23 @@ const HomeDetailsPanels = () => {
 		);
 	};
 
-	const rentalYield = calculateRentalYield( meta );
+	/**
+	 * Renders one read-only investment figure row.
+	 *
+	 * @param {string} key   Field key passed to formatInvestmentFigure().
+	 * @param {string} label Visible label, already translated.
+	 * @return {JSX.Element} The row.
+	 */
+	const figureRow = ( key, label ) => (
+		<p className="ketunkoti-home-details__yield">
+			<span className="ketunkoti-home-details__yield-label">
+				{ label }
+			</span>
+			<strong className="ketunkoti-home-details__yield-value">
+				{ formatInvestmentFigure( key, meta ) ?? '—' }
+			</strong>
+		</p>
+	);
 
 	return (
 		<>
@@ -702,31 +879,48 @@ const HomeDetailsPanels = () => {
 				</div>
 			</PluginDocumentSettingPanel>
 
-			<PluginDocumentSettingPanel
-				name="ketunkoti-home-sale"
-				title={ __( 'Hinnat ja vastikkeet', 'ketunkoti-features' ) }
-			>
-				<div className="ketunkoti-home-details">
-					{ numberField(
-						FIELDS.debtFreePrice,
-						__( 'Velaton hinta (€)', 'ketunkoti-features' )
-					) }
-					{ numberField(
-						FIELDS.sellingPrice,
-						__( 'Myyntihinta (€)', 'ketunkoti-features' )
-					) }
-					{ numberField(
-						FIELDS.maintenanceCharge,
-						__( 'Hoitovastike (€/kk)', 'ketunkoti-features' ),
-						{ step: '0.01', isFloat: true }
-					) }
-					{ numberField(
-						FIELDS.capitalCharge,
-						__( 'Pääomavastike (€/kk)', 'ketunkoti-features' ),
-						{ step: '0.01', isFloat: true }
-					) }
-				</div>
-			</PluginDocumentSettingPanel>
+			{ ! isRental && (
+				<PluginDocumentSettingPanel
+					name="ketunkoti-home-sale"
+					title={ __( 'Hinnat ja vastikkeet', 'ketunkoti-features' ) }
+				>
+					<div className="ketunkoti-home-details">
+						{ numberField(
+							FIELDS.debtFreePrice,
+							__( 'Velaton hinta (€)', 'ketunkoti-features' )
+						) }
+						{ numberField(
+							FIELDS.sellingPrice,
+							__( 'Myyntihinta (€)', 'ketunkoti-features' )
+						) }
+						{ numberField(
+							FIELDS.maintenanceCharge,
+							__( 'Hoitovastike (€/kk)', 'ketunkoti-features' ),
+							{ step: '0.01', isFloat: true }
+						) }
+						{ numberField(
+							FIELDS.capitalCharge,
+							__( 'Pääomavastike (€/kk)', 'ketunkoti-features' ),
+							{ step: '0.01', isFloat: true }
+						) }
+						{ numberField(
+							FIELDS.loanInterest,
+							__(
+								'Taloyhtiölainan korko (%)',
+								'ketunkoti-features'
+							),
+							{
+								step: '0.01',
+								isFloat: true,
+								help: __(
+									'Prosentteina, esim. 4,3.',
+									'ketunkoti-features'
+								),
+							}
+						) }
+					</div>
+				</PluginDocumentSettingPanel>
+			) }
 
 			<PluginDocumentSettingPanel
 				name="ketunkoti-home-rental"
@@ -743,8 +937,35 @@ const HomeDetailsPanels = () => {
 					) }
 					{ numberField(
 						FIELDS.waterCharge,
-						__( 'Vesimaksu (€/hlö/kk)', 'ketunkoti-features' ),
+						__( 'Vesimaksu (€)', 'ketunkoti-features' ),
 						{ step: '0.01', isFloat: true }
+					) }
+					{ selectField(
+						FIELDS.waterChargeBasis,
+						__( 'Vesimaksun peruste', 'ketunkoti-features' ),
+						[
+							{
+								label: __(
+									'Henkilöä kohden / kk',
+									'ketunkoti-features'
+								),
+								value: '',
+							},
+							{
+								label: __(
+									'Asuntoa kohden / kk',
+									'ketunkoti-features'
+								),
+								value: 'month',
+							},
+							{
+								label: __(
+									'Kulutuksen mukaan (ennakko / kk)',
+									'ketunkoti-features'
+								),
+								value: 'consumption',
+							},
+						]
 					) }
 					{ textField(
 						FIELDS.otherCharges,
@@ -757,33 +978,77 @@ const HomeDetailsPanels = () => {
 						}
 					) }
 					{ availabilityField() }
-				</div>
-			</PluginDocumentSettingPanel>
-
-			<PluginDocumentSettingPanel
-				name="ketunkoti-home-investment"
-				title={ __( 'Sijoituslaskelma', 'ketunkoti-features' ) }
-			>
-				<div className="ketunkoti-home-details">
-					<p className="ketunkoti-home-details__yield">
-						<span className="ketunkoti-home-details__yield-label">
-							{ __( 'Vuokratuotto', 'ketunkoti-features' ) }
-						</span>
-						<strong className="ketunkoti-home-details__yield-value">
-							{ undefined === rentalYield
-								? '—'
-								: `${ formatNumber( rentalYield, 1 ) }\u00a0%` }
-						</strong>
-					</p>
-
-					<p className="ketunkoti-home-details__yield-help">
-						{ __(
-							'Lasketaan vuokrasta, velattomasta hinnasta ja hoitovastikkeesta.',
-							'ketunkoti-features'
+					{ textField(
+						FIELDS.leaseType,
+						__( 'Vuokrasopimus', 'ketunkoti-features' ),
+						{
+							help: __(
+								'Esimerkiksi "Toistaiseksi voimassa" tai "Määräaikainen 1 v".',
+								'ketunkoti-features'
+							),
+						}
+					) }
+					{ selectField(
+						FIELDS.elevator,
+						__( 'Hissi', 'ketunkoti-features' ),
+						[
+							{ label: '—', value: '' },
+							{
+								label: __( 'Kyllä', 'ketunkoti-features' ),
+								value: 'yes',
+							},
+							{
+								label: __( 'Ei', 'ketunkoti-features' ),
+								value: 'no',
+							},
+						]
+					) }
+					{ isRental &&
+						textField(
+							FIELDS.pets,
+							__( 'Lemmikit', 'ketunkoti-features' ),
+							{
+								help: __(
+									'Esimerkiksi "Sovittavissa" tai "Ei lemmikkejä".',
+									'ketunkoti-features'
+								),
+							}
 						) }
-					</p>
 				</div>
 			</PluginDocumentSettingPanel>
+
+			{ ! isRental && (
+				<PluginDocumentSettingPanel
+					name="ketunkoti-home-investment"
+					title={ __( 'Sijoituslaskelma', 'ketunkoti-features' ) }
+				>
+					<div className="ketunkoti-home-details">
+						{ figureRow(
+							FIELDS.rentalYield,
+							__( 'Vuokratuotto', 'ketunkoti-features' )
+						) }
+						{ figureRow(
+							FIELDS.cashFlow,
+							__( 'Kassavirta', 'ketunkoti-features' )
+						) }
+						{ figureRow(
+							FIELDS.equityReturn,
+							__( 'Oman pääoman tuotto', 'ketunkoti-features' )
+						) }
+						{ figureRow(
+							FIELDS.loanInterest,
+							__( 'Taloyhtiölainan korko', 'ketunkoti-features' )
+						) }
+
+						<p className="ketunkoti-home-details__yield-help">
+							{ __(
+								'Lasketaan vuokrasta, hoito- ja pääomavastikkeesta, myynti- ja velattomasta hinnasta sekä korosta. Ennen veroja.',
+								'ketunkoti-features'
+							) }
+						</p>
+					</div>
+				</PluginDocumentSettingPanel>
+			) }
 		</>
 	);
 };
