@@ -56,6 +56,37 @@ function ketunkoti_enqueue_styles() {
 add_action( 'wp_enqueue_scripts', 'ketunkoti_enqueue_styles' );
 
 /**
+ * Preloads the fonts needed for the first view.
+ *
+ * Fonts are otherwise discovered only after the stylesheet has been parsed,
+ * which delays the front page H1 (the LCP element). Only the two upright
+ * faces are preloaded: Cormorant Garamond for headings and Hanken Grotesk for
+ * body text. The italics cover a word or two and would only compete for
+ * bandwidth.
+ *
+ * @param array $preload_resources Resources to preload.
+ * @return array
+ */
+function ketunkoti_preload_fonts( $preload_resources ) {
+	$fonts = array(
+		'assets/fonts/cormorant-garamond/CormorantGaramond-VariableFont_wght.woff2',
+		'assets/fonts/hanken-grotesk/HankenGrotesk-VariableFont_wght.woff2',
+	);
+
+	foreach ( $fonts as $font ) {
+		$preload_resources[] = array(
+			'href'        => get_parent_theme_file_uri( $font ),
+			'as'          => 'font',
+			'type'        => 'font/woff2',
+			'crossorigin' => 'anonymous',
+		);
+	}
+
+	return $preload_resources;
+}
+add_filter( 'wp_preload_resources', 'ketunkoti_preload_fonts' );
+
+/**
  * Enqueues block editor tweaks.
  *
  * @return void
