@@ -196,6 +196,7 @@
 							],
 							"fontWeight": "300 700",
 							"fontStyle": "normal",
+							"fontDisplay": "swap",
 							"fontFamily": "\"Cormorant Garamond\""
 						},
 						{
@@ -204,6 +205,7 @@
 							],
 							"fontWeight": "300 700",
 							"fontStyle": "italic",
+							"fontDisplay": "swap",
 							"fontFamily": "\"Cormorant Garamond\""
 						}
 					]
@@ -219,6 +221,7 @@
 							],
 							"fontWeight": "100 900",
 							"fontStyle": "normal",
+							"fontDisplay": "swap",
 							"fontFamily": "\"Hanken Grotesk\""
 						},
 						{
@@ -227,6 +230,7 @@
 							],
 							"fontWeight": "100 900",
 							"fontStyle": "italic",
+							"fontDisplay": "swap",
 							"fontFamily": "\"Hanken Grotesk\""
 						}
 					]
@@ -242,6 +246,7 @@
 							],
 							"fontWeight": "300 700",
 							"fontStyle": "normal",
+							"fontDisplay": "swap",
 							"fontFamily": "\"Fira Code\""
 						}
 					]

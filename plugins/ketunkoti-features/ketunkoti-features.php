@@ -43,6 +43,7 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/taxonomies.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/meta.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/bindings.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/faq-schema.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/contact-form.php';
 
 /**
  * Runs on plugin activation.
