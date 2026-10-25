@@ -158,6 +158,7 @@ jobs:
               --exclude='.git*' \
               --exclude='node_modules/' \
               --exclude='.DS_Store' \
+              --exclude='tests/' \
               -e "ssh -p ${SSH_PORT} -i ${HOME}/.ssh/deploy_key -o UserKnownHostsFile=${HOME}/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
               "$source" "${SSH_USER}@${SSH_HOST}:${target}"
           }

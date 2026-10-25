@@ -36,8 +36,8 @@
 					<p class="home-card__area has-accent-4-color has-text-color has-small-font-size">&#8212;</p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:paragraph {"className":"home-card__price","fontSize":"medium","fontFamily":"cormorant-garamond","style":{"typography":{"fontWeight":"600"}},"metadata":{"bindings":{"content":{"source":"ketunkoti/home-pricing","args":{"key":"home_selling_price"}}}}} -->
-					<p class="home-card__price has-cormorant-garamond-font-family has-medium-font-size" style="font-weight:600">&#8212;</p>
+					<!-- wp:paragraph {"className":"home-card__price","fontSize":"medium","style":{"typography":{"fontWeight":"600"}},"metadata":{"bindings":{"content":{"source":"ketunkoti/home-pricing","args":{"key":"home_selling_price"}}}}} -->
+					<p class="home-card__price has-medium-font-size" style="font-weight:600">&#8212;</p>
 					<!-- /wp:paragraph -->
 				</div>
 				<!-- /wp:group -->

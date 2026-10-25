@@ -13,7 +13,8 @@
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
 		"format": "wp-scripts format",
-		"lint:js": "wp-scripts lint-js"
+		"lint:js": "wp-scripts lint-js",
+		"test:unit": "wp-scripts test-unit-js"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^30",
