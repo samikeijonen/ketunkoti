@@ -151,13 +151,9 @@ a {
  * Signup form (synced block "Tilaa Ketun kodit", Buttondown embed).
  *
  * Label above, then the email field and button on one row once there is room
- * for both, stacked full width on narrow screens. The surrounding
- * `.launch-signup.is-centered` group centres the whole form (front page hero);
- * elsewhere it sits at the start of the content column.
+ * for both, stacked full width on narrow screens. The form fills the width of
+ * its content column.
  */
-.ketunkoti-signup {
-	max-width: 34rem;
-}
 
 /* Shrinks to its text, so the peeking fox on the right never sits on it. */
 .ketunkoti-signup__label {
@@ -327,12 +323,9 @@ a {
 /*
  * Launch front page (avajaiset).
  *
- * Hero: the signup group is as wide as the form, centred under the lead.
+ * Hero: the signup group is centred under the lead. It has no width of its
+ * own, so it currently fills the content column like the facts box above it.
  */
-.launch-signup {
-	max-width: 34rem;
-}
-
 .launch-signup.is-centered {
 	margin-inline: auto;
 }
