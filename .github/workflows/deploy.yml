@@ -1,6 +1,6 @@
 name: Deploy to production
 
-# Deploys the theme and the custom plugin to the server over SSH whenever
+# Deploys the theme and the custom plugins to the server over SSH whenever
 # something lands on main, which includes merged pull requests.
 #
 # Required repository secrets:
@@ -14,8 +14,9 @@ name: Deploy to production
 #   SSH_KNOWN_HOSTS  Output of: ssh-keyscan -p <port> <host>
 #   DEPLOY_PATH      Absolute path to wp-content on the server, no trailing slash
 #
-# The deploy writes only inside DEPLOY_PATH/themes/ketunkoti and
-# DEPLOY_PATH/plugins/ketunkoti-features. Nothing else on the server is touched.
+# The deploy writes only inside DEPLOY_PATH/themes/ketunkoti,
+# DEPLOY_PATH/plugins/ketunkoti-features and DEPLOY_PATH/plugins/ketunkoti-ai.
+# Nothing else on the server is touched.
 
 on:
   push:
@@ -128,7 +129,7 @@ jobs:
 
           echo 'Host key entry found for the target host.'
 
-      - name: Sync theme and plugin
+      - name: Sync theme and plugins
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
@@ -165,6 +166,7 @@ jobs:
 
           sync 'themes/ketunkoti/' "${DEPLOY_PATH}/themes/ketunkoti/"
           sync 'plugins/ketunkoti-features/' "${DEPLOY_PATH}/plugins/ketunkoti-features/"
+          sync 'plugins/ketunkoti-ai/' "${DEPLOY_PATH}/plugins/ketunkoti-ai/"
 
       - name: Remove the deploy key
         if: always()
