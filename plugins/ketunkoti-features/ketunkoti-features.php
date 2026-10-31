@@ -45,6 +45,7 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/investment.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/bindings.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/faq-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/organization-schema.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/home-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/contact-form.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/security.php';
 
