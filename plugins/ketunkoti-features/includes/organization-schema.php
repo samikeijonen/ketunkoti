@@ -79,3 +79,60 @@ function add_organization_schema_details( $graph ): array {
     return $graph;
 }
 add_filter( 'the_seo_framework_schema_graph_data', __NAMESPACE__ . '\add_organization_schema_details' );
+
+/**
+ * Page types for the pages that describe the business, keyed by page slug.
+ *
+ * The SEO Framework marks every page as `WebPage` and has no per-page setting.
+ * Slugs are used rather than IDs because the IDs differ between environments.
+ */
+const ORGANIZATION_PAGE_TYPES = [
+    'ketun-kodista' => 'AboutPage',
+    'ota-yhteytta'  => 'ContactPage',
+];
+
+/**
+ * Marks the about and contact pages with their own schema.org page types.
+ *
+ * The page entity also gets an `about` reference to the organization, the
+ * same reference The SEO Framework adds to the front page. The organization's
+ * `@id` is read from the `WebSite` entity's publisher, so nothing is added
+ * when the Knowledge Graph represents a person.
+ *
+ * @param array $graph A sequential list of graph entities.
+ * @return array Filtered graph.
+ */
+function set_organization_page_types( $graph ): array {
+    if ( ! is_array( $graph ) || ! is_page() ) {
+        return is_array( $graph ) ? $graph : [];
+    }
+
+    $type = ORGANIZATION_PAGE_TYPES[ get_post_field( 'post_name', get_queried_object_id() ) ] ?? null;
+
+    if ( ! $type ) {
+        return $graph;
+    }
+
+    $organization_id = null;
+
+    foreach ( $graph as $entity ) {
+        if ( 'WebSite' === ( $entity['@type'] ?? '' ) && 'Organization' === ( $entity['publisher']['@type'] ?? '' ) ) {
+            $organization_id = $entity['publisher']['@id'] ?? null;
+        }
+    }
+
+    foreach ( $graph as $index => $entity ) {
+        if ( 'WebPage' !== ( $entity['@type'] ?? '' ) ) {
+            continue;
+        }
+
+        $graph[ $index ]['@type'] = $type;
+
+        if ( $organization_id && ! isset( $entity['about'] ) ) {
+            $graph[ $index ]['about'] = [ '@id' => $organization_id ];
+        }
+    }
+
+    return $graph;
+}
+add_filter( 'the_seo_framework_schema_graph_data', __NAMESPACE__ . '\set_organization_page_types' );
