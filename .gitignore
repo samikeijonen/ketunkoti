@@ -8,3 +8,7 @@ node_modules/
 .wp-env.override.json
 
 .claude/
+
+# Separately cloned plugins
+plugins/meom-ai-assistant/
+plugins/meom-ai-translate/
