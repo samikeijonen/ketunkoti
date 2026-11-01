@@ -17,10 +17,11 @@
 	"scripts": {
 		"build": "npm run build --workspaces --if-present",
 		"build:theme": "npm run build --workspace=themes/ketunkoti",
-		"build:plugins": "npm run build --workspace=plugins/ketunkoti-features",
+		"build:plugins": "npm run build --workspace=plugins/ketunkoti-features --workspace=plugins/ketunkoti-blocks",
 		"watch": "run-p --print-label \"watch:*\"",
 		"watch:theme": "npm run watch --workspace=themes/ketunkoti",
 		"watch:plugins": "npm run start --workspace=plugins/ketunkoti-features",
+		"watch:blocks": "npm run start --workspace=plugins/ketunkoti-blocks",
 		"format": "npm run format --workspaces --if-present",
 		"lint:js": "npm run lint:js --workspaces --if-present",
 		"start": "wp-env start",

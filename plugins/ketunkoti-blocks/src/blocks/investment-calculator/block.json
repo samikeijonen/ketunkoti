@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ketunkoti/investment-calculator",
+	"version": "1.0.0",
+	"title": "Sijoituslaskuri",
+	"category": "ketunkoti",
+	"icon": "calculator",
+	"description": "Laskuri, jolla sijoittaja testaa asunnon luvut ensimmäiseltä vuodelta: kassavirta, tuotot ja herkkyys koron nousulle ja tyhjille kuukausille.",
+	"keywords": [ "sijoitus", "vuokratuotto", "kassavirta", "laskuri" ],
+	"textdomain": "ketunkoti-blocks",
+	"supports": {
+		"html": false,
+		"interactivity": true,
+		"align": [ "wide" ]
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"viewScriptModule": "file:./view.js",
+	"render": "file:./render.php"
+}

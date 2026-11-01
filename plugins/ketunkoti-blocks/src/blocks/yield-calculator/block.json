@@ -1,0 +1,22 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ketunkoti/yield-calculator",
+	"version": "1.0.0",
+	"title": "Vuokratuottolaskuri",
+	"category": "ketunkoti",
+	"icon": "calculator",
+	"description": "Laskuri, jolla kävijä kokeilee kodin tuottoa omalla pankkilainallaan. Luvut haetaan kodin tiedoista.",
+	"keywords": [ "vuokratuotto", "kassavirta", "laskuri" ],
+	"textdomain": "ketunkoti-blocks",
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"interactivity": true,
+		"align": [ "wide" ]
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"viewScriptModule": "file:./view.js",
+	"render": "file:./render.php"
+}

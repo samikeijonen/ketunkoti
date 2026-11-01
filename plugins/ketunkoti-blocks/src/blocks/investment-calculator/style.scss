@@ -1,0 +1,125 @@
+/**
+ * Investment calculator: layout only, on the theme's tokens.
+ *
+ * The block draws no box of its own. Background, border and width come from
+ * where it is placed, for example an alignwide Group with a background colour
+ * and a border.
+ */
+
+.investment-calculator {
+
+	&__grid {
+		display: grid;
+		gap: var(--wp--preset--spacing--50);
+
+		// minmax( 0, 1fr ) lets a column shrink below its content's width, so
+		// long values never push the results past the block's edge.
+		@media (min-width: 40rem) {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	&__form,
+	&__group {
+		display: grid;
+		gap: var(--wp--preset--spacing--30);
+	}
+
+	&__form {
+		align-content: start;
+		gap: var(--wp--preset--spacing--40);
+	}
+
+	&__share {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--wp--preset--spacing--30);
+	}
+
+	&__copy-status {
+		margin: 0;
+	}
+
+	&__group-title {
+		margin: 0;
+		font-weight: 600;
+	}
+
+	&__field {
+		display: grid;
+		gap: var(--wp--preset--spacing--10);
+	}
+
+	&__input {
+		padding: 0.5em 0.75em;
+		border: 1px solid currentcolor;
+		border-radius: 6px;
+		font: inherit;
+		background-color: var(--wp--preset--color--base);
+		color: inherit;
+
+		&:focus-visible {
+			outline: 2px solid currentcolor;
+			outline-offset: 2px;
+		}
+	}
+
+	&__list {
+		display: grid;
+		margin: 0 0 var(--wp--preset--spacing--40);
+	}
+
+	// A faint rule under each row guides the eye across the gap between the
+	// label and its value. Derived from the text colour, so it works on any
+	// background the surrounding Group gets.
+	&__row,
+	&__table th,
+	&__table td {
+		border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+	}
+
+	&__row {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--wp--preset--spacing--30);
+		padding-block: var(--wp--preset--spacing--20);
+
+		dd {
+			margin: 0;
+			font-weight: 600;
+			text-align: end;
+		}
+	}
+
+	&__table {
+		width: 100%;
+		margin-bottom: var(--wp--preset--spacing--40);
+		border-collapse: collapse;
+
+		caption {
+			margin-bottom: var(--wp--preset--spacing--20);
+			font-weight: 600;
+			text-align: start;
+		}
+
+		th,
+		td {
+			padding-block: var(--wp--preset--spacing--20);
+			text-align: start;
+		}
+
+		th[scope="row"] {
+			font-weight: inherit;
+		}
+
+		td,
+		th[scope="col"] {
+			text-align: end;
+		}
+
+		td {
+			font-weight: 600;
+		}
+	}
+}

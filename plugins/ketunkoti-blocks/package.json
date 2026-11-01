@@ -1,0 +1,31 @@
+{
+	"name": "ketunkoti-blocks",
+	"version": "1.0.0",
+	"description": "Custom blocks for Ketun koti.",
+	"author": "Sami Keijonen",
+	"license": "GPL-2.0-or-later",
+	"private": true,
+	"engines": {
+		"node": ">=22.22.2"
+	},
+	"scripts": {
+		"build": "wp-scripts build --webpack-src-dir=src/blocks --experimental-modules",
+		"start": "wp-scripts start --webpack-src-dir=src/blocks --experimental-modules",
+		"format": "wp-scripts format",
+		"lint:js": "wp-scripts lint-js",
+		"test:unit": "wp-scripts test-unit-js"
+	},
+	"dependencies": {
+		"@wordpress/block-editor": "^19.0.0",
+		"@wordpress/blocks": "^17.0.0",
+		"@wordpress/components": "^43.0.0",
+		"@wordpress/i18n": "^7.0.0",
+		"@wordpress/interactivity": "^8.0.0",
+		"@wordpress/server-side-render": "^7.0.0"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^37.0.0",
+		"vite": "^8.3.5",
+		"vitest": "^5.0.5"
+	}
+}
