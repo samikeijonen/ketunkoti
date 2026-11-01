@@ -2,9 +2,10 @@
  * Investment calculations for the editor sidebar and bindings preview.
  *
  * The JS twin of `includes/investment.php` (and of get_rental_yield() in
- * `includes/bindings.php`), which stay authoritative for the front end. These
- * copies exist so the sidebar can show the figures live, before the post is
- * saved. Both are tested against the same cases: `investment.test.js` here,
+ * `includes/bindings.php`). These copies let the editor sidebar show the
+ * figures live, before the post is saved, and the calculator block in
+ * `ketunkoti-blocks` update them live on the front end. Both copies are used
+ * for display and must give the same results. Both are tested against the same cases: `investment.test.js` here,
  * `tests/php/test-investment.php` there.
  *
  * Plain numbers in, plain numbers out: nothing here reads post meta or the
@@ -132,6 +133,190 @@ export const calculateEquityReturn = ( {
 	}
 
 	return ( ( ( rent - maintenance ) * 12 - interest ) / sellingPrice ) * 100;
+};
+
+/**
+ * Calculates the monthly payment of an annuity bank loan.
+ *
+ * Nominal monthly rate (annual rate / 12), as the taloyhtiö loan above.
+ *
+ * @param {number}           loan              Loan in euros.
+ * @param {number|undefined} annualRatePercent Nominal annual rate, or undefined when not entered.
+ * @param {number}           years             Loan term in years.
+ * @return {number|undefined} Euros per month, 0 without a loan, or undefined when the rate or term is missing.
+ */
+export const calculateAnnuityPayment = ( loan, annualRatePercent, years ) => {
+	if ( ! ( loan > 0 ) ) {
+		return 0;
+	}
+
+	if ( ! ( years > 0 ) || undefined === annualRatePercent ) {
+		return undefined;
+	}
+
+	const months = years * 12;
+	const monthlyRate = annualRatePercent / 100 / 12;
+
+	const denominator = 1 - Math.pow( 1 + monthlyRate, -months );
+
+	// A zero rate, or one so small that the denominator rounds to zero, is an
+	// interest-free loan.
+	if ( 0 === denominator ) {
+		return loan / months;
+	}
+
+	return ( loan * monthlyRate ) / denominator;
+};
+
+/**
+ * Calculates a bank loan's first year: total payments and total interest.
+ *
+ * The JS twin of calculate_first_year_loan() in `includes/investment.php`;
+ * see there for the three methods.
+ *
+ * @param {number}           loan              Loan in euros.
+ * @param {number|undefined} annualRatePercent Nominal annual rate, or undefined when not entered.
+ * @param {number}           years             Loan term in years.
+ * @param {string}           method            `annuity`, `fixed` or `straight`.
+ * @param {number|undefined} baseRatePercent   Rate that fixes the `fixed` payment, undefined for the current rate.
+ * @return {{payments: number, interest: number}|undefined} Year totals, zeros without a loan, or undefined when the inputs are not enough.
+ */
+export const calculateFirstYearLoan = (
+	loan,
+	annualRatePercent,
+	years,
+	method,
+	baseRatePercent
+) => {
+	if ( ! ( loan > 0 ) ) {
+		return { payments: 0, interest: 0 };
+	}
+
+	if (
+		undefined === annualRatePercent ||
+		! ( years >= 1 ) ||
+		! [ 'annuity', 'fixed', 'straight' ].includes( method )
+	) {
+		return undefined;
+	}
+
+	const monthlyRate = annualRatePercent / 100 / 12;
+	const repayment = loan / ( years * 12 );
+	const payment = calculateAnnuityPayment(
+		loan,
+		'fixed' === method
+			? baseRatePercent ?? annualRatePercent
+			: annualRatePercent,
+		years
+	);
+
+	let balance = loan;
+	let payments = 0;
+	let interest = 0;
+
+	for ( let month = 0; month < 12; month++ ) {
+		const monthInterest = balance * monthlyRate;
+		const monthPayment =
+			'straight' === method ? repayment + monthInterest : payment;
+
+		interest += monthInterest;
+		payments += monthPayment;
+		balance -= monthPayment - monthInterest;
+	}
+
+	return { payments, interest };
+};
+
+/**
+ * Calculates the monthly cash flow with the investor's own bank loan.
+ *
+ * @param {number} rent        Vuokra in euros per month.
+ * @param {number} maintenance Hoitovastike in euros per month.
+ * @param {number} capital     Pääomavastike in euros per month.
+ * @param {number} bankPayment Bank loan payment in euros per month.
+ * @return {number|undefined} Euros per month, or undefined without a rent.
+ */
+export const calculateLeveragedCashFlow = (
+	rent,
+	maintenance,
+	capital,
+	bankPayment
+) => {
+	const cashFlow = calculateCashFlow( rent, maintenance, capital );
+
+	return undefined === cashFlow ? undefined : cashFlow - bankPayment;
+};
+
+/**
+ * Calculates the first year's return on the investor's own capital with a bank loan.
+ *
+ *     (nettovuokra * 12 - taloyhtiö interest - bank interest) / omarahoitus * 100
+ *
+ * @param {Object}           inputs                   Calculation inputs.
+ * @param {number}           inputs.rent              Vuokra in euros per month.
+ * @param {number}           inputs.maintenance       Hoitovastike in euros per month.
+ * @param {number}           inputs.capital           Pääomavastike in euros per month.
+ * @param {number}           inputs.sellingPrice      Myyntihinta in euros.
+ * @param {number}           inputs.debtFreePrice     Velaton hinta in euros.
+ * @param {number|undefined} inputs.annualRatePercent Taloyhtiölainan korko, or undefined when not entered.
+ * @param {number}           inputs.ownCapital        Omarahoitus in euros.
+ * @param {number|undefined} inputs.bankRate          Bank loan rate, or undefined when not entered.
+ * @param {number}           inputs.years             Bank loan term in years.
+ * @return {number|undefined} Percentage, or undefined when the inputs are not enough.
+ */
+export const calculateLeveragedEquityReturn = ( {
+	rent,
+	maintenance,
+	capital,
+	sellingPrice,
+	debtFreePrice,
+	annualRatePercent,
+	ownCapital,
+	bankRate,
+	years,
+} ) => {
+	if ( ! ( rent > 0 ) || ! ( sellingPrice > 0 ) || ! ( ownCapital > 0 ) ) {
+		return undefined;
+	}
+
+	const loanShare = debtFreePrice - sellingPrice;
+	let companyInterest = 0;
+
+	if ( loanShare > 0 && capital > 0 ) {
+		// A loan is being paid but its rate is unknown: any figure would be a guess.
+		if ( undefined === annualRatePercent ) {
+			return undefined;
+		}
+
+		companyInterest = calculateFirstYearInterest(
+			loanShare,
+			annualRatePercent,
+			capital
+		);
+	}
+
+	const bankLoan = Math.max( 0, sellingPrice - ownCapital );
+	let bankInterest = 0;
+
+	if ( bankLoan > 0 ) {
+		const payment = calculateAnnuityPayment( bankLoan, bankRate, years );
+
+		if ( undefined === payment ) {
+			return undefined;
+		}
+
+		bankInterest = calculateFirstYearInterest(
+			bankLoan,
+			bankRate,
+			payment
+		);
+	}
+
+	return (
+		( ( ( rent - maintenance ) * 12 - companyInterest - bankInterest ) /
+			ownCapital ) *
+		100
+	);
 };
 
 /**

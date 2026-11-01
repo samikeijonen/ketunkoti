@@ -1,0 +1,16 @@
+[     778ms] [WARNING] Add @babel/plugin-transform-react-jsx-source to get a more detailed component stack. Note that you should not add it to production builds of your App for bundle size reasons. @ http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:321
+[     784ms] Error: Component's "onsubmit" property should be a function, but got [string] instead
+<form class="yield-calculator__form" onsubmit="return false;">..</form>
+
+  in form
+
+    at l.__b (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:432:139)
+    at q (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:126:88)
+    at L (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:63:145)
+    at G (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:195:41)
+    at q (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:156:92)
+    at L (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:63:145)
+    at G (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:195:41)
+    at q (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:156:92)
+    at L (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:63:145)
+    at q (http://localhost:8888/wp-includes/js/dist/script-modules/interactivity/index.js?ver=6a43cba92ed701f32cd9:144:276)

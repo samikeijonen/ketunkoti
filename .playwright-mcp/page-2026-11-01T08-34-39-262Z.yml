@@ -1,0 +1,110 @@
+- generic [active] [ref=e1]:
+  - link "Siirry sisältöön" [ref=e2] [cursor=pointer]:
+    - /url: "#wp--skip-link--target"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e7]:
+        - link [ref=e9] [cursor=pointer]:
+          - /url: http://localhost:8888/
+          - img "Ketun koti" [ref=e10]
+        - navigation "Valikko 2" [ref=e12]:
+          - generic [ref=e16]:
+            - list [ref=e17]:
+              - listitem [ref=e18]:
+                - link "Sijoitusasunnot" [ref=e19] [cursor=pointer]:
+                  - /url: http://localhost:8888/myytavat-sijoitusasunnot/
+              - listitem [ref=e20]:
+                - link "Myytävät kodit" [ref=e21] [cursor=pointer]:
+                  - /url: http://localhost:8888/myytavat-kodit/
+              - listitem [ref=e22]:
+                - link "UKK" [ref=e23] [cursor=pointer]:
+                  - /url: http://localhost:8888/usein-kysytyt-kysymykset/
+              - listitem [ref=e24]:
+                - link "Ota yhteyttä" [ref=e25] [cursor=pointer]:
+                  - /url: http://localhost:8888/ota-yhteytta/
+            - link "Tilaa Ketun kodit" [ref=e28] [cursor=pointer]:
+              - /url: http://localhost:8888/tilaa-ketun-kodit/
+    - main [ref=e29]:
+      - region [ref=e31]:
+        - heading "Laske tuotto omalla lainallasi" [level=2] [ref=e32]
+        - generic [ref=e33]:
+          - group "Omat lähtötiedot" [ref=e35]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: Vuokra (€/kk)
+              - textbox "Vuokra (€/kk)" [ref=e39]: "780"
+            - generic [ref=e40]:
+              - generic [ref=e41]: Omarahoitus (€)
+              - textbox "Omarahoitus (€)" [ref=e42]: "6500"
+            - generic [ref=e43]:
+              - generic [ref=e44]: Laina-aika (vuotta)
+              - textbox "Laina-aika (vuotta)" [ref=e45]: "25"
+            - generic [ref=e46]:
+              - generic [ref=e47]: Pankkilainan korko (%)
+              - textbox "Pankkilainan korko (%)" [ref=e48]: 3,85
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - term [ref=e52]: Myyntihinta
+                - definition [ref=e53]: 26 000 €
+              - generic [ref=e54]:
+                - term [ref=e55]: Velaton hinta
+                - definition [ref=e56]: 138 725 €
+              - generic [ref=e57]:
+                - term [ref=e58]: Hoitovastike
+                - definition [ref=e59]: 151,30 €/kk
+              - generic [ref=e60]:
+                - term [ref=e61]: Pääomavastike
+                - definition [ref=e62]: 600,72 €/kk
+              - generic [ref=e63]:
+                - term [ref=e64]: Taloyhtiölainan korko
+                - definition [ref=e65]: 4,3 %
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - term [ref=e69]: Vuokratuotto
+                - definition [ref=e70]: 5,4 %
+              - generic [ref=e71]:
+                - term [ref=e72]: Kassavirta pankkilainan kanssa
+                - definition [ref=e73]: −73 €/kk
+              - generic [ref=e74]:
+                - term [ref=e75]: Oman pääoman tuotto pankkilainan kanssa
+                - definition [ref=e76]: 30,8 %
+    - contentinfo [ref=e77]:
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - heading "Tilaa Ketun kodit" [level=2] [ref=e82]
+            - link "Tilaamaan" [ref=e85] [cursor=pointer]:
+              - /url: http://localhost:8888/tilaa-ketun-kodit/
+          - generic [ref=e86]:
+            - heading "Linkit" [level=2] [ref=e87]
+            - navigation "Footerin valikko 1" [ref=e89]:
+              - list [ref=e90]:
+                - listitem [ref=e91]:
+                  - link "Myytävät kodit" [ref=e92] [cursor=pointer]:
+                    - /url: http://localhost:8888/myytavat-kodit/
+                - listitem [ref=e93]:
+                  - link "Myytävät sijoitusasunnot" [ref=e94] [cursor=pointer]:
+                    - /url: http://localhost:8888/myytavat-sijoitusasunnot/
+                - listitem [ref=e95]:
+                  - link "Ota yhteyttä" [ref=e96] [cursor=pointer]:
+                    - /url: http://localhost:8888/ota-yhteytta/
+                - listitem [ref=e97]:
+                  - link "Usein kysytyt kysymykset" [ref=e98] [cursor=pointer]:
+                    - /url: http://localhost:8888/usein-kysytyt-kysymykset/
+          - generic [ref=e99]:
+            - heading "Seuraa somessa" [level=2] [ref=e100]
+            - list [ref=e101]:
+              - listitem [ref=e102]:
+                - link "Instagram" [ref=e103] [cursor=pointer]:
+                  - /url: https://www.instagram.com/ketunkoti.fi
+              - listitem [ref=e107]:
+                - link "YouTube" [ref=e108] [cursor=pointer]:
+                  - /url: https://www.youtube.com/@ketunkoti
+          - generic [ref=e112]:
+            - heading "Info" [level=2] [ref=e113]
+            - paragraph [ref=e114]: "Ketun kotiY-tunnus: 2227257-6Verkkolaskuosoite: 003722272576Operaattori: Maventa (003721291126)"
+        - generic [ref=e115]:
+          - paragraph [ref=e116]: "@ketunkoti"
+          - paragraph [ref=e117]:
+            - link "Tietosuojaseloste" [ref=e118] [cursor=pointer]:
+              - /url: http://localhost:8888/tietosuojaselosta/

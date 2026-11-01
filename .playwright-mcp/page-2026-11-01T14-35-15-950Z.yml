@@ -1,0 +1,188 @@
+- generic [active] [ref=e1]:
+  - link "Siirry sisältöön" [ref=e2] [cursor=pointer]:
+    - /url: "#wp--skip-link--target"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e7]:
+        - link [ref=e9] [cursor=pointer]:
+          - /url: http://localhost:8888/
+          - img "Ketun koti" [ref=e10]
+        - navigation "Valikko 2" [ref=e12]:
+          - generic [ref=e16]:
+            - list [ref=e17]:
+              - listitem [ref=e18]:
+                - link "Sijoitusasunnot" [ref=e19] [cursor=pointer]:
+                  - /url: http://localhost:8888/myytavat-sijoitusasunnot/
+              - listitem [ref=e20]:
+                - link "Myytävät kodit" [ref=e21] [cursor=pointer]:
+                  - /url: http://localhost:8888/myytavat-kodit/
+              - listitem [ref=e22]:
+                - link "UKK" [ref=e23] [cursor=pointer]:
+                  - /url: http://localhost:8888/usein-kysytyt-kysymykset/
+              - listitem [ref=e24]:
+                - link "Ota yhteyttä" [ref=e25] [cursor=pointer]:
+                  - /url: http://localhost:8888/ota-yhteytta/
+            - link "Tilaa Ketun kodit" [ref=e28] [cursor=pointer]:
+              - /url: http://localhost:8888/tilaa-ketun-kodit/
+    - main [ref=e29]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - paragraph [ref=e35]: Kohde
+            - generic [ref=e36]:
+              - generic [ref=e37]: Velaton hinta (€)
+              - spinbutton "Velaton hinta (€)" [ref=e38]: "90000"
+            - generic [ref=e39]:
+              - generic [ref=e40]: Vuokra (€/kk)
+              - spinbutton "Vuokra (€/kk)" [ref=e41]: "590"
+            - generic [ref=e42]:
+              - generic [ref=e43]: Pinta-ala (m²)
+              - spinbutton "Pinta-ala (m²)" [ref=e44]: "26"
+            - generic [ref=e45]:
+              - generic [ref=e46]: Hoitovastike (€/m²/kk)
+              - spinbutton "Hoitovastike (€/m²/kk)" [ref=e47]: "4"
+            - generic [ref=e48]:
+              - generic [ref=e49]: Tyhjät kuukaudet vuodessa
+              - spinbutton "Tyhjät kuukaudet vuodessa" [ref=e50]: "0"
+          - generic [ref=e51]:
+            - paragraph [ref=e52]: Rahoitus
+            - generic [ref=e53]:
+              - generic [ref=e54]: Omarahoitusosuus (%)
+              - spinbutton "Omarahoitusosuus (%)" [ref=e55]: "30"
+            - generic [ref=e56]:
+              - generic [ref=e57]: Pankkilainan korko (%)
+              - spinbutton "Pankkilainan korko (%)" [ref=e58]: "3.8"
+            - generic [ref=e59]:
+              - generic [ref=e60]: Laina-aika (vuotta)
+              - spinbutton "Laina-aika (vuotta)" [ref=e61]: "25"
+            - generic [ref=e62]:
+              - generic [ref=e63]: Lyhennystapa
+              - combobox "Lyhennystapa" [ref=e64]:
+                - option "Annuiteetti" [selected]
+                - option "Kiinteä tasaerä"
+                - option "Tasalyhennys"
+          - generic [ref=e65]:
+            - paragraph [ref=e66]: Kulut ja verot
+            - generic [ref=e67]:
+              - generic [ref=e68]: Varainsiirtovero (%)
+              - spinbutton "Varainsiirtovero (%)" [ref=e69]: "1.5"
+            - generic [ref=e70]:
+              - generic [ref=e71]: Remonttivara (€)
+              - spinbutton "Remonttivara (€)" [ref=e72]: "0"
+            - generic [ref=e73]:
+              - generic [ref=e74]: Vuokratulon vero (%)
+              - spinbutton "Vuokratulon vero (%)" [ref=e75]: "30"
+        - generic [ref=e76]:
+          - paragraph [ref=e77]: Koko velaton hinta rahoitetaan omarahoituksella ja pankkilainalla, eikä taloyhtiölainaa tai pääomavastiketta oleteta. Luvut ovat suuntaa antava arvio ensimmäiseltä vuodelta, eivät sitova tarjous.
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - term [ref=e81]: Omarahoitus
+                - definition [ref=e82]: 27 000 €
+              - generic [ref=e83]:
+                - term [ref=e84]: Pankkilaina
+                - definition [ref=e85]: 63 000 €
+              - generic [ref=e86]:
+                - term [ref=e87]: Kuukausierä
+                - definition [ref=e88]: 326 €/kk
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - term [ref=e91]: Vuokratuotto (netto)
+                - definition [ref=e92]: 6,4 %
+              - generic [ref=e93]:
+                - term [ref=e94]: Kassavirta ennen veroja
+                - definition [ref=e95]: +160 €/kk
+              - generic [ref=e96]:
+                - term [ref=e97]: Kassavirta verojen jälkeen
+                - definition [ref=e98]: +74 €/kk
+              - generic [ref=e99]:
+                - term [ref=e100]: Oman pääoman tuotto
+                - definition [ref=e101]: 12,2 %
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - term [ref=e104]: Neliöhinta
+                - definition [ref=e105]: 3 462 €/m²
+              - generic [ref=e106]:
+                - term [ref=e107]: Neliövuokra
+                - definition [ref=e108]: 22,69 €/m²/kk
+              - generic [ref=e109]:
+                - term [ref=e110]: Hoitovastike neliöltä
+                - definition [ref=e111]: 4,00 €/m²/kk
+          - table [ref=e112]:
+            - caption [ref=e113]: Kassavirta verojen jälkeen, jos korko nousee
+            - rowgroup [ref=e114]:
+              - row [ref=e115]:
+                - cell [ref=e116]
+                - columnheader "Kassavirta" [ref=e117]
+            - rowgroup [ref=e118]:
+              - row [ref=e119]:
+                - rowheader "Nykyinen korko" [ref=e120]
+                - cell "+74 €/kk" [ref=e121]
+              - row [ref=e122]:
+                - rowheader "+1 prosenttiyksikkö" [ref=e123]
+                - cell "+54 €/kk" [ref=e124]
+              - row [ref=e125]:
+                - rowheader "+2 prosenttiyksikköä" [ref=e126]
+                - cell "+33 €/kk" [ref=e127]
+              - row [ref=e128]:
+                - rowheader "+4 prosenttiyksikköä" [ref=e129]
+                - cell "−16 €/kk" [ref=e130]
+          - table [ref=e131]:
+            - caption [ref=e132]: Vuokratuotto tyhjillä kuukausilla
+            - rowgroup [ref=e133]:
+              - row [ref=e134]:
+                - cell [ref=e135]
+                - columnheader "Vuokratuotto" [ref=e136]
+            - rowgroup [ref=e137]:
+              - row [ref=e138]:
+                - rowheader "Ei tyhjiä kuukausia" [ref=e139]
+                - cell "6,4 %" [ref=e140]
+              - row [ref=e141]:
+                - rowheader "1 tyhjä kuukausi" [ref=e142]
+                - cell "5,7 %" [ref=e143]
+              - row [ref=e144]:
+                - rowheader "2 tyhjää kuukautta" [ref=e145]
+                - cell "5,1 %" [ref=e146]
+              - row [ref=e147]:
+                - rowheader "3 tyhjää kuukautta" [ref=e148]
+                - cell "4,4 %" [ref=e149]
+    - contentinfo [ref=e150]:
+      - generic [ref=e152]:
+        - generic [ref=e153]:
+          - generic [ref=e154]:
+            - heading "Tilaa Ketun kodit" [level=2] [ref=e155]
+            - link "Tilaamaan" [ref=e158] [cursor=pointer]:
+              - /url: http://localhost:8888/tilaa-ketun-kodit/
+          - generic [ref=e159]:
+            - heading "Linkit" [level=2] [ref=e160]
+            - navigation "Footerin valikko 1" [ref=e162]:
+              - list [ref=e163]:
+                - listitem [ref=e164]:
+                  - link "Myytävät kodit" [ref=e165] [cursor=pointer]:
+                    - /url: http://localhost:8888/myytavat-kodit/
+                - listitem [ref=e166]:
+                  - link "Myytävät sijoitusasunnot" [ref=e167] [cursor=pointer]:
+                    - /url: http://localhost:8888/myytavat-sijoitusasunnot/
+                - listitem [ref=e168]:
+                  - link "Ota yhteyttä" [ref=e169] [cursor=pointer]:
+                    - /url: http://localhost:8888/ota-yhteytta/
+                - listitem [ref=e170]:
+                  - link "Usein kysytyt kysymykset" [ref=e171] [cursor=pointer]:
+                    - /url: http://localhost:8888/usein-kysytyt-kysymykset/
+          - generic [ref=e172]:
+            - heading "Seuraa somessa" [level=2] [ref=e173]
+            - list [ref=e174]:
+              - listitem [ref=e175]:
+                - link "Instagram" [ref=e176] [cursor=pointer]:
+                  - /url: https://www.instagram.com/ketunkoti.fi
+              - listitem [ref=e180]:
+                - link "YouTube" [ref=e181] [cursor=pointer]:
+                  - /url: https://www.youtube.com/@ketunkoti
+          - generic [ref=e185]:
+            - heading "Info" [level=2] [ref=e186]
+            - paragraph [ref=e187]: "Ketun kotiY-tunnus: 2227257-6Verkkolaskuosoite: 003722272576Operaattori: Maventa (003721291126)"
+        - generic [ref=e188]:
+          - paragraph [ref=e189]: "@ketunkoti"
+          - paragraph [ref=e190]:
+            - link "Tietosuojaseloste" [ref=e191] [cursor=pointer]:
+              - /url: http://localhost:8888/tietosuojaselosta/

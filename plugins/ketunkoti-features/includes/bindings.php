@@ -246,19 +246,13 @@ function format_availability( $value ): string {
  * @return string|null Formatted percentage, or null when the inputs are missing.
  */
 function get_rental_yield( int $post_id ): ?string {
-    $rent  = (float) get_post_meta( $post_id, 'home_rent', true );
-    $price = (float) get_post_meta( $post_id, 'home_debt_free_price', true );
+    $yield = calculate_rental_yield(
+        (float) get_post_meta( $post_id, 'home_rent', true ),
+        (float) get_post_meta( $post_id, 'home_maintenance_charge', true ),
+        (float) get_post_meta( $post_id, 'home_debt_free_price', true )
+    );
 
-    // Without a rent and a price there is no yield to state, and dividing by a
-    // zero price would be a fatal error rather than a missing value.
-    if ( $rent <= 0 || $price <= 0 ) {
-        return null;
-    }
-
-    $maintenance = (float) get_post_meta( $post_id, 'home_maintenance_charge', true );
-    $yield       = ( ( $rent - $maintenance ) * 12 ) / $price * 100;
-
-    return format_percentage( $yield );
+    return null === $yield ? null : format_percentage( $yield );
 }
 
 /**

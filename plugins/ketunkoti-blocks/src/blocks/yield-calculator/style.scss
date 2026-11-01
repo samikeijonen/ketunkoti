@@ -1,0 +1,72 @@
+/**
+ * Yield calculator: layout only, on the theme's tokens.
+ *
+ * The block draws no box of its own. Background, border and width come from
+ * where it is placed, for example an alignwide Group with a background colour
+ * and a border.
+ */
+
+.yield-calculator {
+
+	&__grid {
+		display: grid;
+		gap: var(--wp--preset--spacing--40);
+
+		@media (min-width: 40rem) {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	&__figures,
+	&__results {
+		display: grid;
+		margin: 0;
+	}
+
+	// A faint rule under each row guides the eye across the gap between the
+	// label and its value. Derived from the text colour, so it works on any
+	// background the surrounding Group gets.
+	&__figure,
+	&__result {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--wp--preset--spacing--30);
+		padding-block: var(--wp--preset--spacing--20);
+		border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+	}
+
+	&__figure dd,
+	&__result dd {
+		margin: 0;
+		font-weight: 600;
+		text-align: end;
+	}
+
+	&__fields {
+		display: grid;
+		gap: var(--wp--preset--spacing--30);
+	}
+
+	&__field {
+		display: grid;
+		gap: var(--wp--preset--spacing--10);
+	}
+
+	&__input {
+		padding: 0.5em 0.75em;
+		border: 1px solid currentcolor;
+		border-radius: 6px;
+		font: inherit;
+		background-color: var(--wp--preset--color--base);
+		color: inherit;
+
+		&:focus-visible {
+			outline: 2px solid currentcolor;
+			outline-offset: 2px;
+		}
+	}
+
+	&__results {
+		margin-top: var(--wp--preset--spacing--40);
+	}
+}

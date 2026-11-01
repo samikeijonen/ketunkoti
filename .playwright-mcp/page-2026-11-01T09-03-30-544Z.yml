@@ -1,0 +1,196 @@
+- generic [active] [ref=e1]:
+  - link "Siirry sisältöön" [ref=e2] [cursor=pointer]:
+    - /url: "#wp--skip-link--target"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e7]:
+        - link [ref=e9] [cursor=pointer]:
+          - /url: http://localhost:8888/
+          - img "Ketun koti" [ref=e10]
+        - navigation "Valikko 2" [ref=e12]:
+          - generic [ref=e16]:
+            - list [ref=e17]:
+              - listitem [ref=e18]:
+                - link "Sijoitusasunnot" [ref=e19] [cursor=pointer]:
+                  - /url: http://localhost:8888/myytavat-sijoitusasunnot/
+              - listitem [ref=e20]:
+                - link "Myytävät kodit" [ref=e21] [cursor=pointer]:
+                  - /url: http://localhost:8888/myytavat-kodit/
+              - listitem [ref=e22]:
+                - link "UKK" [ref=e23] [cursor=pointer]:
+                  - /url: http://localhost:8888/usein-kysytyt-kysymykset/
+              - listitem [ref=e24]:
+                - link "Ota yhteyttä" [ref=e25] [cursor=pointer]:
+                  - /url: http://localhost:8888/ota-yhteytta/
+            - link "Tilaa Ketun kodit" [ref=e28] [cursor=pointer]:
+              - /url: http://localhost:8888/tilaa-ketun-kodit/
+    - main [ref=e29]:
+      - generic [ref=e30]:
+        - heading "Kaksio sijoitusasunnoksi Lahden keskustan kupeesta" [level=1] [ref=e31]
+        - generic [ref=e32]:
+          - generic [ref=e37]:
+            - paragraph [ref=e38]: Myyntihinta
+            - paragraph [ref=e39]: 26 000 €
+          - generic [ref=e44]:
+            - paragraph [ref=e45]: Velaton hinta
+            - paragraph [ref=e46]: 138 725 €
+          - generic [ref=e51]:
+            - paragraph [ref=e52]: Hoitovastike
+            - paragraph [ref=e53]: 151,30 €/kk
+          - generic [ref=e58]:
+            - paragraph [ref=e59]: Pääomavastike
+            - paragraph [ref=e60]: 600,72 €/kk
+          - generic [ref=e65]:
+            - paragraph [ref=e66]: Asuinpinta-ala
+            - paragraph [ref=e67]: 44,5 m²
+          - generic [ref=e72]:
+            - paragraph [ref=e73]: Huoneistoselitelmä
+            - paragraph [ref=e74]: 2h + k + kph + p
+          - generic [ref=e79]:
+            - paragraph [ref=e80]: Kerros
+            - paragraph [ref=e81]: 3/5
+          - generic [ref=e86]:
+            - paragraph [ref=e87]: Hissi
+            - paragraph [ref=e88]: Kyllä
+          - generic [ref=e93]:
+            - paragraph [ref=e94]: Rakennusvuosi
+            - paragraph [ref=e95]: "2023"
+          - generic [ref=e100]:
+            - paragraph [ref=e101]: Tontti
+            - paragraph [ref=e102]: Oma
+          - generic [ref=e107]:
+            - paragraph [ref=e108]: Osoite
+            - paragraph [ref=e109]: Kirkkokatu 12
+          - generic [ref=e114]:
+            - paragraph [ref=e115]: Sijainti
+            - paragraph [ref=e116]: Lahti
+          - generic [ref=e121]:
+            - paragraph [ref=e122]: Vuokra
+            - paragraph [ref=e123]: 780 €/kk
+          - generic [ref=e128]:
+            - paragraph [ref=e129]: Vuokrasopimus
+            - paragraph [ref=e130]: Toistaiseksi voimassa
+          - generic [ref=e135]:
+            - paragraph [ref=e136]: Vakuus
+            - paragraph [ref=e137]: 780 €
+          - generic [ref=e142]:
+            - paragraph [ref=e143]: Vesimaksu
+            - paragraph [ref=e144]: 24,00 €/hlö/kk
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - generic [ref=e151]:
+              - paragraph [ref=e152]: Vuokratuotto
+              - paragraph [ref=e153]: 5,4 %
+            - generic [ref=e158]:
+              - paragraph [ref=e159]: Kassavirta
+              - paragraph [ref=e160]: +28 €/kk
+            - generic [ref=e165]:
+              - paragraph [ref=e166]: Oman pääoman tuotto
+              - paragraph [ref=e167]: 10,6 %
+            - generic [ref=e172]:
+              - paragraph [ref=e173]: Taloyhtiölainan korko
+              - paragraph [ref=e174]: 4,3 %
+          - paragraph [ref=e175]: Laskelmat ennen veroja. Oman pääoman tuotto on ensimmäisen vuoden tuotto myyntihinnalle, ja lyhennykset lasketaan sijoittajan varallisuudeksi.
+        - region [ref=e176]:
+          - heading "Laske tuotto omalla lainallasi" [level=2] [ref=e177]
+          - generic [ref=e178]:
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - generic [ref=e181]: Vuokra (€/kk)
+                - spinbutton "Vuokra (€/kk)" [ref=e182]: "780"
+              - generic [ref=e183]:
+                - generic [ref=e184]: Laina-aika (vuotta)
+                - spinbutton "Laina-aika (vuotta)" [ref=e185]: "25"
+              - generic [ref=e186]:
+                - generic [ref=e187]: Pankkilainan korko (%)
+                - spinbutton "Pankkilainan korko (%)" [ref=e188]: "3.8"
+              - generic [ref=e189]:
+                - generic [ref=e190]: Omarahoitusosuus (%)
+                - spinbutton "Omarahoitusosuus (%)" [ref=e191]: "30"
+            - generic [ref=e192]:
+              - paragraph [ref=e193]: Laskelmassa koko velaton hinta rahoitetaan omarahoituksella ja pankkilainalla, joten taloyhtiölaina maksetaan pois eikä pääomavastiketta jää.
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - term [ref=e196]: Myyntihinta
+                  - definition [ref=e197]: 26 000 €
+                - generic [ref=e198]:
+                  - term [ref=e199]: Velaton hinta
+                  - definition [ref=e200]: 138 725 €
+                - generic [ref=e201]:
+                  - term [ref=e202]: Hoitovastike
+                  - definition [ref=e203]: 151,30 €/kk
+              - generic [ref=e205]:
+                - generic [ref=e206]:
+                  - term [ref=e207]: Vuokratuotto
+                  - definition [ref=e208]: 5,4 %
+                - generic [ref=e209]:
+                  - term [ref=e210]: Kassavirta pankkilainan kanssa
+                  - definition [ref=e211]: +127 €/kk
+                - generic [ref=e212]:
+                  - term [ref=e213]: Oman pääoman tuotto pankkilainan kanssa
+                  - definition [ref=e214]: 9,4 %
+        - paragraph [ref=e215]: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Valmiiksi vuokrattu uudiskohde Lahden keskustan kupeessa, omalla tontilla.
+        - heading "Taloyhtiöstä" [level=2] [ref=e216]
+        - paragraph [ref=e217]: Cras mattis consectetur purus sit amet fermentum. Vestibulum id ligula porta felis euismod semper. Maecenas faucibus mollis interdum.
+        - heading "Valmiiksi vuokrattu" [level=2] [ref=e218]
+        - paragraph [ref=e219]: Aenean lacinia bibendum nulla sed consectetur. Curabitur blandit tempus porttitor. Etiam porta sem malesuada magna mollis euismod.
+        - heading "Ota yhteyttä" [level=2] [ref=e220]
+        - generic [ref=e221]:
+          - generic [ref=e222]:
+            - status
+            - list
+          - form "Yhteydenottolomake" [ref=e223]:
+            - paragraph [ref=e224]:
+              - generic [ref=e225]:
+                - text: Nimi
+                - textbox "Nimi" [ref=e227]
+            - paragraph [ref=e228]:
+              - generic [ref=e229]:
+                - text: Sähköpostiosoite
+                - textbox "Sähköpostiosoite" [ref=e231]
+            - paragraph [ref=e232]:
+              - generic [ref=e233]:
+                - text: Viestisi (valinnainen)
+                - textbox "Viestisi (valinnainen)" [ref=e235]
+            - paragraph [ref=e236]:
+              - button "Otahan yhteyttä" [ref=e237] [cursor=pointer]
+    - contentinfo [ref=e238]:
+      - generic [ref=e240]:
+        - generic [ref=e241]:
+          - generic [ref=e242]:
+            - heading "Tilaa Ketun kodit" [level=2] [ref=e243]
+            - link "Tilaamaan" [ref=e246] [cursor=pointer]:
+              - /url: http://localhost:8888/tilaa-ketun-kodit/
+          - generic [ref=e247]:
+            - heading "Linkit" [level=2] [ref=e248]
+            - navigation "Footerin valikko 1" [ref=e250]:
+              - list [ref=e251]:
+                - listitem [ref=e252]:
+                  - link "Myytävät kodit" [ref=e253] [cursor=pointer]:
+                    - /url: http://localhost:8888/myytavat-kodit/
+                - listitem [ref=e254]:
+                  - link "Myytävät sijoitusasunnot" [ref=e255] [cursor=pointer]:
+                    - /url: http://localhost:8888/myytavat-sijoitusasunnot/
+                - listitem [ref=e256]:
+                  - link "Ota yhteyttä" [ref=e257] [cursor=pointer]:
+                    - /url: http://localhost:8888/ota-yhteytta/
+                - listitem [ref=e258]:
+                  - link "Usein kysytyt kysymykset" [ref=e259] [cursor=pointer]:
+                    - /url: http://localhost:8888/usein-kysytyt-kysymykset/
+          - generic [ref=e260]:
+            - heading "Seuraa somessa" [level=2] [ref=e261]
+            - list [ref=e262]:
+              - listitem [ref=e263]:
+                - link "Instagram" [ref=e264] [cursor=pointer]:
+                  - /url: https://www.instagram.com/ketunkoti.fi
+              - listitem [ref=e268]:
+                - link "YouTube" [ref=e269] [cursor=pointer]:
+                  - /url: https://www.youtube.com/@ketunkoti
+          - generic [ref=e273]:
+            - heading "Info" [level=2] [ref=e274]
+            - paragraph [ref=e275]: "Ketun kotiY-tunnus: 2227257-6Verkkolaskuosoite: 003722272576Operaattori: Maventa (003721291126)"
+        - generic [ref=e276]:
+          - paragraph [ref=e277]: "@ketunkoti"
+          - paragraph [ref=e278]:
+            - link "Tietosuojaseloste" [ref=e279] [cursor=pointer]:
+              - /url: http://localhost:8888/tietosuojaselosta/
