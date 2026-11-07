@@ -5,9 +5,10 @@
  * above the step text. Numbers come from a CSS counter, so reordering steps in
  * the editor never leaves them out of sequence.
  *
- * On the site, the line fills, the dots light up and the text rises gently as
- * the visitor scrolls. Pure CSS (scroll-driven animations): without browser
- * support or with reduced motion, everything is simply shown finished.
+ * On the site, the line fills, the dots light up and the text slides in a
+ * little from the right as the visitor scrolls. Pure CSS (scroll-driven
+ * animations): without browser support or with reduced motion, everything
+ * is simply shown finished.
  */
 
 .timeline {
@@ -122,15 +123,15 @@
 	}
 }
 
+// Movement only, no opacity: the text keeps its full colour contrast at every
+// point of the animation, also for checkers that never scroll the page.
 @keyframes ketunkoti-timeline-reveal {
 
 	from {
-		opacity: 0.35;
-		translate: 0 0.375rem;
+		translate: 1rem 0;
 	}
 
 	to {
-		opacity: 1;
 		translate: 0 0;
 	}
 }
