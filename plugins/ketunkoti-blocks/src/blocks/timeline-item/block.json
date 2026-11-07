@@ -1,0 +1,20 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ketunkoti/timeline-item",
+	"version": "1.0.0",
+	"title": "Aikajanan vaihe",
+	"category": "ketunkoti",
+	"icon": "marker",
+	"description": "Yksi aikajanan vaihe. Numero tulee automaattisesti järjestyksen mukaan.",
+	"keywords": [ "timeline", "aikajana", "vaihe" ],
+	"textdomain": "ketunkoti-blocks",
+	"parent": [ "ketunkoti/timeline" ],
+	"allowedBlocks": [ "core/paragraph", "core/heading", "core/list" ],
+	"supports": {
+		"html": false,
+		"reusable": false
+	},
+	"editorScript": "file:./index.js",
+	"render": "file:./render.php"
+}

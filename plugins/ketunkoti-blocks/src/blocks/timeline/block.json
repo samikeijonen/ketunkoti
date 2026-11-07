@@ -1,0 +1,23 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "ketunkoti/timeline",
+	"version": "1.0.0",
+	"title": "Aikajana",
+	"category": "ketunkoti",
+	"icon": "editor-ol",
+	"description": "Numeroidut vaiheet pystyviivan varrella, esimerkiksi \"Näin kauppa etenee\". Viiva täyttyy vierittäessä.",
+	"keywords": [ "timeline", "aikajana", "vaiheet", "prosessi" ],
+	"textdomain": "ketunkoti-blocks",
+	"allowedBlocks": [ "ketunkoti/timeline-item" ],
+	"supports": {
+		"html": false,
+		"align": [ "wide" ],
+		"spacing": {
+			"margin": [ "top", "bottom" ]
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}
