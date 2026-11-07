@@ -1,0 +1,167 @@
+/**
+ * Timeline and its steps.
+ *
+ * A vertical line on the left with a dot for each step. The step number sits
+ * above the step text. Numbers come from a CSS counter, so reordering steps in
+ * the editor never leaves them out of sequence.
+ *
+ * On the site, the line fills, the dots light up and the text rises gently as
+ * the visitor scrolls. Pure CSS (scroll-driven animations): without browser
+ * support or with reduced motion, everything is simply shown finished.
+ */
+
+.timeline {
+	--timeline-dot: 0.9rem;
+	--timeline-gutter: 2.5rem;
+	--timeline-line-width: 2px;
+	--timeline-track: color-mix(in srgb, currentcolor 20%, transparent);
+	--timeline-accent: var(--wp--preset--color--accent-3);
+
+	position: relative;
+	margin-inline-start: 0;
+	padding: 0 0 0 var(--timeline-gutter);
+	list-style: none;
+	counter-reset: timeline-step;
+	view-timeline: --ketunkoti-timeline block;
+
+	// Track (before) and its fill (after), centred under the dots.
+	&::before,
+	&::after {
+		content: "";
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: calc(var(--timeline-dot) / 2);
+		width: var(--timeline-line-width);
+		translate: -50% 0;
+	}
+
+	&::before {
+		background: var(--timeline-track);
+	}
+
+	&::after {
+		background: var(--timeline-accent);
+		transform-origin: top;
+	}
+}
+
+.timeline-item {
+	position: relative;
+	margin: 0;
+	counter-increment: timeline-step;
+
+	& + & {
+		margin-block-start: var(--wp--preset--spacing--50);
+	}
+
+	// The dot on the line, level with the number.
+	&::before {
+		content: "";
+		position: absolute;
+		inset-block-start: 0.55rem;
+		inset-inline-start: calc(var(--timeline-gutter) * -1);
+		width: var(--timeline-dot);
+		height: var(--timeline-dot);
+		border-radius: 50%;
+		background: var(--timeline-accent);
+	}
+
+	&__number {
+		display: block;
+		font-family: var(--wp--preset--font-family--cormorant-garamond);
+		font-size: 1.75rem;
+		font-weight: 600;
+		// Cormorant's default old-style figures make "1" read as "I".
+		font-variant-numeric: lining-nums;
+		line-height: 1;
+		color: var(--wp--preset--color--accent-4);
+
+		&::before {
+			content: counter(timeline-step);
+		}
+	}
+
+	&__content {
+		margin-block-start: 0.25rem;
+
+		> :first-child {
+			margin-block-start: 0;
+		}
+
+		> :last-child {
+			margin-block-end: 0;
+		}
+	}
+}
+
+@keyframes ketunkoti-timeline-grow {
+
+	from {
+		scale: 1 0;
+	}
+
+	to {
+		scale: 1 1;
+	}
+}
+
+@keyframes ketunkoti-timeline-pop {
+
+	0% {
+		scale: 0.3;
+		background: var(--timeline-track);
+	}
+
+	60% {
+		scale: 1.4;
+	}
+
+	100% {
+		scale: 1;
+		background: var(--timeline-accent);
+	}
+}
+
+@keyframes ketunkoti-timeline-reveal {
+
+	from {
+		opacity: 0.35;
+		translate: 0 0.375rem;
+	}
+
+	to {
+		opacity: 1;
+		translate: 0 0;
+	}
+}
+
+// Site only: the editor's block wrapper carries
+// .block-editor-block-list__block, so steps stay still and fully visible
+// while editing.
+@media (prefers-reduced-motion: no-preference) {
+
+	@supports (animation-timeline: view()) {
+
+		.timeline:not(.block-editor-block-list__block) {
+
+			&::after {
+				animation: ketunkoti-timeline-grow linear both;
+				animation-timeline: --ketunkoti-timeline;
+				animation-range: entry 40% exit 30%;
+			}
+
+			.timeline-item::before {
+				animation: ketunkoti-timeline-pop linear both;
+				animation-timeline: view();
+				animation-range: entry 30% cover 40%;
+			}
+
+			.timeline-item__number,
+			.timeline-item__content {
+				animation: ketunkoti-timeline-reveal linear both;
+				animation-timeline: view();
+				animation-range: entry 10% cover 30%;
+			}
+		}
+	}
+}
