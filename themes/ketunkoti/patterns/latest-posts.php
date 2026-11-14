@@ -1,6 +1,6 @@
 <?php
 /**
- * Title: Uusimmat artikkelit
+ * Title: Uusimmat löpinät
  * Slug: ketunkoti/latest-posts
  * Categories: query, posts
  * Viewport width: 1400
@@ -17,11 +17,11 @@
 		<!-- wp:group {"style":{"spacing":{"margin":{"bottom":"var:preset|spacing|40"},"blockGap":"var:preset|spacing|30"}},"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between","verticalAlignment":"bottom"}} -->
 		<div class="wp-block-group" style="margin-bottom:var(--wp--preset--spacing--40)">
 			<!-- wp:heading -->
-			<h2 class="wp-block-heading"><?php esc_html_e( 'Uusimmat artikkelit', 'ketunkoti' ); ?></h2>
+			<h2 class="wp-block-heading"><?php esc_html_e( 'Uusimmat löpinät', 'ketunkoti' ); ?></h2>
 			<!-- /wp:heading -->
 
 			<!-- wp:paragraph -->
-			<p><a href="<?php echo esc_url( home_url( '/lopinat/' ) ); ?>"><?php esc_html_e( 'Kaikki artikkelit', 'ketunkoti' ); ?></a></p>
+			<p><a href="<?php echo esc_url( home_url( '/lopinat/' ) ); ?>"><?php esc_html_e( 'Kaikki löpinät', 'ketunkoti' ); ?></a></p>
 			<!-- /wp:paragraph -->
 		</div>
 		<!-- /wp:group -->
