@@ -27,9 +27,9 @@
 		<!-- /wp:post-template -->
 
 		<!-- wp:query-pagination {"paginationArrow":"arrow","style":{"spacing":{"margin":{"top":"var:preset|spacing|50"}}},"layout":{"type":"flex","justifyContent":"left"}} -->
-			<!-- wp:query-pagination-previous {"label":"<?php echo esc_attr__( 'Uudemmat', 'ketunkoti' ); ?>"} /-->
+			<!-- wp:query-pagination-previous /-->
 			<!-- wp:query-pagination-numbers /-->
-			<!-- wp:query-pagination-next {"label":"<?php echo esc_attr__( 'Vanhemmat', 'ketunkoti' ); ?>"} /-->
+			<!-- wp:query-pagination-next /-->
 		<!-- /wp:query-pagination -->
 
 		<!-- wp:query-no-results -->
