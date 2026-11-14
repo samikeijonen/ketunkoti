@@ -509,6 +509,105 @@ p {
 }
 
 /*
+ * Post list rows
+ *
+ * Used by the `ketunkoti/latest-posts` and `ketunkoti/template-query-loop`
+ * patterns and by copies of the same rows in page content (front page,
+ * /lopinat/). Layout, spacing, borders, colours and the arrow icon come from
+ * block settings. Only what
+ * blocks cannot express lives here: the whole row as one link, row hover and
+ * focus, first-line alignment and the narrow screen layout.
+ */
+.latest-posts__row {
+	position: relative;
+}
+
+/*
+ * The date and the arrow get the height of one title line, so they sit
+ * centred on the title's first line even when the title wraps.
+ */
+.latest-posts__row .wp-block-post-date {
+	line-height: calc(var(--wp--preset--font-size--large) * 1.15);
+	font-variant-numeric: lining-nums tabular-nums;
+}
+
+.latest-posts__row .wp-block-icon {
+	display: flex;
+	align-items: center;
+	height: calc(var(--wp--preset--font-size--large) * 1.15);
+	transition: transform 0.2s ease;
+}
+
+/* Lets the title shrink, so the row only wraps when the date is moved above. */
+.latest-posts__row .wp-block-post-title {
+	flex-basis: 0;
+}
+
+.latest-posts__row .wp-block-post-title a {
+	transition: color 0.2s ease;
+}
+
+.latest-posts__row:hover .wp-block-post-title a,
+.latest-posts__row .wp-block-post-title a:focus-visible {
+	color: var(--wp--preset--color--accent-2);
+}
+
+.latest-posts__row:hover .wp-block-icon,
+.latest-posts__row:focus-within .wp-block-icon {
+	transform: translateX(4px);
+}
+
+/*
+ * Stretches the title link across the whole row, so the entire row is
+ * clickable while only one link is exposed. Front end only: in the editor the
+ * overlay would stop clicks from selecting the blocks in the row.
+ */
+body:not(.editor-styles-wrapper) .latest-posts__row .wp-block-post-title a::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+}
+
+/* Moves the focus indicator from the stretched link onto the row. */
+@supports selector(:has(*)) {
+
+	.latest-posts__row .wp-block-post-title a:focus-visible {
+		outline: none;
+	}
+
+	.latest-posts__row:has(.wp-block-post-title a:focus-visible) {
+		outline: 2px solid var(--wp--preset--color--contrast);
+		outline-offset: 3px;
+	}
+}
+
+/* On narrow screens the date moves above the title. */
+@media (max-width: 600px) {
+
+	.latest-posts__row {
+		row-gap: var(--wp--preset--spacing--10);
+	}
+
+	.latest-posts__row .wp-block-post-date {
+		flex-basis: 100%;
+		line-height: inherit;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.latest-posts__row .wp-block-icon,
+	.latest-posts__row .wp-block-post-title a {
+		transition: none;
+	}
+
+	.latest-posts__row:hover .wp-block-icon,
+	.latest-posts__row:focus-within .wp-block-icon {
+		transform: none;
+	}
+}
+
+/*
  * Form controls
  *
  * Their resting appearance - border, background, padding, typography - is set
