@@ -56,12 +56,42 @@ final class Registrar {
      * REST exposure and MCP exposure (public only for read-only abilities).
      * The ability's own permission callback is the only access check.
      *
-     * @param string $name Ability name, e.g. ketunkoti/get-home.
-     * @param array  $args Ability arguments, including `annotations`.
+     * @param string $name     Ability name, e.g. ketunkoti/get-home.
+     * @param array  $args     Ability arguments, including `annotations`.
+     * @param string $mcp_type `tool` (default) or `prompt`. A prompt must be
+     *                         read-only and is exposed to MCP clients only.
      * @return void
      */
-    public static function register( string $name, array $args ): void {
+    public static function register( string $name, array $args, string $mcp_type = 'tool' ): void {
         $annotations = $args['annotations'] ?? null;
+        $is_prompt   = 'prompt' === $mcp_type;
+
+        if ( ! in_array( $mcp_type, [ 'tool', 'prompt' ], true ) ) {
+            _doing_it_wrong(
+                __METHOD__,
+                sprintf(
+                    /* translators: 1: ability name, 2: MCP type. */
+                    esc_html__( 'Ability %1$s has an unknown MCP type "%2$s"; use tool or prompt.', 'ketunkoti-ai' ),
+                    esc_html( $name ),
+                    esc_html( $mcp_type )
+                ),
+                '1.2.0'
+            );
+            return;
+        }
+
+        if ( $is_prompt && true !== ( $annotations['readonly'] ?? null ) ) {
+            _doing_it_wrong(
+                __METHOD__,
+                sprintf(
+                    /* translators: %s: ability name. */
+                    esc_html__( 'Prompt %s must be read-only.', 'ketunkoti-ai' ),
+                    esc_html( $name )
+                ),
+                '1.2.0'
+            );
+            return;
+        }
 
         foreach ( [ 'readonly', 'destructive', 'idempotent' ] as $key ) {
             if ( ! is_array( $annotations ) || ! isset( $annotations[ $key ] ) || ! is_bool( $annotations[ $key ] ) ) {
@@ -94,15 +124,17 @@ final class Registrar {
         $args['category'] = self::CATEGORY;
         unset( $args['annotations'] );
 
+        // A prompt is MCP-only: it returns instructions for an MCP client, so it
+        // is neither a chat tool nor a REST ability, and it is not in NAMES.
         $args['meta'] = array_replace_recursive(
             $args['meta'] ?? [],
             [
                 'annotations'  => $annotations,
-                'show_in_rest' => true,
-                'public'       => true,
+                'show_in_rest' => ! $is_prompt,
+                'public'       => ! $is_prompt,
                 'mcp'          => [
                     'public' => true === $annotations['readonly'],
-                    'type'   => 'tool',
+                    'type'   => $is_prompt ? 'prompt' : 'tool',
                 ],
             ]
         );

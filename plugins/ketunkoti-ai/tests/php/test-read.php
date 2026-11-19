@@ -45,7 +45,13 @@ check( 'list by type', 'rental', $rentals['items'][0]['post_type'] ?? $rentals )
 
 $tools = Registrar::add_tools( [ 'tools' => [ 'other/tool' ] ] )['tools'];
 check( 'mcp tools keep existing', 'other/tool', $tools[0] );
-$registered = array_keys( wp_get_abilities( [ 'category' => 'ketunkoti' ] ) );
+// Every tool ability in the category is listed; prompts are exposed as MCP prompts instead.
+$registered = array_keys(
+    array_filter(
+        wp_get_abilities( [ 'category' => 'ketunkoti' ] ),
+        static fn( $ability ) => 'tool' === ( $ability->get_meta()['mcp']['type'] ?? 'tool' )
+    )
+);
 $listed     = array_values( array_diff( $tools, [ 'other/tool' ] ) );
 sort( $registered );
 sort( $listed );
