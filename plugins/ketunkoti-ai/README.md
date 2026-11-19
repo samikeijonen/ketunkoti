@@ -8,7 +8,14 @@ Home abilities for Claude. Lets Claude read, copy and fill in home listings: the
 - Ketun koti Features active (`Requires Plugins`).
 - For Claude on your computer: the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin and an MCP client connected to the site.
 
-The plugin works with or without Seravo AI Assistant. When Seravo AI Assistant is active, its chat offers these abilities too, and Claude can write a home's title and content with `seravo-ai-assistant/update-post`.
+The plugin works with or without Seravo AI Assistant. When Seravo AI Assistant is active, its chat offers these abilities too, and Seravo's own generic abilities cover the rest of a listing:
+
+- `seravo-ai-assistant/update-post`: title, content, excerpt, status, `terms` (`{ taxonomy: [term ids] }`, replaces only the taxonomies named) and `featured_media` (attachment id, `0` removes).
+- `seravo-ai-assistant/list-taxonomies`, `list-terms`, `create-term`: which taxonomy belongs to which post type (the `home-*` taxonomies map to `home` and `rental`) and their terms.
+- `seravo-ai-assistant/upload-media`, `update-media`, `get-media-image`: photos (https URL or base64) with alt text, title and caption.
+- `seravo-ai-assistant/get-seo`, `update-seo`: SEO title, description, social titles, canonical and indexing in The SEO Framework (or Yoast).
+
+This plugin only knows the `home_*` fields; Seravo knows nothing about homes.
 
 Each ability checks only WordPress's own capabilities, per home (see the table). There is no separate AI permission and no draft ownership.
 
@@ -56,14 +63,19 @@ Numbers may use Finnish formatting: spaces as thousands separators and a decimal
 1. `ketunkoti/list-homes` to find a similar home.
 2. `ketunkoti/copy-home` to copy it into a draft.
 3. `ketunkoti/update-home-meta` for the new prices, area, floor and other fields.
-4. The title and content with `seravo-ai-assistant/update-post` when Seravo AI Assistant is active, otherwise in wp-admin. Terms and images are changed in wp-admin for now.
+4. With Seravo AI Assistant active:
+   - photos with `seravo-ai-assistant/upload-media` (with alt text);
+   - title, content, terms (city, status, type, rooms…) and the featured image in one `seravo-ai-assistant/update-post` call (`list-taxonomies` and `list-terms` give the term ids, `create-term` adds a missing one);
+   - SEO title and description with `seravo-ai-assistant/update-seo`.
+
+   Without Seravo AI Assistant, these are done in wp-admin.
 5. The editor opens the draft, checks it and publishes.
 
 A test copy that is no longer needed goes to the trash with `ketunkoti/trash-home`.
 
 ## Changing an existing home
 
-1. Claude calls `ketunkoti/update-home-meta` with the fields to change.
+1. Claude calls `ketunkoti/update-home-meta` with the `home_*` fields to change (title, content, terms, photos and SEO go through the Seravo abilities above, with the same approval and edit-lock rules).
 2. The MCP client, or the Seravo chat's approval card, asks you first. Nothing is written until you allow it, unless the tool is set to always allow in the MCP client.
 3. The change is saved at once: on a published home it shows on the site immediately.
 
