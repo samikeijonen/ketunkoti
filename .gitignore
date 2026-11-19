@@ -12,3 +12,4 @@ node_modules/
 # Separately cloned plugins
 plugins/meom-ai-assistant/
 plugins/meom-ai-translate/
+plugins/seravo-ai-assistant/
