@@ -32,6 +32,7 @@ final class Plugin {
 
         add_action( 'wp_abilities_api_categories_init', [ Registrar::class, 'register_category' ] );
         add_action( 'wp_abilities_api_init', [ Home_Abilities::class, 'register' ] );
+        add_action( 'wp_abilities_api_init', [ New_Home_Prompt::class, 'register' ] );
         add_filter( 'mcp_adapter_default_server_config', [ Registrar::class, 'add_tools' ] );
     }
 }

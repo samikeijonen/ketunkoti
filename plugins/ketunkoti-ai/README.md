@@ -73,6 +73,19 @@ Numbers may use Finnish formatting: spaces as thousands separators and a decimal
 
 A test copy that is no longer needed goes to the trash with `ketunkoti/trash-home`.
 
+### The "New home" prompt
+
+The steps above are also an MCP prompt, `ketunkoti/new-home` (MCP name `ketunkoti-new-home`), so you don't have to explain them to Claude each time:
+
+- Claude Code: type `/` and pick the ketunkoti server's `new-home` prompt (e.g. `/mcp__ketunkoti-production__ketunkoti-new-home`).
+- Claude Desktop: the "+" menu, then the ketunkoti server's prompts.
+
+Arguments, both optional: `source` (ID or search words of the home to copy) and `details` (the new home's details as free text: address, price, area, rooms, floor, availability…).
+
+The prompt only returns instructions; it changes nothing. Each write is still its own tool call that the MCP client asks you to approve, and the prompt tells Claude to leave the listing as a draft. Without Seravo AI Assistant, it lists the wp-admin steps instead. It is MCP-only: not a tool, not in the Seravo chat and not in the REST API, and it needs `edit_posts`.
+
+The instructions live in `includes/class-new-home-prompt.php`; change them there when the workflow changes.
+
 ## Changing an existing home
 
 1. Claude calls `ketunkoti/update-home-meta` with the `home_*` fields to change (title, content, terms, photos and SEO go through the Seravo abilities above, with the same approval and edit-lock rules).
