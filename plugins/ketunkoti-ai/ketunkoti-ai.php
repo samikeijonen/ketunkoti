@@ -2,11 +2,11 @@
 /**
  * Plugin Name:       Ketun koti AI
  * Plugin URI:        https://ketunkoti.fi
- * Description:       Home abilities for Claude: read, copy and fill in home listings. Add-on for MEOM AI Assistant.
- * Version:           1.0.0
+ * Description:       Home abilities for Claude: read, copy and fill in home listings.
+ * Version:           1.1.0
  * Requires at least: 7.1
  * Requires PHP:      8.2
- * Requires Plugins:  meom-ai-assistant, ketunkoti-features
+ * Requires Plugins:  ketunkoti-features
  * Author:            Sami Keijonen
  * Author URI:        https://ketunkoti.fi
  * License:           GPL-2.0-or-later
@@ -32,7 +32,6 @@ define( 'KETUNKOTI_AI_DIR', plugin_dir_path( __FILE__ ) );
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-fields.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-reader.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-copier.php';
-require_once KETUNKOTI_AI_DIR . 'includes/class-meta-proposals.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-registrar.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-abilities.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-plugin.php';

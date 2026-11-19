@@ -20,19 +20,18 @@ final class Plugin {
     /**
      * Adds the plugin's hooks. Runs on `plugins_loaded`.
      *
-     * Does nothing without MEOM AI Assistant, whose ownership and settings
-     * the abilities rely on. WordPress already refuses to activate the plugin
-     * without it; this covers the assistant being removed later.
+     * Needs only the Abilities API (WordPress core) and, for MCP, the MCP
+     * Adapter. No assistant plugin is required.
      *
      * @return void
      */
     public static function init(): void {
-        if ( ! class_exists( \MEOM\AI_Assistant\Settings::class ) ) {
+        if ( ! function_exists( 'wp_register_ability' ) ) {
             return;
         }
 
         add_action( 'wp_abilities_api_categories_init', [ Registrar::class, 'register_category' ] );
         add_action( 'wp_abilities_api_init', [ Home_Abilities::class, 'register' ] );
-        add_filter( 'meom_ai_mcp_abilities', [ Registrar::class, 'mcp_names' ] );
+        add_filter( 'mcp_adapter_default_server_config', [ Registrar::class, 'add_tools' ] );
     }
 }
