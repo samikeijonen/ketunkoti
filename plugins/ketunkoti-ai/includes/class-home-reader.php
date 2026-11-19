@@ -7,7 +7,6 @@
 
 namespace Ketunkoti\AI;
 
-use MEOM\AI_Assistant\Ownership;
 use WP_Error;
 use WP_Query;
 
@@ -70,7 +69,6 @@ final class Home_Reader {
             'fields'         => $fields,
             'terms'          => self::terms( $post ),
             'calculated'     => self::calculated( $post ),
-            'ai_owned'       => Ownership::is_ai_owned( $post->ID, get_current_user_id() ),
         ];
     }
 

@@ -30,6 +30,12 @@ final class Home_Fields {
     public const POST_TYPES = [ 'home', 'rental' ];
 
     /**
+     * Post meta that holds one row per home_* write made through the
+     * abilities: user, time, and the before and after values.
+     */
+    public const LOG_META = '_ketunkoti_ai_meta_log';
+
+    /**
      * Prefix of the editable meta keys.
      */
     private const PREFIX = 'home_';

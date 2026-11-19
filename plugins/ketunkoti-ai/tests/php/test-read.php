@@ -7,6 +7,8 @@
 
 namespace Ketunkoti\AI\Tests;
 
+use Ketunkoti\AI\Registrar;
+
 require_once __DIR__ . '/bootstrap.php';
 
 $get_home   = wp_get_ability( 'ketunkoti/get-home' );
@@ -27,7 +29,7 @@ check( 'get-home unset field null', true, array_key_exists( 'value', $res['field
 check( 'get-home city', 'Lahti', $res['terms']['home-city'][0]['name'] ?? $res );
 check( 'get-home all taxonomies', get_object_taxonomies( 'home' ), array_keys( $res['terms'] ?? [] ) );
 check( 'get-home calculated keys', [ 'home_rental_yield', 'home_cash_flow', 'home_equity_return' ], array_keys( $res['calculated'] ?? [] ) );
-check( 'get-home not owned', false, $res['ai_owned'] ?? 'missing' );
+check( 'get-home has no ai_owned', false, array_key_exists( 'ai_owned', is_array( $res ) ? $res : [] ) );
 check( 'get-home page refused', true, is_wp_error( $get_home->execute( [ 'id' => self_page() ] ) ) );
 
 $rental = make_home( 'rental', [ 'home_rent' => 700 ] );
@@ -41,8 +43,17 @@ check( 'list total', 1, $list['total'] ?? $list );
 $rentals = $list_homes->execute( [ 'post_type' => 'rental', 'search' => get_the_title( $rental ) ] );
 check( 'list by type', 'rental', $rentals['items'][0]['post_type'] ?? $rentals );
 
-check( 'mcp filter has names', true, in_array( 'ketunkoti/apply-home-meta', apply_filters( 'meom_ai_mcp_abilities', [] ), true ) );
-check( 'mcp public', true, $get_home->get_meta()['mcp']['public'] ?? false );
+$tools = Registrar::add_tools( [ 'tools' => [ 'other/tool' ] ] )['tools'];
+check( 'mcp tools keep existing', 'other/tool', $tools[0] );
+$registered = array_keys( wp_get_abilities( [ 'category' => 'ketunkoti' ] ) );
+$listed     = array_values( array_diff( $tools, [ 'other/tool' ] ) );
+sort( $registered );
+sort( $listed );
+check( 'mcp tools list every ability', $registered, $listed );
+check( 'no meom filter', false, has_filter( 'meom_ai_mcp_abilities' ) );
+check( 'get-home public', true, $get_home->get_meta()['public'] ?? false );
+check( 'get-home mcp public', true, $get_home->get_meta()['mcp']['public'] ?? false );
+check( 'get-home annotations', [ true, false, true ], array_values( $get_home->get_meta()['annotations'] ?? [] ) );
 check( 'show in rest', true, $get_home->get_meta()['show_in_rest'] ?? false );
 check( 'category', 'ketunkoti', $get_home->get_category() );
 

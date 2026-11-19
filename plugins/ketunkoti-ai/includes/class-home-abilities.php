@@ -7,16 +7,18 @@
 
 namespace Ketunkoti\AI;
 
-use MEOM\AI_Assistant\Ownership;
-
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 /**
- * Registers the home abilities. The callbacks only check input and delegate
- * to the reader, copier and proposal classes.
+ * Registers the home abilities. The callbacks check input, edit locks and
+ * delegate to the reader, copier and field classes.
+ *
+ * The write abilities work on any home the user may edit or delete,
+ * published ones included. Approval happens in the client: the MCP client,
+ * or the chat's approval card, asks the user before each write runs.
  */
 final class Home_Abilities {
 
@@ -30,10 +32,15 @@ final class Home_Abilities {
             'ketunkoti/get-home',
             [
                 'label'               => __( 'Get home', 'ketunkoti-ai' ),
-                'description'         => __( 'Returns a whole home or rental: title, excerpt, featured image, every home_* field with its label, type, description and value, terms per taxonomy, the calculated investment figures (read-only) and ai_owned, whether you may edit it directly with ketunkoti/update-home-meta.', 'ketunkoti-ai' ),
+                'description'         => __( 'Returns a whole home or rental: title, excerpt, featured image, every home_* field with its label, type, description and value, terms per taxonomy and the calculated investment figures (read-only).', 'ketunkoti-ai' ),
                 'input_schema'        => self::id_schema(),
                 'execute_callback'    => static fn( array $input ) => Home_Reader::get( (int) $input['id'] ),
                 'permission_callback' => [ self::class, 'can_edit_post' ],
+                'annotations'         => [
+                    'readonly'    => true,
+                    'destructive' => false,
+                    'idempotent'  => true,
+                ],
             ]
         );
 
@@ -68,6 +75,11 @@ final class Home_Abilities {
                 ],
                 'execute_callback'    => static fn( array $input = [] ) => Home_Reader::list( $input ),
                 'permission_callback' => static fn() => current_user_can( 'edit_posts' ),
+                'annotations'         => [
+                    'readonly'    => true,
+                    'destructive' => false,
+                    'idempotent'  => true,
+                ],
             ]
         );
 
@@ -75,7 +87,7 @@ final class Home_Abilities {
             'ketunkoti/copy-home',
             [
                 'label'               => __( 'Copy home', 'ketunkoti-ai' ),
-                'description'         => __( 'Copies a home or rental exactly (content, excerpt, template, featured image, every home_* field and every term) into a new draft that you may then edit directly: home_* fields with ketunkoti/update-home-meta, title, content and terms with meom-ai/update-ai-draft. SEO meta is not copied. The editor publishes the draft. Pass on every entry of notes to the user, for example a title another home already has.', 'ketunkoti-ai' ),
+                'description'         => __( 'Copies a home or rental exactly (content, excerpt, template, featured image, every home_* field and every term) into a new draft, with the current user as author. Then set the home_* fields with ketunkoti/update-home-meta, and the title and content with seravo-ai-assistant/update-post when that ability is available. Terms and images stay as copied unless the editor changes them in wp-admin. SEO meta is not copied. The editor publishes the draft. Pass on every entry of notes to the user, for example a title another home already has.', 'ketunkoti-ai' ),
                 'input_schema'        => [
                     'type'                 => 'object',
                     'additionalProperties' => false,
@@ -96,6 +108,7 @@ final class Home_Abilities {
                 'annotations'         => [
                     'readonly'    => false,
                     'destructive' => false,
+                    'idempotent'  => false,
                 ],
             ]
         );
@@ -103,57 +116,15 @@ final class Home_Abilities {
         Registrar::register(
             'ketunkoti/update-home-meta',
             [
-                'label'               => __( 'Update home fields on your draft', 'ketunkoti-ai' ),
-                'description'         => __( 'Sets home_* fields directly on a draft you created (ai_owned true in ketunkoti/get-home). null or an empty string clears a field. For any other home use ketunkoti/propose-home-meta. Returns the values as saved, and notes on fields that usually change together (a new rent without the deposit, for example): ask the user about each.', 'ketunkoti-ai' ),
+                'label'               => __( 'Update home fields', 'ketunkoti-ai' ),
+                'description'         => __( 'Sets home_* fields on any home or rental the user may edit, published ones included, and saves them at once: a published home changes on the site immediately. Before calling, read the home with ketunkoti/get-home and show the user each change as "label: before → after", and call only after the user agrees. null or an empty string clears a field. One invalid value refuses the whole call. Refused while another user has the home open in the editor. Every change is logged on the home with its before and after values. Returns the values as saved, and notes on fields that usually change together (a new rent without the deposit, for example): ask the user about each.', 'ketunkoti-ai' ),
                 'input_schema'        => self::meta_schema(),
                 'execute_callback'    => [ self::class, 'update_home_meta' ],
                 'permission_callback' => [ self::class, 'can_edit_post' ],
                 'annotations'         => [
                     'readonly'    => false,
-                    'destructive' => false,
-                ],
-            ]
-        );
-
-        Registrar::register(
-            'ketunkoti/propose-home-meta',
-            [
-                'label'               => __( 'Propose home field changes', 'ketunkoti-ai' ),
-                'description'         => __( 'Proposes home_* field changes to any home or rental, for example a published one. Changes nothing: returns proposal_id, the changes with each field\'s value before and after, and notes on fields that usually change together. Show the user every change as "label: before → after" and every note, and call ketunkoti/apply-home-meta only after the user says yes; otherwise call ketunkoti/discard-home-meta. A proposal expires in 30 minutes.', 'ketunkoti-ai' ),
-                'input_schema'        => self::meta_schema(),
-                'execute_callback'    => static fn( array $input ) => Meta_Proposals::propose( (int) $input['id'], get_current_user_id(), (array) $input['meta'] ),
-                'permission_callback' => [ self::class, 'can_edit_post' ],
-                'annotations'         => [
-                    'readonly'    => false,
-                    'destructive' => false,
-                ],
-            ]
-        );
-
-        Registrar::register(
-            'ketunkoti/apply-home-meta',
-            [
-                'label'               => __( 'Apply approved home field changes', 'ketunkoti-ai' ),
-                'description'         => __( 'Applies a proposal from ketunkoti/propose-home-meta. Call it only after the user has seen the changes and said yes. Refused if the proposal is someone else\'s, has expired, or any of its fields changed since.', 'ketunkoti-ai' ),
-                'input_schema'        => self::proposal_schema(),
-                'execute_callback'    => static fn( array $input ) => Meta_Proposals::apply( (string) $input['proposal_id'], get_current_user_id() ),
-                'annotations'         => [
-                    'readonly'    => false,
                     'destructive' => true,
-                ],
-            ]
-        );
-
-        Registrar::register(
-            'ketunkoti/discard-home-meta',
-            [
-                'label'               => __( 'Discard home field changes', 'ketunkoti-ai' ),
-                'description'         => __( 'Discards a proposal from ketunkoti/propose-home-meta, for example when the user says no.', 'ketunkoti-ai' ),
-                'input_schema'        => self::proposal_schema(),
-                'execute_callback'    => static fn( array $input ) => Meta_Proposals::discard( (string) $input['proposal_id'], get_current_user_id() ),
-                'annotations'         => [
-                    'readonly'    => false,
-                    'destructive' => false,
+                    'idempotent'  => true,
                 ],
             ]
         );
@@ -161,14 +132,15 @@ final class Home_Abilities {
         Registrar::register(
             'ketunkoti/trash-home',
             [
-                'label'               => __( 'Move your home draft to the trash', 'ketunkoti-ai' ),
-                'description'         => __( 'Moves a home or rental draft you created (ai_owned true in ketunkoti/get-home) to the trash, for example a test copy. Call it only when the user asked to delete that home. The editor can restore it from the trash in wp-admin. Any other home is refused: the editor trashes it in wp-admin.', 'ketunkoti-ai' ),
+                'label'               => __( 'Move a home to the trash', 'ketunkoti-ai' ),
+                'description'         => __( 'Moves any home or rental the user may delete to the trash, published ones included: a published home leaves the site at once. Never deletes permanently; the editor can restore it from the trash in wp-admin. Call it only when the user asked to remove that home. Before calling, name the home and its current status to the user, and call only after the user agrees. Refused while trash is disabled on the site. Refused while another user has the home open in the editor.', 'ketunkoti-ai' ),
                 'input_schema'        => self::id_schema(),
                 'execute_callback'    => [ self::class, 'trash_home' ],
-                'permission_callback' => static fn( $input ) => is_array( $input ) && current_user_can( 'delete_post', (int) ( $input['id'] ?? 0 ) ),
+                'permission_callback' => [ self::class, 'can_delete_post' ],
                 'annotations'         => [
                     'readonly'    => false,
                     'destructive' => true,
+                    'idempotent'  => true,
                 ],
             ]
         );
@@ -177,9 +149,10 @@ final class Home_Abilities {
     /**
      * Executes ketunkoti/trash-home.
      *
-     * Only Claude's own drafts: a published or hand-saved home is the
-     * editor's to remove. Trash, never a permanent delete, so a mistake can
-     * be undone in wp-admin.
+     * Any home the user may delete, published ones included. Trash, never a
+     * permanent delete, so a mistake can be undone in wp-admin: refused when
+     * the site has trash disabled (EMPTY_TRASH_DAYS 0). A home already in the
+     * trash returns the same success shape, so the call is idempotent.
      *
      * @param array $input Ability input: `id`.
      * @return array|\WP_Error Post ID, title and the new status, or an error.
@@ -195,11 +168,26 @@ final class Home_Abilities {
             );
         }
 
-        if ( ! Ownership::is_ai_owned( $post_id, get_current_user_id() ) ) {
+        // Already in the trash: report it as done instead of failing, so repeating the call is harmless.
+        if ( 'trash' === get_post_status( $post_id ) ) {
+            return [
+                'id'     => $post_id,
+                'title'  => get_the_title( $post_id ),
+                'status' => 'trash',
+            ];
+        }
+
+        // With EMPTY_TRASH_DAYS at 0, wp_trash_post() deletes permanently. This ability never does.
+        if ( ! EMPTY_TRASH_DAYS ) {
             return new \WP_Error(
-                'ketunkoti_ai_not_ai_owned',
-                __( 'This home is not a draft you created, or someone has saved it since. Ask the editor to move it to the trash in wp-admin.', 'ketunkoti-ai' )
+                'ketunkoti_ai_trash_disabled',
+                __( 'Trash is disabled on this site, so the home is not removed: it would be deleted permanently. Ask the editor to remove it in wp-admin.', 'ketunkoti-ai' )
             );
+        }
+
+        $locked = self::lock_error( $post_id );
+        if ( $locked ) {
+            return $locked;
         }
 
         $title   = get_the_title( $post_id );
@@ -278,6 +266,10 @@ final class Home_Abilities {
     /**
      * Executes ketunkoti/update-home-meta.
      *
+     * Writes on any home the user may edit, published ones included, unless
+     * another user has it open in the editor. Logs one row per call in
+     * Home_Fields::LOG_META with the values before and after the write.
+     *
      * @param array $input Ability input: `id` and `meta`.
      * @return array|\WP_Error The written fields as saved, or an error.
      */
@@ -285,26 +277,68 @@ final class Home_Abilities {
         $post_id = (int) $input['id'];
         $meta    = (array) $input['meta'];
 
-        if ( ! Ownership::is_ai_owned( $post_id, get_current_user_id() ) ) {
-            return new \WP_Error(
-                'ketunkoti_ai_not_ai_owned',
-                __( 'This home is not a draft you created, or someone has saved it since. Use ketunkoti/propose-home-meta and ask the user before applying.', 'ketunkoti-ai' )
-            );
-        }
-
         $prepared = Home_Fields::prepare( $post_id, $meta );
         if ( is_wp_error( $prepared ) ) {
             return $prepared;
         }
 
+        $locked = self::lock_error( $post_id );
+        if ( $locked ) {
+            return $locked;
+        }
+
+        $before = Home_Fields::values( $post_id, array_keys( $prepared ) );
         Home_Fields::write( $post_id, $prepared );
-        Ownership::record_write( $post_id );
+        add_post_meta(
+            $post_id,
+            Home_Fields::LOG_META,
+            wp_slash(
+                [
+                    'user_id' => get_current_user_id(),
+                    'changed' => time(),
+                    'before'  => $before,
+                    'after'   => $prepared,
+                ]
+            )
+        );
 
         return [
             'id'     => $post_id,
             'fields' => Home_Fields::values( $post_id, array_keys( $prepared ) ),
             'notes'  => Home_Fields::related_notes( $post_id, array_keys( $prepared ) ),
         ];
+    }
+
+    /**
+     * Builds an error when another user has the post open in the editor.
+     *
+     * Uses the block editor's own edit lock, so a write never lands under
+     * someone who is editing the home at that moment. The current user's own
+     * lock does not count.
+     *
+     * @param int $post_id Post ID.
+     * @return \WP_Error|null The error, or null when the post is free.
+     */
+    private static function lock_error( int $post_id ): ?\WP_Error {
+        if ( ! function_exists( 'wp_check_post_lock' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/post.php';
+        }
+
+        $user_id = wp_check_post_lock( $post_id );
+        if ( ! $user_id ) {
+            return null;
+        }
+
+        $user = get_userdata( $user_id );
+
+        return new \WP_Error(
+            'ketunkoti_ai_post_locked',
+            sprintf(
+                /* translators: %s: display name of the user who is editing the home. */
+                __( '%s is editing this home right now. Nothing was changed. Ask the user to try again after the home is closed in the editor.', 'ketunkoti-ai' ),
+                $user ? $user->display_name : __( 'Another user', 'ketunkoti-ai' )
+            )
+        );
     }
 
     /**
@@ -337,6 +371,18 @@ final class Home_Abilities {
     }
 
     /**
+     * Whether the current user may delete (trash) the post named by the input `id`.
+     *
+     * @param mixed $input Ability input.
+     * @return bool
+     */
+    public static function can_delete_post( $input ): bool {
+        $post_id = is_array( $input ) ? (int) ( $input['id'] ?? 0 ) : 0;
+
+        return $post_id > 0 && current_user_can( 'delete_post', $post_id );
+    }
+
+    /**
      * Input schema with a required post ID and an object of home_* values.
      *
      * @return array
@@ -355,22 +401,6 @@ final class Home_Abilities {
         ];
 
         return $schema;
-    }
-
-    /**
-     * Input schema with only a required proposal ID.
-     *
-     * @return array
-     */
-    private static function proposal_schema(): array {
-        return [
-            'type'                 => 'object',
-            'additionalProperties' => false,
-            'required'             => [ 'proposal_id' ],
-            'properties'           => [
-                'proposal_id' => [ 'type' => 'string' ],
-            ],
-        ];
     }
 
     /**

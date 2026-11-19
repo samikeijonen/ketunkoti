@@ -1,36 +1,44 @@
 # Ketun koti AI
 
-Home abilities for Claude. An add-on for [MEOM AI Assistant](../meom-ai-assistant/README.md) that lets Claude on your computer (through MCP) read, copy and fill in home listings: the `home` (for sale and investment flats) and `rental` post types of Ketun koti Features.
-
-MEOM AI Assistant already lets Claude write the title, content, excerpt, featured image and terms of its own drafts, and upload images. This plugin adds what is specific to homes: copying a listing and writing its `home_*` fields.
+Home abilities for Claude. Lets Claude read, copy and fill in home listings: the `home` (for sale and investment flats) and `rental` post types of Ketun koti Features. The abilities are registered with the WordPress Abilities API and exposed on the MCP Adapter's default server, so Claude on your computer can use them over MCP.
 
 ## Requirements
 
-- WordPress 7.1+, PHP 8.2+.
-- MEOM AI Assistant and Ketun koti Features active (`Requires Plugins`). Without the assistant the plugin registers nothing.
-- For Claude on your computer: the MCP setup described in the assistant's README.
+- WordPress 7.1+ (Abilities API), PHP 8.2+.
+- Ketun koti Features active (`Requires Plugins`).
+- For Claude on your computer: the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin and an MCP client connected to the site.
 
-The abilities follow the assistant's access rules: the user needs the assistant's capability (`meom_ai_capability`), the assistant must be enabled, and the user must be able to edit the home in question.
+The plugin works with or without Seravo AI Assistant. When Seravo AI Assistant is active, its chat offers these abilities too, and Claude can write a home's title and content with `seravo-ai-assistant/update-post`.
+
+Each ability checks only WordPress's own capabilities, per home (see the table). There is no separate AI permission and no draft ownership.
 
 ## Abilities
 
-| Ability | Input | What it does |
-|---|---|---|
-| `ketunkoti/list-homes` | `post_type`, `status`, `search`, `limit`, `offset` (all optional) | Lists homes and rentals: id, type, title, status, city, rooms. |
-| `ketunkoti/get-home` | `id` | Returns the whole listing: post fields, featured image, every `home_*` field with label, type, description and value, terms per taxonomy, the calculated investment figures (read-only) and `ai_owned`. |
-| `ketunkoti/copy-home` | `id`, optional `title` | Copies a listing into a new draft: content, excerpt, menu order, template, featured image, every `home_*` field and every term. SEO meta is not copied. The default title is the source title with " (kopio)". The draft is Claude's own. |
-| `ketunkoti/update-home-meta` | `id`, `meta` | Writes `home_*` fields directly on a draft Claude created. |
-| `ketunkoti/propose-home-meta` | `id`, `meta` | Proposes `home_*` changes to any other home. Changes nothing; returns the before and after values. |
-| `ketunkoti/apply-home-meta` | `proposal_id` | Applies a proposal after the user said yes. |
-| `ketunkoti/discard-home-meta` | `proposal_id` | Drops a proposal. |
-| `ketunkoti/trash-home` | `id` | Moves a draft Claude created to the trash, for example a test copy. Any other home is refused; the editor trashes it in wp-admin. Never deletes permanently. |
+| Ability | Input | Access | What it does |
+|---|---|---|---|
+| `ketunkoti/list-homes` | `post_type`, `status`, `search`, `limit`, `offset` (all optional) | `edit_posts` | Lists homes and rentals: id, type, title, status, city, rooms. Read-only. |
+| `ketunkoti/get-home` | `id` | `edit_post` on the home | Returns the whole listing: post fields, featured image, every `home_*` field with label, type, description and value, terms per taxonomy and the calculated investment figures. Read-only. |
+| `ketunkoti/copy-home` | `id`, optional `title` | `edit_post` on the source and `create_posts` of its post type | Copies a listing into a new draft by the current user: content, excerpt, menu order, template, featured image, every `home_*` field and every term. SEO meta is not copied. The default title is the source title with " (kopio)". |
+| `ketunkoti/update-home-meta` | `id`, `meta` | `edit_post` on the home | Writes `home_*` fields on any home or rental, published ones included. Saved at once and logged. |
+| `ketunkoti/trash-home` | `id` | `delete_post` on the home | Moves any home or rental, published ones included, to the trash. Never deletes permanently; the editor can restore it in wp-admin. |
+
+The three write abilities (`copy-home`, `update-home-meta`, `trash-home`) are not marked read-only, so the MCP client asks the user before each call. In the Seravo chat, the approval card does the same.
+
+### Annotations
+
+| Ability | `readonly` | `destructive` | `idempotent` |
+|---|---|---|---|
+| `list-homes`, `get-home` | true | false | true |
+| `copy-home` | false | false | false |
+| `update-home-meta` | false | true | true |
+| `trash-home` | false | true | true |
 
 ### Notes
 
 Some responses carry `notes`, things Claude should check with the user. Nothing is changed because of them.
 
 - `copy-home`: the copy's title is already used by another home or rental. Two listings with one title look alike in lists, and the later one gets a `-2` slug.
-- `update-home-meta` and `propose-home-meta`: a field changed without the field that usually changes with it. Vuokra without Vakuus, and Velaton hinta and Myyntihinta without each other. A related field sent in the same call, even with its current value, counts as checked.
+- `update-home-meta`: a field changed without the field that usually changes with it. Vuokra without Vakuus, and Velaton hinta and Myyntihinta without each other. A related field sent in the same call, even with its current value, counts as checked.
 
 The field list is read from the meta Ketun koti Features registers, so a new `home_*` field is picked up automatically. The calculated figures (`home_rental_yield`, `home_cash_flow`, `home_equity_return`) are never written.
 
@@ -48,38 +56,36 @@ Numbers may use Finnish formatting: spaces as thousands separators and a decimal
 1. `ketunkoti/list-homes` to find a similar home.
 2. `ketunkoti/copy-home` to copy it into a draft.
 3. `ketunkoti/update-home-meta` for the new prices, area, floor and other fields.
-4. `meom-ai/update-ai-draft` for the title, content and terms, `meom-ai/upload-media` for the images.
+4. The title and content with `seravo-ai-assistant/update-post` when Seravo AI Assistant is active, otherwise in wp-admin. Terms and images are changed in wp-admin for now.
 5. The editor opens the draft, checks it and publishes.
 
 A test copy that is no longer needed goes to the trash with `ketunkoti/trash-home`.
 
-A draft stays Claude's own until someone saves it by hand. After that, it counts as an existing home.
-
 ## Changing an existing home
 
-Changes to any home Claude did not create, published or not, always need approval:
+1. Claude calls `ketunkoti/update-home-meta` with the fields to change.
+2. The MCP client, or the Seravo chat's approval card, asks you first. Nothing is written until you allow it, unless the tool is set to always allow in the MCP client.
+3. The change is saved at once: on a published home it shows on the site immediately.
 
-1. Claude calls `ketunkoti/propose-home-meta` and shows you each change as "label: before → after".
-2. You say yes or no in the conversation.
-3. Claude calls `ketunkoti/apply-home-meta`, or `ketunkoti/discard-home-meta`.
+The server refuses the write, and changes nothing, when:
 
-The server refuses to apply when:
+- another user has the home open in the editor (`ketunkoti_ai_post_locked`, the block editor's own edit lock; your own open editor does not block);
+- any value is invalid (`ketunkoti_ai_invalid_value`);
+- the post is not a home or a rental (`ketunkoti_ai_not_a_home`);
+- you may not edit the home (the permission check fails).
 
-- the proposal is someone else's (`ketunkoti_ai_not_your_proposal`),
-- it is older than 30 minutes, or already applied or discarded (`ketunkoti_ai_proposal_not_found`),
-- any of its fields changed after the proposal (`ketunkoti_ai_stale`),
-- the user has **Allow applying changes from Claude on my computer** off in their profile (`ketunkoti_ai_apply_disabled`). This is the assistant's own switch. Proposing is refused too while it is off, because there is no chat card to apply the proposal from.
+`ketunkoti/trash-home` follows the same edit lock and `not_a_home` rules, with `delete_post` as the permission. It only moves homes to the trash: when the site has trash disabled (`EMPTY_TRASH_DAYS` 0) it refuses (`ketunkoti_ai_trash_disabled`) instead of deleting permanently. A home already in the trash is reported as trashed again, without changes.
 
-Title, content, excerpt, featured image and terms of existing homes go through the assistant's own `meom-ai/propose-change`.
+Every successful `update-home-meta` call is logged on the home in the post meta `_ketunkoti_ai_meta_log`: one row per call with `user_id`, `changed` (Unix time), `before` (the stored values, read before the write; `null` when a field was not set) and `after` (the values written; `null` when a field was cleared).
 
-Every applied proposal is logged on the home in the post meta `_ketunkoti_ai_meta_log`, one row per change with the user, time and the before and after values.
+Older rows, from before 1.1.0, have `proposal_id` and `applied` instead of `changed`.
 
 ## Tests
 
 The tests run in the wp-env tests environment and clean up after themselves:
 
 ```bash
-for t in fields read copy proposals; do
+for t in fields read copy write; do
     npx wp-env run tests-cli wp eval-file wp-content/plugins/ketunkoti-ai/tests/php/test-$t.php
 done
 ```

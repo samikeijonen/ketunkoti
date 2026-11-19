@@ -1,6 +1,6 @@
 <?php
 /**
- * Tests for copying homes and writing meta on Claude's own drafts.
+ * Tests for copying homes and writing meta on the copies.
  *
  * @package Ketunkoti\AI
  */
@@ -8,7 +8,6 @@
 namespace Ketunkoti\AI\Tests;
 
 use Ketunkoti\AI\Home_Fields;
-use MEOM\AI_Assistant\Ownership;
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -76,7 +75,6 @@ foreach ( get_object_taxonomies( 'home' ) as $taxonomy ) {
     );
 }
 check( 'seo meta not copied', '', get_post_meta( $id, '_genesis_title', true ) );
-check( 'copy is ai owned', true, Ownership::is_ai_owned( $id, $user ) );
 check( 'copy response home', $id, $copy['home']['id'] ?? 0 );
 check( 'copy response edit link', true, ! empty( $copy['edit_link'] ) );
 check( 'copy of a page refused', true, is_wp_error( $copy_home->execute( [ 'id' => self_page() ] ) ) );
@@ -97,7 +95,7 @@ check( 'rental copy pets', 'Sovittavissa', get_post_meta( $rental_id, 'home_pets
 check( 'rental copy skips home-only', false, metadata_exists( 'post', $rental_id, 'home_debt_free_price' ) );
 check( 'rental copy skips home-only taxonomy', [], wp_get_object_terms( $rental_id, 'home-plot', [ 'fields' => 'ids' ] ) );
 
-// Update meta on Claude's draft.
+// Update meta on the copy.
 $res = $update_meta->execute(
     [
         'id'   => $id,
@@ -109,22 +107,22 @@ $res = $update_meta->execute(
 );
 check( 'update writes', '1/3', get_post_meta( $id, 'home_floor', true ) );
 check( 'update deletes', true, is_array( $res ) && array_key_exists( 'home_area', $res['fields'] ) && null === $res['fields']['home_area'] );
-check( 'still ai owned', true, Ownership::is_ai_owned( $id, $user ) );
 $update_meta->execute( [ 'id' => $id, 'meta' => [ 'home_capital_charge' => 0, 'home_debt_free_price' => '142 500' ] ] );
 check( 'update saves zero', '0', get_post_meta( $id, 'home_capital_charge', true ) );
 check( 'update saves finnish price', '142500', get_post_meta( $id, 'home_debt_free_price', true ) );
 check( 'update bad value refused', 'ketunkoti_ai_invalid_value', code( $update_meta->execute( [ 'id' => $id, 'meta' => [ 'home_year_built' => 'vanha' ] ] ) ) );
-check( 'published refused', 'ketunkoti_ai_not_ai_owned', code( $update_meta->execute( [ 'id' => $source, 'meta' => [ 'home_floor' => '1/3' ] ] ) ) );
-check( 'published unchanged', '3/5', get_post_meta( $source, 'home_floor', true ) );
+check( 'published home updated', true, is_array( $update_meta->execute( [ 'id' => $source, 'meta' => [ 'home_floor' => '1/3' ] ] ) ) );
+check( 'published home written', '1/3', get_post_meta( $source, 'home_floor', true ) );
 
-// The editor saves the draft by hand: it is no longer Claude's own.
+// The editor saves the draft by hand: it can still be updated.
 wp_update_post(
     [
         'ID'           => $id,
         'post_content' => 'Käsin muokattu',
     ]
 );
-check( 'hand-saved draft refused', 'ketunkoti_ai_not_ai_owned', code( $update_meta->execute( [ 'id' => $id, 'meta' => [ 'home_floor' => '2/3' ] ] ) ) );
+check( 'hand-saved draft updated', true, is_array( $update_meta->execute( [ 'id' => $id, 'meta' => [ 'home_floor' => '2/3' ] ] ) ) );
+check( 'hand-saved draft written', '2/3', get_post_meta( $id, 'home_floor', true ) );
 
 // Notes: a title another home has, and fields that usually change together.
 check( 'unique title no notes', [], $copy['notes'] ?? null );
@@ -147,16 +145,13 @@ check( 'price without selling price noted', 1, count( $res['notes'] ?? [] ) );
 $res = $update_meta->execute( [ 'id' => $same_id, 'meta' => [ 'home_floor' => '4/8' ] ] );
 check( 'unrelated field no notes', [], $res['notes'] ?? null );
 
-// Trash: only Claude's own drafts, and only to the trash.
+// Trash: the copy goes to the trash, never deleted; a page is refused.
 $trash_home = wp_get_ability( 'ketunkoti/trash-home' );
 check( 'trash ability registered', true, (bool) $trash_home );
 if ( $trash_home ) {
     $res = $trash_home->execute( [ 'id' => $same_id ] );
     check( 'own draft trashed', 'trash', is_array( $res ) ? $res['status'] : code( $res ) );
     check( 'trashed post still exists', true, (bool) get_post( $same_id ) );
-    check( 'published not trashed', 'ketunkoti_ai_not_ai_owned', code( $trash_home->execute( [ 'id' => $source ] ) ) );
-    check( 'published still published', 'publish', get_post_status( $source ) );
-    check( 'hand-saved draft not trashed', 'ketunkoti_ai_not_ai_owned', code( $trash_home->execute( [ 'id' => $id ] ) ) );
     check( 'page not trashed', 'ketunkoti_ai_not_a_home', code( $trash_home->execute( [ 'id' => self_page() ] ) ) );
 }
 

@@ -1,13 +1,12 @@
 <?php
 /**
- * Copies a home or rental into a new draft owned by the assistant.
+ * Copies a home or rental into a new draft.
  *
  * @package Ketunkoti\AI
  */
 
 namespace Ketunkoti\AI;
 
-use MEOM\AI_Assistant\Ownership;
 use WP_Error;
 
 // Prevent direct file access.
@@ -23,10 +22,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Home_Copier {
 
     /**
-     * Copies a home into a new draft that the assistant may edit freely.
+     * Copies a home into a new draft.
      *
      * @param int         $source_id Post ID of the home to copy.
-     * @param int         $user_id   User who becomes the author and owner.
+     * @param int         $user_id   User who becomes the author.
      * @param string|null $title     Title of the copy; default is the source title with " (kopio)".
      * @return int|WP_Error ID of the new draft, or an error.
      */
@@ -65,9 +64,6 @@ final class Home_Copier {
 
         self::copy_meta( $source_id, $copy_id );
         self::copy_terms( $source, $copy_id );
-
-        // Last, so the ownership fingerprint matches the finished copy.
-        Ownership::mark( $copy_id, $user_id );
 
         return $copy_id;
     }
