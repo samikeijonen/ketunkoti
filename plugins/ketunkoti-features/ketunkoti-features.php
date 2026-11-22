@@ -43,6 +43,7 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/taxonomies.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/meta.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/investment.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-calculator.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/bindings.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/faq-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/organization-schema.php';
@@ -67,6 +68,7 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/security.php';
 function activate() {
     register_post_types();
     register_taxonomies();
+    register_portfolio();
     flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\activate' );
