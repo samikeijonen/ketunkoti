@@ -15,7 +15,7 @@ namespace Ketunkoti;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /*
@@ -30,7 +30,7 @@ add_filter( 'xmlrpc_enabled', '__return_false' );
  * @return array
  */
 function remove_xmlrpc_methods() {
-    return array();
+	return array();
 }
 add_filter( 'xmlrpc_methods', __NAMESPACE__ . '\remove_xmlrpc_methods' );
 
@@ -41,9 +41,9 @@ add_filter( 'xmlrpc_methods', __NAMESPACE__ . '\remove_xmlrpc_methods' );
  * @return array
  */
 function remove_pingback_header( $headers ) {
-    unset( $headers['X-Pingback'] );
+	unset( $headers['X-Pingback'] );
 
-    return $headers;
+	return $headers;
 }
 add_filter( 'wp_headers', __NAMESPACE__ . '\remove_pingback_header' );
 
@@ -59,17 +59,17 @@ add_filter( 'wp_headers', __NAMESPACE__ . '\remove_pingback_header' );
  * @return void
  */
 function send_security_headers() {
-    if ( headers_sent() ) {
-        return;
-    }
+	if ( headers_sent() ) {
+		return;
+	}
 
-    if ( is_ssl() ) {
-        header( 'Strict-Transport-Security: max-age=31536000' );
-    }
+	if ( is_ssl() ) {
+		header( 'Strict-Transport-Security: max-age=31536000' );
+	}
 
-    header( 'X-Content-Type-Options: nosniff' );
-    header( 'X-Frame-Options: SAMEORIGIN' );
-    header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+	header( 'X-Content-Type-Options: nosniff' );
+	header( 'X-Frame-Options: SAMEORIGIN' );
+	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
 }
 add_action( 'send_headers', __NAMESPACE__ . '\send_security_headers' );
 
@@ -83,16 +83,16 @@ add_action( 'send_headers', __NAMESPACE__ . '\send_security_headers' );
  * @return array
  */
 function disable_user_endpoints( $endpoints ) {
-    if ( is_user_logged_in() ) {
-        return $endpoints;
-    }
+	if ( is_user_logged_in() ) {
+		return $endpoints;
+	}
 
-    unset(
-        $endpoints['/wp/v2/users'],
-        $endpoints['/wp/v2/users/(?P<id>[\d]+)']
-    );
+	unset(
+		$endpoints['/wp/v2/users'],
+		$endpoints['/wp/v2/users/(?P<id>[\d]+)']
+	);
 
-    return $endpoints;
+	return $endpoints;
 }
 add_filter( 'rest_endpoints', __NAMESPACE__ . '\disable_user_endpoints', 1000 );
 
@@ -105,14 +105,14 @@ add_filter( 'rest_endpoints', __NAMESPACE__ . '\disable_user_endpoints', 1000 );
  * @return void
  */
 function disable_author_archives() {
-    if ( ! is_author() ) {
-        return;
-    }
+	if ( ! is_author() ) {
+		return;
+	}
 
-    global $wp_query;
+	global $wp_query;
 
-    $wp_query->set_404();
-    status_header( 404 );
-    nocache_headers();
+	$wp_query->set_404();
+	status_header( 404 );
+	nocache_headers();
 }
 add_action( 'template_redirect', __NAMESPACE__ . '\disable_author_archives', 1 );

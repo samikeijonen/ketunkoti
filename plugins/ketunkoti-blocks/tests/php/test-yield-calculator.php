@@ -21,7 +21,7 @@ use function Ketunkoti\Blocks\parse_decimal;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // number_format_i18n() must use the Finnish decimal comma.
@@ -38,68 +38,77 @@ $GLOBALS['ketunkoti_blocks_test_failures'] = 0;
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( $expected === $actual ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $expected === $actual ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_blocks_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_blocks_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 $dash  = '—';
 $lahti = [
-    'rent'            => 780.0,
-    'maintenance'     => 151.30,
-    'capital'         => 600.72,
-    'selling_price'   => 26000.0,
-    'debt_free_price' => 138725.0,
-    'interest_rate'   => 4.3,
+	'rent'            => 780.0,
+	'maintenance'     => 151.30,
+	'capital'         => 600.72,
+	'selling_price'   => 26000.0,
+	'debt_free_price' => 138725.0,
+	'interest_rate'   => 4.3,
 ];
 
 $defaults = [
-    'rent'            => '780',
-    'years'           => '25',
-    'rate'            => '3,85',
-    'ownCapitalShare' => '30',
+	'rent'            => '780',
+	'years'           => '25',
+	'rate'            => '3,85',
+	'ownCapitalShare' => '30',
 ];
 
-// parse_decimal().
+// Tests for parse_decimal.
 check( 'decimal comma', 3.85, parse_decimal( '3,85' ) );
 check( 'space as thousands separator', 6500.0, parse_decimal( '6 500' ) );
 check( 'non-breaking space as thousands separator', 6500.0, parse_decimal( "6\u{00A0}500" ) );
 check( 'empty', null, parse_decimal( '' ) );
 check( 'not a number', null, parse_decimal( 'abc' ) );
 
-// calculate_calculator_results().
+// Tests for calculate_calculator_results.
 check(
-    'defaults',
-    [
-        'ownCapital'   => "41\u{00A0}618\u{00A0}€",
-        'rentalYield'  => "5,4\u{00A0}%",
-        'cashFlow'     => "+124\u{00A0}€/kk",
-        'equityReturn' => "9,2\u{00A0}%",
-        'notice'       => '',
-    ],
-    calculate_calculator_results( $lahti, $defaults )
+	'defaults',
+	[
+		'ownCapital'   => "41\u{00A0}618\u{00A0}€",
+		'rentalYield'  => "5,4\u{00A0}%",
+		'cashFlow'     => "+124\u{00A0}€/kk",
+		'equityReturn' => "9,2\u{00A0}%",
+		'notice'       => '',
+	],
+	calculate_calculator_results( $lahti, $defaults )
 );
 
 check(
-    'no bank loan pays off the company loan',
-    [
-        'ownCapital'   => "138\u{00A0}725\u{00A0}€",
-        'rentalYield'  => "5,4\u{00A0}%",
-        'cashFlow'     => "+629\u{00A0}€/kk",
-        'equityReturn' => "5,4\u{00A0}%",
-        'notice'       => '',
-    ],
-    calculate_calculator_results( $lahti, array_merge( $defaults, [ 'ownCapitalShare' => '100' ] ) )
+	'no bank loan pays off the company loan',
+	[
+		'ownCapital'   => "138\u{00A0}725\u{00A0}€",
+		'rentalYield'  => "5,4\u{00A0}%",
+		'cashFlow'     => "+629\u{00A0}€/kk",
+		'equityReturn' => "5,4\u{00A0}%",
+		'notice'       => '',
+	],
+	calculate_calculator_results( $lahti, array_merge( $defaults, [ 'ownCapitalShare' => '100' ] ) )
 );
 
 check(
-    'negative equity return uses a real minus sign',
-    "\u{2212}0,4\u{00A0}%",
-    calculate_calculator_results( $lahti, array_merge( $defaults, [ 'rent' => '100', 'ownCapitalShare' => '100' ] ) )['equityReturn']
+	'negative equity return uses a real minus sign',
+	"\u{2212}0,4\u{00A0}%",
+	calculate_calculator_results(
+		$lahti,
+		array_merge(
+			$defaults,
+			[
+				'rent'            => '100',
+				'ownCapitalShare' => '100',
+			]
+		)
+	)['equityReturn']
 );
 
 $results = calculate_calculator_results( $lahti, array_merge( $defaults, [ 'rate' => '' ] ) );
@@ -126,15 +135,15 @@ check( 'missing own capital equity', $dash, $results['equityReturn'] );
 check( 'notice for missing own capital', 'Syötä omarahoitusosuus.', $results['notice'] );
 
 check(
-    'notice for missing rent',
-    [
-        'ownCapital'   => "41\u{00A0}618\u{00A0}€",
-        'rentalYield'  => $dash,
-        'cashFlow'     => $dash,
-        'equityReturn' => $dash,
-        'notice'       => 'Syötä vuokra.',
-    ],
-    calculate_calculator_results( $lahti, array_merge( $defaults, [ 'rent' => '' ] ) )
+	'notice for missing rent',
+	[
+		'ownCapital'   => "41\u{00A0}618\u{00A0}€",
+		'rentalYield'  => $dash,
+		'cashFlow'     => $dash,
+		'equityReturn' => $dash,
+		'notice'       => 'Syötä vuokra.',
+	],
+	calculate_calculator_results( $lahti, array_merge( $defaults, [ 'rent' => '' ] ) )
 );
 
 $results = calculate_calculator_results( array_merge( $lahti, [ 'interest_rate' => null ] ), $defaults );
@@ -155,13 +164,13 @@ set_transient( 'ketunkoti_euribor_12m', 'none', MINUTE_IN_SECONDS );
 check( 'default rate without euribor uses fallback', '3.6', get_calculator_defaults( $lahti )['rate'] );
 delete_transient( 'ketunkoti_euribor_12m' );
 
-// get_calculator_home().
+// Tests for get_calculator_home.
 $post_id = wp_insert_post(
-    [
-        'post_type'   => 'home',
-        'post_status' => 'draft',
-        'post_title'  => 'Yield calculator test',
-    ]
+	[
+		'post_type'   => 'home',
+		'post_status' => 'draft',
+		'post_title'  => 'Yield calculator test',
+	]
 );
 update_post_meta( $post_id, 'home_rent', 700 );
 check( 'home without selling price', null, get_calculator_home( $post_id ) );
@@ -170,8 +179,8 @@ check( 'home with rent and selling price', 90000.0, get_calculator_home( $post_i
 wp_delete_post( $post_id, true );
 
 if ( $GLOBALS['ketunkoti_blocks_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

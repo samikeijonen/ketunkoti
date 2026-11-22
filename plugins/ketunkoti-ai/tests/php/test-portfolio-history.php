@@ -16,16 +16,16 @@ require_once __DIR__ . '/bootstrap.php';
 $history = wp_get_ability( 'ketunkoti/get-portfolio-history' );
 $create  = wp_get_ability( 'ketunkoti/create-portfolio-apartment' );
 if ( ! $history || ! $create ) {
-    check( 'history ability registered', true, false );
-    finish();
-    return;
+	check( 'history ability registered', true, false );
+	finish();
+	return;
 }
 
 // The months below must not collide with snapshots that already exist.
 if ( \Ketunkoti\get_portfolio_snapshots() ) {
-    check( 'tests site has no snapshots to start with', 0, count( \Ketunkoti\get_portfolio_snapshots() ) );
-    finish();
-    return;
+	check( 'tests site has no snapshots to start with', 0, count( \Ketunkoti\get_portfolio_snapshots() ) );
+	finish();
+	return;
 }
 
 make_user( 'editor' );
@@ -38,12 +38,24 @@ $old_name = 'Vanha omistaja ' . wp_generate_password( 5, false );
 $new_name = 'Uusi omistaja ' . wp_generate_password( 5, false );
 $other    = 'Toinen omistaja ' . wp_generate_password( 5, false );
 
-$a = $create->execute( [ 'title' => 'Historia A', 'owner' => $old_name, 'fields' => [ 'portfolio_estimated_value' => 100000 ] ] );
-$b = $create->execute( [ 'title' => 'Historia B', 'owner' => $other, 'fields' => [ 'portfolio_estimated_value' => 50000 ] ] );
+$a = $create->execute(
+	[
+		'title'  => 'Historia A',
+		'owner'  => $old_name,
+		'fields' => [ 'portfolio_estimated_value' => 100000 ],
+	]
+);
+$b = $create->execute(
+	[
+		'title'  => 'Historia B',
+		'owner'  => $other,
+		'fields' => [ 'portfolio_estimated_value' => 50000 ],
+	]
+);
 if ( is_wp_error( $a ) || is_wp_error( $b ) ) {
-    check( 'fixtures created', 'array', code( $a ) . ' ' . code( $b ) );
-    finish();
-    return;
+	check( 'fixtures created', 'array', code( $a ) . ' ' . code( $b ) );
+	finish();
+	return;
 }
 track_post( $a['id'] );
 track_post( $b['id'] );
@@ -56,7 +68,7 @@ $term = get_term_by( 'name', $old_name, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
 wp_update_term( $term->term_id, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY, [ 'name' => $new_name ] );
 $snapshot_ids[] = \Ketunkoti\save_portfolio_snapshot( 'cron', strtotime( '2026-11-01 00:30:00 UTC' ) );
 foreach ( $snapshot_ids as $snapshot_id ) {
-    track_post( (int) $snapshot_id );
+	track_post( (int) $snapshot_id );
 }
 
 $r = $history->execute( [] );
@@ -72,15 +84,42 @@ check( 'no apartments by default', false, array_key_exists( 'apartments', $r[0] 
 $with = $history->execute( [ 'include_apartments' => true ] );
 check( 'apartments on request', 2, count( $with[0]['apartments'] ?? [] ) );
 
-check( 'range filter', 1, count( $history->execute( [ 'from' => '2026-11', 'to' => '2026-11' ] ) ) );
+check(
+	'range filter',
+	1,
+	count(
+		$history->execute(
+			[
+				'from' => '2026-11',
+				'to'   => '2026-11',
+			]
+		)
+	)
+);
 check( 'from only', '2026-11', $history->execute( [ 'from' => '2026-11' ] )[0]['month'] ?? null );
 check( 'to only', 1, count( $history->execute( [ 'to' => '2026-10' ] ) ) );
 check( 'empty range gives empty list', [], $history->execute( [ 'from' => '2030-01' ] ) );
-check( 'invalid range', 'ketunkoti_ai_invalid_range', code( $history->execute( [ 'from' => '2026-12', 'to' => '2026-10' ] ) ) );
+check(
+	'invalid range',
+	'ketunkoti_ai_invalid_range',
+	code(
+		$history->execute(
+			[
+				'from' => '2026-12',
+				'to'   => '2026-10',
+			]
+		)
+	)
+);
 check( 'bad format refused', true, is_wp_error( $history->execute( [ 'from' => '2026-13' ] ) ) );
 
 // Owner filter by the old, stored name.
-$old = $history->execute( [ 'owner' => $old_name, 'include_apartments' => true ] );
+$old = $history->execute(
+	[
+		'owner'              => $old_name,
+		'include_apartments' => true,
+	]
+);
 check( 'renamed owner reachable', 2, is_array( $old ) ? count( $old ) : -1 );
 check( 'old name: first month combined is the group', 1, $old[0]['combined']['count'] ?? null );
 check( 'old name: first month one group', 1, count( $old[0]['groups'] ?? [] ) );
@@ -110,10 +149,10 @@ check( 'in MCP tools', true, in_array( 'ketunkoti/get-portfolio-history', Regist
 
 // Clean up the owner terms.
 foreach ( [ $new_name, $other ] as $name ) {
-    $t = get_term_by( 'name', $name, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
-    if ( $t ) {
-        wp_delete_term( $t->term_id, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
-    }
+	$t = get_term_by( 'name', $name, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
+	if ( $t ) {
+		wp_delete_term( $t->term_id, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
+	}
 }
 
 finish();

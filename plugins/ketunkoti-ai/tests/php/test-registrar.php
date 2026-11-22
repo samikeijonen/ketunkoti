@@ -12,9 +12,9 @@ use Ketunkoti\AI\Registrar;
 require_once __DIR__ . '/bootstrap.php';
 
 $ro = [
-    'readonly'    => true,
-    'destructive' => false,
-    'idempotent'  => true,
+	'readonly'    => true,
+	'destructive' => false,
+	'idempotent'  => true,
 ];
 $m  = Registrar::build_meta( [], $ro, 'mcp_tool' );
 check( 'mcp_tool not public', false, $m['public'] );
@@ -30,7 +30,15 @@ $p = Registrar::build_meta( [], $ro, 'prompt' );
 check( 'prompt not public', false, $p['public'] );
 check( 'prompt type', 'prompt', $p['mcp']['type'] );
 
-$w = Registrar::build_meta( [], [ 'readonly' => false, 'destructive' => false, 'idempotent' => false ], 'mcp_tool' );
+$w = Registrar::build_meta(
+	[],
+	[
+		'readonly'    => false,
+		'destructive' => false,
+		'idempotent'  => false,
+	],
+	'mcp_tool'
+);
 check( 'mcp_tool write not mcp public', false, $w['mcp']['public'] );
 
 check( 'home ability still public', true, wp_get_ability( 'ketunkoti/get-home' )->get_meta()['public'] ?? null );

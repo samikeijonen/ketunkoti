@@ -6,6 +6,7 @@
  * Categories: text
  * Block Types: core/comments
  *
+ * @package Ketunkoti
  */
 
 ?>

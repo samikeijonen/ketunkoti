@@ -17,18 +17,18 @@ namespace Ketunkoti\Blocks;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 if ( '' === trim( wp_strip_all_tags( $content ) ) ) {
-    return;
+	return;
 }
 
 $ketunkoti_wrapper_attributes = get_block_wrapper_attributes( [ 'class' => 'timeline-item' ] );
 ?>
 <li <?php echo $ketunkoti_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by get_block_wrapper_attributes(). ?>>
-    <span class="timeline-item__number" aria-hidden="true"></span>
-    <div class="timeline-item__content">
-        <?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered inner blocks. ?>
-    </div>
+	<span class="timeline-item__number" aria-hidden="true"></span>
+	<div class="timeline-item__content">
+		<?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered inner blocks. ?>
+	</div>
 </li>

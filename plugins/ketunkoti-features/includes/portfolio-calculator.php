@@ -13,7 +13,7 @@ namespace Ketunkoti;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -39,25 +39,25 @@ const PORTFOLIO_DEFAULT_COLLATERAL_RATE = 75.0;
  * @return array{debts: float, net_value: float, collateral_value: float, free_collateral: float}
  */
 function calculate_portfolio_apartment( array $fields ): array {
-    $value           = (float) ( $fields['portfolio_estimated_value'] ?? 0 );
-    $company_loan    = (float) ( $fields['portfolio_company_loan'] ?? 0 );
-    $bank_loan       = (float) ( $fields['portfolio_bank_loan'] ?? 0 );
-    $used_collateral = (float) ( $fields['portfolio_used_collateral'] ?? 0 );
-    $rate            = (float) ( $fields['portfolio_collateral_rate'] ?? 0 );
+	$value           = (float) ( $fields['portfolio_estimated_value'] ?? 0 );
+	$company_loan    = (float) ( $fields['portfolio_company_loan'] ?? 0 );
+	$bank_loan       = (float) ( $fields['portfolio_bank_loan'] ?? 0 );
+	$used_collateral = (float) ( $fields['portfolio_used_collateral'] ?? 0 );
+	$rate            = (float) ( $fields['portfolio_collateral_rate'] ?? 0 );
 
-    if ( $rate <= 0 ) {
-        $rate = PORTFOLIO_DEFAULT_COLLATERAL_RATE;
-    }
+	if ( $rate <= 0 ) {
+		$rate = PORTFOLIO_DEFAULT_COLLATERAL_RATE;
+	}
 
-    $debts            = $company_loan + $bank_loan;
-    $collateral_value = $value * $rate / 100;
+	$debts            = $company_loan + $bank_loan;
+	$collateral_value = $value * $rate / 100;
 
-    return [
-        'debts'            => $debts,
-        'net_value'        => $value - $debts,
-        'collateral_value' => $collateral_value,
-        'free_collateral'  => max( 0.0, $collateral_value - $debts - $used_collateral ),
-    ];
+	return [
+		'debts'            => $debts,
+		'net_value'        => $value - $debts,
+		'collateral_value' => $collateral_value,
+		'free_collateral'  => max( 0.0, $collateral_value - $debts - $used_collateral ),
+	];
 }
 
 /**
@@ -69,35 +69,35 @@ function calculate_portfolio_apartment( array $fields ): array {
  * @return array{count: int, free_collateral: float, debts: float, net_worth: float, value: float, rent: float, charges: float, debt_free_price: float, leverage: float|null}
  */
 function calculate_portfolio_totals( array $apartments ): array {
-    $totals = [
-        'count'           => count( $apartments ),
-        'free_collateral' => 0.0,
-        'debts'           => 0.0,
-        'net_worth'       => 0.0,
-        'value'           => 0.0,
-        'rent'            => 0.0,
-        'charges'         => 0.0,
-        'debt_free_price' => 0.0,
-        'leverage'        => null,
-    ];
+	$totals = [
+		'count'           => count( $apartments ),
+		'free_collateral' => 0.0,
+		'debts'           => 0.0,
+		'net_worth'       => 0.0,
+		'value'           => 0.0,
+		'rent'            => 0.0,
+		'charges'         => 0.0,
+		'debt_free_price' => 0.0,
+		'leverage'        => null,
+	];
 
-    foreach ( $apartments as $fields ) {
-        $apartment = calculate_portfolio_apartment( $fields );
+	foreach ( $apartments as $fields ) {
+		$apartment = calculate_portfolio_apartment( $fields );
 
-        $totals['free_collateral'] += $apartment['free_collateral'];
-        $totals['debts']           += $apartment['debts'];
-        $totals['net_worth']       += $apartment['net_value'];
-        $totals['value']           += (float) ( $fields['portfolio_estimated_value'] ?? 0 );
-        $totals['rent']            += (float) ( $fields['portfolio_rent'] ?? 0 );
-        $totals['charges']         += (float) ( $fields['portfolio_charges'] ?? 0 );
-        $totals['debt_free_price'] += (float) ( $fields['portfolio_debt_free_price'] ?? 0 );
-    }
+		$totals['free_collateral'] += $apartment['free_collateral'];
+		$totals['debts']           += $apartment['debts'];
+		$totals['net_worth']       += $apartment['net_value'];
+		$totals['value']           += (float) ( $fields['portfolio_estimated_value'] ?? 0 );
+		$totals['rent']            += (float) ( $fields['portfolio_rent'] ?? 0 );
+		$totals['charges']         += (float) ( $fields['portfolio_charges'] ?? 0 );
+		$totals['debt_free_price'] += (float) ( $fields['portfolio_debt_free_price'] ?? 0 );
+	}
 
-    if ( $totals['value'] > 0 ) {
-        $totals['leverage'] = $totals['debts'] / $totals['value'];
-    }
+	if ( $totals['value'] > 0 ) {
+		$totals['leverage'] = $totals['debts'] / $totals['value'];
+	}
 
-    return $totals;
+	return $totals;
 }
 
 /**
@@ -110,10 +110,10 @@ function calculate_portfolio_totals( array $apartments ): array {
  * @return string Formatted amount.
  */
 function format_portfolio_euros( float $amount ): string {
-    $rounded = round( $amount );
-    $sign    = $rounded < 0 ? "\u{2212}" : '';
+	$rounded = round( $amount );
+	$sign    = $rounded < 0 ? "\u{2212}" : '';
 
-    return $sign . number_format( abs( $rounded ), 0, ',', "\u{00A0}" ) . "\u{00A0}€";
+	return $sign . number_format( abs( $rounded ), 0, ',', "\u{00A0}" ) . "\u{00A0}€";
 }
 
 /**
@@ -123,9 +123,9 @@ function format_portfolio_euros( float $amount ): string {
  * @return string Formatted percentage such as "65,3 %", or an en dash for null.
  */
 function format_portfolio_percent( ?float $ratio ): string {
-    if ( null === $ratio ) {
-        return '–';
-    }
+	if ( null === $ratio ) {
+		return '–';
+	}
 
-    return number_format( $ratio * 100, 1, ',', '' ) . "\u{00A0}%";
+	return number_format( $ratio * 100, 1, ',', '' ) . "\u{00A0}%";
 }

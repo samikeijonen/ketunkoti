@@ -22,7 +22,7 @@ use function Ketunkoti\Blocks\get_investment_messages;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // number_format_i18n() must use the Finnish separators.
@@ -39,13 +39,13 @@ $GLOBALS['ketunkoti_blocks_test_failures'] = 0;
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( $expected === $actual ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $expected === $actual ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_blocks_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_blocks_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 $n        = "\u{00A0}";
@@ -53,18 +53,18 @@ $m        = "\u{2212}";
 $dash     = '—';
 $messages = get_investment_messages();
 $defaults = [
-    'debtFreePrice'        => '90000',
-    'rent'                 => '590',
-    'area'                 => '26',
-    'maintenance'          => '104',
-    'ownCapitalShare'      => '30',
-    'rate'                 => '3.8',
-    'years'                => '25',
-    'method'               => 'annuity',
-    'vacantMonths'         => '0',
-    'taxRate'              => '30',
-    'transferTaxRate'      => '1.5',
-    'renovation'           => '0',
+	'debtFreePrice'   => '90000',
+	'rent'            => '590',
+	'area'            => '26',
+	'maintenance'     => '104',
+	'ownCapitalShare' => '30',
+	'rate'            => '3.8',
+	'years'           => '25',
+	'method'          => 'annuity',
+	'vacantMonths'    => '0',
+	'taxRate'         => '30',
+	'transferTaxRate' => '1.5',
+	'renovation'      => '0',
 ];
 
 // wp eval-file runs this file inside a method, so run() reads the defaults
@@ -78,27 +78,27 @@ $GLOBALS['ketunkoti_investment_test_defaults'] = $defaults;
  * @return array Results.
  */
 function run( array $overrides = [] ): array {
-    return calculate_investment_results( array_merge( $GLOBALS['ketunkoti_investment_test_defaults'], $overrides ) );
+	return calculate_investment_results( array_merge( $GLOBALS['ketunkoti_investment_test_defaults'], $overrides ) );
 }
 
 check(
-    'defaults annuity',
-    [
-        'ownCapital'           => "27{$n}000{$n}€",
-        'bankLoan'             => "63{$n}000{$n}€",
-        'monthlyPayment'       => "326{$n}€/kk",
-        'rentalYield'          => "6,4{$n}%",
-        'cashFlowBeforeTax'    => "+160{$n}€/kk",
-        'cashFlowAfterTax'     => "+74{$n}€/kk",
-        'equityReturn'         => "12,2{$n}%",
-        'pricePerSquare'       => "3{$n}462{$n}€/m²",
-        'rentPerSquare'        => "22,69{$n}€/m²/kk",
-        'maintenancePerSquare' => "4,00{$n}€/m²/kk",
-        'rateTable'            => [ "+74{$n}€/kk", "+54{$n}€/kk", "+33{$n}€/kk", "{$m}16{$n}€/kk" ],
-        'vacancyTable'         => [ "6,4{$n}%", "5,7{$n}%", "5,1{$n}%", "4,4{$n}%" ],
-        'notice'               => '',
-    ],
-    run()
+	'defaults annuity',
+	[
+		'ownCapital'           => "27{$n}000{$n}€",
+		'bankLoan'             => "63{$n}000{$n}€",
+		'monthlyPayment'       => "326{$n}€/kk",
+		'rentalYield'          => "6,4{$n}%",
+		'cashFlowBeforeTax'    => "+160{$n}€/kk",
+		'cashFlowAfterTax'     => "+74{$n}€/kk",
+		'equityReturn'         => "12,2{$n}%",
+		'pricePerSquare'       => "3{$n}462{$n}€/m²",
+		'rentPerSquare'        => "22,69{$n}€/m²/kk",
+		'maintenancePerSquare' => "4,00{$n}€/m²/kk",
+		'rateTable'            => [ "+74{$n}€/kk", "+54{$n}€/kk", "+33{$n}€/kk", "{$m}16{$n}€/kk" ],
+		'vacancyTable'         => [ "6,4{$n}%", "5,7{$n}%", "5,1{$n}%", "4,4{$n}%" ],
+		'notice'               => '',
+	],
+	run()
 );
 
 $results = run( [ 'method' => 'fixed' ] );
@@ -106,9 +106,23 @@ check( 'fixed shock keeps payment', [ "+74{$n}€/kk", "+90{$n}€/kk", "+106{$n
 check( 'fixed notice', $messages['fixedTerm'], $results['notice'] );
 check( 'fixed notice explains the rising cash flow', true, str_contains( $messages['fixedTerm'], 'verotuksessa' ) );
 check(
-    'negative costs count as zero',
-    run( [ 'taxRate' => '0', 'transferTaxRate' => '0', 'renovation' => '0', 'maintenance' => '0' ] ),
-    run( [ 'taxRate' => '-30', 'transferTaxRate' => '-1.5', 'renovation' => '-91350', 'maintenance' => '-104' ] )
+	'negative costs count as zero',
+	run(
+		[
+			'taxRate'         => '0',
+			'transferTaxRate' => '0',
+			'renovation'      => '0',
+			'maintenance'     => '0',
+		]
+	),
+	run(
+		[
+			'taxRate'         => '-30',
+			'transferTaxRate' => '-1.5',
+			'renovation'      => '-91350',
+			'maintenance'     => '-104',
+		]
+	)
 );
 
 $results = run( [ 'method' => 'straight' ] );
@@ -118,7 +132,12 @@ check( 'straight after tax', "{$m}7{$n}€/kk", $results['cashFlowAfterTax'] );
 check( 'straight equity', "12,3{$n}%", $results['equityReturn'] );
 check( 'straight rate table', [ "{$m}7{$n}€/kk", "{$m}43{$n}€/kk", "{$m}79{$n}€/kk", "{$m}151{$n}€/kk" ], $results['rateTable'] );
 
-$results = run( [ 'ownCapitalShare' => '100', 'rate' => '' ] );
+$results = run(
+	[
+		'ownCapitalShare' => '100',
+		'rate'            => '',
+	]
+);
 check( 'share 100 bank loan', "0{$n}€", $results['bankLoan'] );
 check( 'share 100 payment', "0{$n}€/kk", $results['monthlyPayment'] );
 check( 'share 100 before tax', "+486{$n}€/kk", $results['cashFlowBeforeTax'] );
@@ -132,7 +151,13 @@ check( 'share zero bank loan', "90{$n}000{$n}€", $results['bankLoan'] );
 check( 'share zero equity', "181,5{$n}%", $results['equityReturn'] );
 check( 'share zero notice', '', $results['notice'] );
 
-$results = run( [ 'ownCapitalShare' => '0', 'transferTaxRate' => '0', 'renovation' => '0' ] );
+$results = run(
+	[
+		'ownCapitalShare' => '0',
+		'transferTaxRate' => '0',
+		'renovation'      => '0',
+	]
+);
 check( 'no own money equity', $dash, $results['equityReturn'] );
 check( 'no own money cash flow still shown', true, $dash !== $results['cashFlowAfterTax'] );
 check( 'no own money notice', $messages['ownMoney'], $results['notice'] );
@@ -151,7 +176,16 @@ check( 'missing price notice', $messages['debtFreePrice'], $results['notice'] );
 
 check( 'missing rent', $messages['rent'], run( [ 'rent' => '' ] )['notice'] );
 
-check( 'maintenance per square follows area', "3,90{$n}€/m²/kk", run( [ 'area' => '31.5', 'maintenance' => '122.85' ] )['maintenancePerSquare'] );
+check(
+	'maintenance per square follows area',
+	"3,90{$n}€/m²/kk",
+	run(
+		[
+			'area'        => '31.5',
+			'maintenance' => '122.85',
+		]
+	)['maintenancePerSquare']
+);
 
 $results = run( [ 'area' => '0' ] );
 check( 'zero area price per square', $dash, $results['pricePerSquare'] );
@@ -179,20 +213,20 @@ check( 'link copy failed message', 'Kopiointi ei onnistunut. Kopioi linkki osoit
 
 // Shareable URL parameters, the same names as `url.js` writes.
 $from_query = get_investment_fields_from_query(
-    [
-        'hinta'    => '120000',
-        'vuokra'   => '700',
-        'ala'      => '31.5',
-        'vastike'  => '122,85',
-        'tyhjat'   => '1',
-        'osuus'    => '0',
-        'korko'    => '4.2',
-        'aika'     => '20',
-        'tapa'     => 'tasalyhennys',
-        'vsv'      => '1.5',
-        'remontti' => '2000',
-        'vero'     => '34',
-    ]
+	[
+		'hinta'    => '120000',
+		'vuokra'   => '700',
+		'ala'      => '31.5',
+		'vastike'  => '122,85',
+		'tyhjat'   => '1',
+		'osuus'    => '0',
+		'korko'    => '4.2',
+		'aika'     => '20',
+		'tapa'     => 'tasalyhennys',
+		'vsv'      => '1.5',
+		'remontti' => '2000',
+		'vero'     => '34',
+	]
 );
 check( 'query price', '120000', $from_query['debtFreePrice'] );
 check( 'query decimal area', '31.5', $from_query['area'] );
@@ -216,8 +250,8 @@ check( 'default rate without euribor uses fallback', '3.6', get_investment_defau
 delete_transient( 'ketunkoti_euribor_12m' );
 
 if ( $GLOBALS['ketunkoti_blocks_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

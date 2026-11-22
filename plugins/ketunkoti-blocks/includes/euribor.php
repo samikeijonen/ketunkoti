@@ -17,7 +17,7 @@ namespace Ketunkoti\Blocks;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -57,29 +57,29 @@ const EURIBOR_OPTION = 'ketunkoti_euribor_12m_last';
  * @return float|null Rate in percent, or null when the body is not usable.
  */
 function parse_ecb_euribor( string $body ): ?float {
-    $data   = json_decode( $body, true );
-    $series = $data['dataSets'][0]['series'] ?? null;
+	$data   = json_decode( $body, true );
+	$series = $data['dataSets'][0]['series'] ?? null;
 
-    if ( ! is_array( $series ) || ! $series ) {
-        return null;
-    }
+	if ( ! is_array( $series ) || ! $series ) {
+		return null;
+	}
 
-    $observations = reset( $series )['observations'] ?? null;
+	$observations = reset( $series )['observations'] ?? null;
 
-    if ( ! is_array( $observations ) || ! $observations ) {
-        return null;
-    }
+	if ( ! is_array( $observations ) || ! $observations ) {
+		return null;
+	}
 
-    $keys  = array_map( 'intval', array_keys( $observations ) );
-    $value = $observations[ (string) max( $keys ) ][0] ?? null;
+	$keys  = array_map( 'intval', array_keys( $observations ) );
+	$value = $observations[ (string) max( $keys ) ][0] ?? null;
 
-    if ( ! is_int( $value ) && ! is_float( $value ) ) {
-        return null;
-    }
+	if ( ! is_int( $value ) && ! is_float( $value ) ) {
+		return null;
+	}
 
-    $value = (float) $value;
+	$value = (float) $value;
 
-    return $value >= -5 && $value <= 20 ? $value : null;
+	return $value >= -5 && $value <= 20 ? $value : null;
 }
 
 /**
@@ -89,10 +89,10 @@ function parse_ecb_euribor( string $body ): ?float {
  * @return void
  */
 function log_euribor_error( string $message ): void {
-    if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+	if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only.
-        error_log( 'Ketunkoti Euribor: ' . $message );
-    }
+		error_log( 'Ketunkoti Euribor: ' . $message );
+	}
 }
 
 /**
@@ -101,35 +101,35 @@ function log_euribor_error( string $message ): void {
  * @return float|null Rate in percent, or null on any failure.
  */
 function fetch_euribor_12m(): ?float {
-    // The ECB firewall answers WordPress's default user agent with a 503
-    // "protection exception", so identify as the site instead.
-    $response = wp_remote_get(
-        EURIBOR_URL,
-        [
-            'timeout'    => 5,
-            'user-agent' => 'Ketunkoti/1.0 (+' . home_url( '/' ) . ')',
-        ]
-    );
+	// The ECB firewall answers WordPress's default user agent with a 503
+	// "protection exception", so identify as the site instead.
+	$response = wp_remote_get(
+		EURIBOR_URL,
+		[
+			'timeout'    => 5,
+			'user-agent' => 'Ketunkoti/1.0 (+' . home_url( '/' ) . ')',
+		]
+	);
 
-    if ( is_wp_error( $response ) ) {
-        log_euribor_error( $response->get_error_message() );
-        return null;
-    }
+	if ( is_wp_error( $response ) ) {
+		log_euribor_error( $response->get_error_message() );
+		return null;
+	}
 
-    $code = (int) wp_remote_retrieve_response_code( $response );
+	$code = (int) wp_remote_retrieve_response_code( $response );
 
-    if ( 200 !== $code ) {
-        log_euribor_error( 'HTTP ' . $code );
-        return null;
-    }
+	if ( 200 !== $code ) {
+		log_euribor_error( 'HTTP ' . $code );
+		return null;
+	}
 
-    $rate = parse_ecb_euribor( (string) wp_remote_retrieve_body( $response ) );
+	$rate = parse_ecb_euribor( (string) wp_remote_retrieve_body( $response ) );
 
-    if ( null === $rate ) {
-        log_euribor_error( 'Unexpected response body.' );
-    }
+	if ( null === $rate ) {
+		log_euribor_error( 'Unexpected response body.' );
+	}
 
-    return $rate;
+	return $rate;
 }
 
 /**
@@ -138,28 +138,28 @@ function fetch_euribor_12m(): ?float {
  * @return float|null Rate in percent, or null when none has ever been fetched.
  */
 function get_euribor_12m(): ?float {
-    $cached = get_transient( EURIBOR_TRANSIENT );
+	$cached = get_transient( EURIBOR_TRANSIENT );
 
-    if ( false !== $cached ) {
-        return is_numeric( $cached ) ? (float) $cached : null;
-    }
+	if ( false !== $cached ) {
+		return is_numeric( $cached ) ? (float) $cached : null;
+	}
 
-    $rate = fetch_euribor_12m();
+	$rate = fetch_euribor_12m();
 
-    if ( null !== $rate ) {
-        set_transient( EURIBOR_TRANSIENT, $rate, DAY_IN_SECONDS );
-        update_option( EURIBOR_OPTION, $rate, false );
+	if ( null !== $rate ) {
+		set_transient( EURIBOR_TRANSIENT, $rate, DAY_IN_SECONDS );
+		update_option( EURIBOR_OPTION, $rate, false );
 
-        return $rate;
-    }
+		return $rate;
+	}
 
-    $fallback = get_option( EURIBOR_OPTION );
-    $fallback = is_numeric( $fallback ) ? (float) $fallback : null;
+	$fallback = get_option( EURIBOR_OPTION );
+	$fallback = is_numeric( $fallback ) ? (float) $fallback : null;
 
-    // Retry within the hour rather than on every page view.
-    set_transient( EURIBOR_TRANSIENT, $fallback ?? 'none', HOUR_IN_SECONDS );
+	// Retry within the hour rather than on every page view.
+	set_transient( EURIBOR_TRANSIENT, $fallback ?? 'none', HOUR_IN_SECONDS );
 
-    return $fallback;
+	return $fallback;
 }
 
 /**
@@ -173,5 +173,5 @@ function get_euribor_12m(): ?float {
  * @return float Rate in percent rounded to one decimal.
  */
 function get_default_interest_rate(): float {
-    return round( ( get_euribor_12m() ?? EURIBOR_FALLBACK ) + EURIBOR_MARGIN, 1 );
+	return round( ( get_euribor_12m() ?? EURIBOR_FALLBACK ) + EURIBOR_MARGIN, 1 );
 }

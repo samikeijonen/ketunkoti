@@ -17,7 +17,7 @@ use function Ketunkoti\Blocks\format_euros;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // number_format_i18n() must use the Finnish separators.
@@ -34,13 +34,13 @@ $GLOBALS['ketunkoti_blocks_test_failures'] = 0;
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( $expected === $actual ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $expected === $actual ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_blocks_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_blocks_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 check( 'whole euros', "27\u{00A0}000\u{00A0}€", format_euros( 27000.0 ) );
@@ -50,8 +50,8 @@ check( 'missing', '—', format_euros( null ) );
 check( 'not finite', '—', format_euros( INF ) );
 
 if ( $GLOBALS['ketunkoti_blocks_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

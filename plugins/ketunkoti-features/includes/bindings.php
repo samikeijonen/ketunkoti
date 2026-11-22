@@ -12,7 +12,7 @@ namespace Ketunkoti;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -26,9 +26,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * four share the same get_value_callback() below, since it already resolves
  * any key generically regardless of which source name reached it.
  */
-const BINDINGS_SOURCE           = 'ketunkoti/home-details';
-const PRICING_BINDINGS_SOURCE   = 'ketunkoti/home-pricing';
-const RENTAL_BINDINGS_SOURCE    = 'ketunkoti/home-rental';
+const BINDINGS_SOURCE            = 'ketunkoti/home-details';
+const PRICING_BINDINGS_SOURCE    = 'ketunkoti/home-pricing';
+const RENTAL_BINDINGS_SOURCE     = 'ketunkoti/home-rental';
 const INVESTMENT_BINDINGS_SOURCE = 'ketunkoti/home-investment';
 
 /**
@@ -37,11 +37,11 @@ const INVESTMENT_BINDINGS_SOURCE = 'ketunkoti/home-investment';
  * Keyed by the binding key, valued by the taxonomy it reads.
  */
 const TAXONOMY_FIELDS = [
-    'home_city'    => 'home-city',
-    'home_rooms'   => 'home-rooms',
-    'home_purpose' => PURPOSE_TAXONOMY,
-    'home_status'  => 'home-status',
-    'home_plot'    => 'home-plot',
+	'home_city'    => 'home-city',
+	'home_rooms'   => 'home-rooms',
+	'home_purpose' => PURPOSE_TAXONOMY,
+	'home_status'  => 'home-status',
+	'home_plot'    => 'home-plot',
 ];
 
 /**
@@ -59,41 +59,41 @@ const COMPUTED_FIELDS = [ 'home_rental_yield', 'home_cash_flow', 'home_equity_re
  * @return void
  */
 function register_bindings() {
-    register_block_bindings_source(
-        BINDINGS_SOURCE,
-        [
-            'label'              => __( 'Kodin tiedot', 'ketunkoti-features' ),
-            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
-            'uses_context'       => [ 'postId', 'postType' ],
-        ]
-    );
+	register_block_bindings_source(
+		BINDINGS_SOURCE,
+		[
+			'label'              => __( 'Kodin tiedot', 'ketunkoti-features' ),
+			'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+			'uses_context'       => [ 'postId', 'postType' ],
+		]
+	);
 
-    register_block_bindings_source(
-        PRICING_BINDINGS_SOURCE,
-        [
-            'label'              => __( 'Hinnat ja vastikkeet', 'ketunkoti-features' ),
-            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
-            'uses_context'       => [ 'postId', 'postType' ],
-        ]
-    );
+	register_block_bindings_source(
+		PRICING_BINDINGS_SOURCE,
+		[
+			'label'              => __( 'Hinnat ja vastikkeet', 'ketunkoti-features' ),
+			'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+			'uses_context'       => [ 'postId', 'postType' ],
+		]
+	);
 
-    register_block_bindings_source(
-        RENTAL_BINDINGS_SOURCE,
-        [
-            'label'              => __( 'Vuokratiedot', 'ketunkoti-features' ),
-            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
-            'uses_context'       => [ 'postId', 'postType' ],
-        ]
-    );
+	register_block_bindings_source(
+		RENTAL_BINDINGS_SOURCE,
+		[
+			'label'              => __( 'Vuokratiedot', 'ketunkoti-features' ),
+			'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+			'uses_context'       => [ 'postId', 'postType' ],
+		]
+	);
 
-    register_block_bindings_source(
-        INVESTMENT_BINDINGS_SOURCE,
-        [
-            'label'              => __( 'Sijoituslaskelma', 'ketunkoti-features' ),
-            'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
-            'uses_context'       => [ 'postId', 'postType' ],
-        ]
-    );
+	register_block_bindings_source(
+		INVESTMENT_BINDINGS_SOURCE,
+		[
+			'label'              => __( 'Sijoituslaskelma', 'ketunkoti-features' ),
+			'get_value_callback' => __NAMESPACE__ . '\get_binding_value',
+			'uses_context'       => [ 'postId', 'postType' ],
+		]
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\register_bindings' );
 
@@ -109,13 +109,13 @@ add_action( 'init', __NAMESPACE__ . '\register_bindings' );
  * @return string|null Separated term names, or null when the post has none.
  */
 function get_term_names( int $post_id, string $taxonomy ): ?string {
-    $terms = get_the_terms( $post_id, $taxonomy );
+	$terms = get_the_terms( $post_id, $taxonomy );
 
-    if ( is_wp_error( $terms ) || empty( $terms ) ) {
-        return null;
-    }
+	if ( is_wp_error( $terms ) || empty( $terms ) ) {
+		return null;
+	}
 
-    return implode( ', ', wp_list_pluck( $terms, 'name' ) );
+	return implode( ', ', wp_list_pluck( $terms, 'name' ) );
 }
 
 /**
@@ -129,15 +129,15 @@ function get_term_names( int $post_id, string $taxonomy ): ?string {
  * @return string|null Formatted amount, or null when there is nothing to show.
  */
 function format_price( $value, string $format ): ?string {
-    // round() rather than a bare (int) cast: truncating would render an entered
-    // 1250,90 as 1250, quietly losing the euro rather than the cents.
-    $price = (int) round( (float) $value );
+	// round() rather than a bare (int) cast: truncating would render an entered
+	// 1250,90 as 1250, quietly losing the euro rather than the cents.
+	$price = (int) round( (float) $value );
 
-    if ( $price <= 0 ) {
-        return null;
-    }
+	if ( $price <= 0 ) {
+		return null;
+	}
 
-    return sprintf( $format, number_format_i18n( $price ) );
+	return sprintf( $format, number_format_i18n( $price ) );
 }
 
 /**
@@ -148,13 +148,13 @@ function format_price( $value, string $format ): ?string {
  * @return string|null Formatted charge, or null when there is nothing to show.
  */
 function format_charge( $value, string $format ): ?string {
-    $charge = (float) $value;
+	$charge = (float) $value;
 
-    if ( $charge <= 0 ) {
-        return null;
-    }
+	if ( $charge <= 0 ) {
+		return null;
+	}
 
-    return sprintf( $format, number_format_i18n( $charge, 2 ) );
+	return sprintf( $format, number_format_i18n( $charge, 2 ) );
 }
 
 /**
@@ -165,19 +165,19 @@ function format_charge( $value, string $format ): ?string {
  * @return string|null Formatted charge, or null when not set.
  */
 function format_water_charge( $value, string $basis ): ?string {
-    switch ( $basis ) {
-        case 'month':
-            /* translators: %s: Water charge in euros per month, for example "20,00". */
-            return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
+	switch ( $basis ) {
+		case 'month':
+			/* translators: %s: Water charge in euros per month, for example "20,00". */
+			return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
 
-        case 'consumption':
-            /* translators: %s: Monthly water charge advance in euros, for example "20,00". */
-            return format_charge( $value, __( '%s €/kk, kulutuksen mukaan', 'ketunkoti-features' ) );
+		case 'consumption':
+			/* translators: %s: Monthly water charge advance in euros, for example "20,00". */
+			return format_charge( $value, __( '%s €/kk, kulutuksen mukaan', 'ketunkoti-features' ) );
 
-        default:
-            /* translators: %s: Water charge in euros per person per month, for example "25,00". */
-            return format_charge( $value, __( '%s €/hlö/kk', 'ketunkoti-features' ) );
-    }
+		default:
+			/* translators: %s: Water charge in euros per person per month, for example "25,00". */
+			return format_charge( $value, __( '%s €/hlö/kk', 'ketunkoti-features' ) );
+	}
 }
 
 /**
@@ -187,16 +187,16 @@ function format_water_charge( $value, string $basis ): ?string {
  * @return string|null "Kyllä" or "Ei", or null when not stated.
  */
 function format_yes_no( $value ): ?string {
-    switch ( $value ) {
-        case 'yes':
-            return __( 'Kyllä', 'ketunkoti-features' );
+	switch ( $value ) {
+		case 'yes':
+			return __( 'Kyllä', 'ketunkoti-features' );
 
-        case 'no':
-            return __( 'Ei', 'ketunkoti-features' );
+		case 'no':
+			return __( 'Ei', 'ketunkoti-features' );
 
-        default:
-            return null;
-    }
+		default:
+			return null;
+	}
 }
 
 /**
@@ -213,14 +213,14 @@ function format_yes_no( $value ): ?string {
  * @return string Finnish formatted date, or the "available now" label.
  */
 function format_availability( $value ): string {
-    $date   = trim( (string) $value );
-    $parsed = '' === $date ? false : \DateTimeImmutable::createFromFormat( 'Y-m-d', $date );
+	$date   = trim( (string) $value );
+	$parsed = '' === $date ? false : \DateTimeImmutable::createFromFormat( 'Y-m-d', $date );
 
-    if ( false === $parsed ) {
-        return __( 'Heti vapaa', 'ketunkoti-features' );
-    }
+	if ( false === $parsed ) {
+		return __( 'Heti vapaa', 'ketunkoti-features' );
+	}
 
-    return $parsed->format( 'j.n.Y' );
+	return $parsed->format( 'j.n.Y' );
 }
 
 /**
@@ -246,13 +246,13 @@ function format_availability( $value ): string {
  * @return string|null Formatted percentage, or null when the inputs are missing.
  */
 function get_rental_yield( int $post_id ): ?string {
-    $yield = calculate_rental_yield(
-        (float) get_post_meta( $post_id, 'home_rent', true ),
-        (float) get_post_meta( $post_id, 'home_maintenance_charge', true ),
-        (float) get_post_meta( $post_id, 'home_debt_free_price', true )
-    );
+	$yield = calculate_rental_yield(
+		(float) get_post_meta( $post_id, 'home_rent', true ),
+		(float) get_post_meta( $post_id, 'home_maintenance_charge', true ),
+		(float) get_post_meta( $post_id, 'home_debt_free_price', true )
+	);
 
-    return null === $yield ? null : format_percentage( $yield );
+	return null === $yield ? null : format_percentage( $yield );
 }
 
 /**
@@ -262,10 +262,10 @@ function get_rental_yield( int $post_id ): ?string {
  * @return string|null Formatted cash flow, or null without a rent.
  */
 function get_cash_flow( int $post_id ): ?string {
-    $inputs    = get_investment_inputs( $post_id );
-    $cash_flow = calculate_cash_flow( $inputs['rent'], $inputs['maintenance'], $inputs['capital'] );
+	$inputs    = get_investment_inputs( $post_id );
+	$cash_flow = calculate_cash_flow( $inputs['rent'], $inputs['maintenance'], $inputs['capital'] );
 
-    return null === $cash_flow ? null : format_cash_flow( $cash_flow );
+	return null === $cash_flow ? null : format_cash_flow( $cash_flow );
 }
 
 /**
@@ -275,17 +275,17 @@ function get_cash_flow( int $post_id ): ?string {
  * @return string|null Formatted percentage, or null when the inputs are not enough.
  */
 function get_equity_return( int $post_id ): ?string {
-    $inputs        = get_investment_inputs( $post_id );
-    $equity_return = calculate_equity_return(
-        $inputs['rent'],
-        $inputs['maintenance'],
-        $inputs['capital'],
-        $inputs['selling_price'],
-        $inputs['debt_free_price'],
-        $inputs['interest_rate']
-    );
+	$inputs        = get_investment_inputs( $post_id );
+	$equity_return = calculate_equity_return(
+		$inputs['rent'],
+		$inputs['maintenance'],
+		$inputs['capital'],
+		$inputs['selling_price'],
+		$inputs['debt_free_price'],
+		$inputs['interest_rate']
+	);
 
-    return null === $equity_return ? null : format_percentage( $equity_return );
+	return null === $equity_return ? null : format_percentage( $equity_return );
 }
 
 /**
@@ -304,105 +304,105 @@ function get_equity_return( int $post_id ): ?string {
  * @return string|null Formatted value, or null when there is nothing to show.
  */
 function get_binding_value( array $source_args, $block_instance = null ): ?string {
-    if ( empty( $source_args['key'] ) ) {
-        return null;
-    }
+	if ( empty( $source_args['key'] ) ) {
+		return null;
+	}
 
-    $key     = $source_args['key'];
-    $post_id = $block_instance->context['postId'] ?? get_the_ID();
+	$key     = $source_args['key'];
+	$post_id = $block_instance->context['postId'] ?? get_the_ID();
 
-    if ( ! $post_id ) {
-        return null;
-    }
+	if ( ! $post_id ) {
+		return null;
+	}
 
-    // Taxonomy backed values are not post meta, so they are resolved before
-    // the meta lookup below.
-    if ( isset( TAXONOMY_FIELDS[ $key ] ) ) {
-        return get_term_names( $post_id, TAXONOMY_FIELDS[ $key ] );
-    }
+	// Taxonomy backed values are not post meta, so they are resolved before
+	// the meta lookup below.
+	if ( isset( TAXONOMY_FIELDS[ $key ] ) ) {
+		return get_term_names( $post_id, TAXONOMY_FIELDS[ $key ] );
+	}
 
-    // Derived values have no meta row to read, so they resolve before the
-    // lookup below.
-    if ( in_array( $key, COMPUTED_FIELDS, true ) ) {
-        return match ( $key ) {
-            'home_rental_yield'  => get_rental_yield( $post_id ),
-            'home_cash_flow'     => get_cash_flow( $post_id ),
-            'home_equity_return' => get_equity_return( $post_id ),
-            default              => null,
-        };
-    }
+	// Derived values have no meta row to read, so they resolve before the
+	// lookup below.
+	if ( in_array( $key, COMPUTED_FIELDS, true ) ) {
+		return match ( $key ) {
+			'home_rental_yield'  => get_rental_yield( $post_id ),
+			'home_cash_flow'     => get_cash_flow( $post_id ),
+			'home_equity_return' => get_equity_return( $post_id ),
+			default              => null,
+		};
+	}
 
-    $value = get_post_meta( $post_id, $key, true );
+	$value = get_post_meta( $post_id, $key, true );
 
-    // The availability date is the one field where an empty value is meaningful
-    // rather than absent, so it is formatted before the early return below.
-    if ( 'home_available_from' === $key ) {
-        return format_availability( $value );
-    }
+	// The availability date is the one field where an empty value is meaningful
+	// rather than absent, so it is formatted before the early return below.
+	if ( 'home_available_from' === $key ) {
+		return format_availability( $value );
+	}
 
-    if ( '' === $value || null === $value ) {
-        return null;
-    }
+	if ( '' === $value || null === $value ) {
+		return null;
+	}
 
-    switch ( $key ) {
-        case 'home_area':
-            $area = (float) $value;
+	switch ( $key ) {
+		case 'home_area':
+			$area = (float) $value;
 
-            if ( $area <= 0 ) {
-                return null;
-            }
+			if ( $area <= 0 ) {
+				return null;
+			}
 
-            /* translators: %s: Living area in square metres, for example "85,5". */
-            return sprintf( __( '%s m²', 'ketunkoti-features' ), number_format_i18n( $area, 1 ) );
+			/* translators: %s: Living area in square metres, for example "85,5". */
+			return sprintf( __( '%s m²', 'ketunkoti-features' ), number_format_i18n( $area, 1 ) );
 
-        case 'home_year_built':
-            $year = (int) $value;
+		case 'home_year_built':
+			$year = (int) $value;
 
-            if ( $year <= 0 ) {
-                return null;
-            }
+			if ( $year <= 0 ) {
+				return null;
+			}
 
-            // Deliberately not run through number_format_i18n(): a year takes
-            // no thousands separator, which would render 1987 as "1 987".
-            return (string) $year;
+			// Deliberately not run through number_format_i18n(): a year takes
+			// no thousands separator, which would render 1987 as "1 987".
+			return (string) $year;
 
-        case 'home_floor':
-        case 'home_address':
-        case 'home_room_layout':
-        case 'home_other_charges':
-        case 'home_pets':
-        case 'home_lease_type':
-            // Free text fields are shown as entered.
-            return (string) $value;
+		case 'home_floor':
+		case 'home_address':
+		case 'home_room_layout':
+		case 'home_other_charges':
+		case 'home_pets':
+		case 'home_lease_type':
+			// Free text fields are shown as entered.
+			return (string) $value;
 
-        case 'home_maintenance_charge':
-        case 'home_capital_charge':
-            /* translators: %s: Monthly charge in euros, for example "285,50". */
-            return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
+		case 'home_maintenance_charge':
+		case 'home_capital_charge':
+			/* translators: %s: Monthly charge in euros, for example "285,50". */
+			return format_charge( $value, __( '%s €/kk', 'ketunkoti-features' ) );
 
-        case 'home_water_charge':
-            return format_water_charge( $value, (string) get_post_meta( $post_id, 'home_water_charge_basis', true ) );
+		case 'home_water_charge':
+			return format_water_charge( $value, (string) get_post_meta( $post_id, 'home_water_charge_basis', true ) );
 
-        case 'home_elevator':
-            return format_yes_no( $value );
+		case 'home_elevator':
+			return format_yes_no( $value );
 
-        case 'home_rent':
-            // Rents are quoted in round euros, unlike the vastike charges above.
-            /* translators: %s: Monthly rent in euros, for example "1 250". */
-            return format_price( $value, __( '%s €/kk', 'ketunkoti-features' ) );
+		case 'home_rent':
+			// Rents are quoted in round euros, unlike the vastike charges above.
+			/* translators: %s: Monthly rent in euros, for example "1 250". */
+			return format_price( $value, __( '%s €/kk', 'ketunkoti-features' ) );
 
-        case 'home_debt_free_price':
-        case 'home_selling_price':
-        case 'home_deposit':
-            /* translators: %s: Amount in euros, for example "285 000". */
-            return format_price( $value, __( '%s €', 'ketunkoti-features' ) );
+		case 'home_debt_free_price':
+		case 'home_selling_price':
+		case 'home_deposit':
+			/* translators: %s: Amount in euros, for example "285 000". */
+			return format_price( $value, __( '%s €', 'ketunkoti-features' ) );
 
-        case 'home_loan_interest':
-            $rate = (float) $value;
+		case 'home_loan_interest':
+			$rate = (float) $value;
 
-            return $rate > 0 ? format_interest_rate( $rate ) : null;
+			return $rate > 0 ? format_interest_rate( $rate ) : null;
 
-        default:
-            return null;
-    }
+		default:
+			return null;
+	}
 }

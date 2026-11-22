@@ -21,7 +21,7 @@ use function Ketunkoti\Blocks\parse_ecb_euribor;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // wp eval-file runs this file inside a method, so the counter lives in
@@ -40,19 +40,19 @@ $GLOBALS['ketunkoti_blocks_test_failures'] = 0;
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
-        $passed = round( $expected, 3 ) === round( (float) $actual, 3 );
-    } else {
-        $passed = $expected === $actual;
-    }
+	if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
+		$passed = round( $expected, 3 ) === round( (float) $actual, 3 );
+	} else {
+		$passed = $expected === $actual;
+	}
 
-    if ( $passed ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $passed ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_blocks_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_blocks_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 /**
@@ -63,20 +63,20 @@ function check( string $name, $expected, $actual ): void {
  * @return void
  */
 function stub_http( int $code, string $body ): void {
-    remove_all_filters( 'pre_http_request' );
-    add_filter(
-        'pre_http_request',
-        static fn() => [
-            'headers'  => [],
-            'body'     => $body,
-            'response' => [
-                'code'    => $code,
-                'message' => '',
-            ],
-            'cookies'  => [],
-            'filename' => null,
-        ]
-    );
+	remove_all_filters( 'pre_http_request' );
+	add_filter(
+		'pre_http_request',
+		static fn() => [
+			'headers'  => [],
+			'body'     => $body,
+			'response' => [
+				'code'    => $code,
+				'message' => '',
+			],
+			'cookies'  => [],
+			'filename' => null,
+		]
+	);
 }
 
 /**
@@ -85,15 +85,15 @@ function stub_http( int $code, string $body ): void {
  * @return void
  */
 function reset_cache(): void {
-    delete_transient( 'ketunkoti_euribor_12m' );
-    delete_option( 'ketunkoti_euribor_12m_last' );
+	delete_transient( 'ketunkoti_euribor_12m' );
+	delete_option( 'ketunkoti_euribor_12m_last' );
 }
 
 // Keep the site's real cached rate and fallback, and put them back at the end,
 // so running the tests never leaves the calculators without a rate.
 $GLOBALS['ketunkoti_euribor_saved'] = [
-    'transient' => get_transient( 'ketunkoti_euribor_12m' ),
-    'option'    => get_option( 'ketunkoti_euribor_12m_last' ),
+	'transient' => get_transient( 'ketunkoti_euribor_12m' ),
+	'option'    => get_option( 'ketunkoti_euribor_12m_last' ),
 ];
 
 $ecb = '{"dataSets":[{"series":{"0:0:0:0:0:0:0":{"observations":{"0":[3.247,0,0,null,null]}}}}]}';
@@ -105,9 +105,9 @@ check( 'missing path', null, parse_ecb_euribor( '{"dataSets":[]}' ) );
 check( 'out of range', null, parse_ecb_euribor( str_replace( '3.247', '42', $ecb ) ) );
 check( 'non numeric', null, parse_ecb_euribor( str_replace( '3.247', '"x"', $ecb ) ) );
 check(
-    'latest observation',
-    3.1,
-    parse_ecb_euribor( '{"dataSets":[{"series":{"0:0:0:0:0:0:0":{"observations":{"0":[2.9,0],"1":[3.1,0]}}}}]}' )
+	'latest observation',
+	3.1,
+	parse_ecb_euribor( '{"dataSets":[{"series":{"0:0:0:0:0:0:0":{"observations":{"0":[2.9,0],"1":[3.1,0]}}}}]}' )
 );
 
 // Successful fetch.
@@ -124,23 +124,23 @@ reset_cache();
 remove_all_filters( 'pre_http_request' );
 $GLOBALS['ketunkoti_euribor_user_agent'] = '';
 add_filter(
-    'pre_http_request',
-    static function ( $response, array $args ) use ( $ecb ) {
-        $GLOBALS['ketunkoti_euribor_user_agent'] = (string) ( $args['user-agent'] ?? '' );
+	'pre_http_request',
+	static function ( $response, array $args ) use ( $ecb ) {
+		$GLOBALS['ketunkoti_euribor_user_agent'] = (string) ( $args['user-agent'] ?? '' );
 
-        return [
-            'headers'  => [],
-            'body'     => $ecb,
-            'response' => [
-                'code'    => 200,
-                'message' => '',
-            ],
-            'cookies'  => [],
-            'filename' => null,
-        ];
-    },
-    10,
-    2
+		return [
+			'headers'  => [],
+			'body'     => $ecb,
+			'response' => [
+				'code'    => 200,
+				'message' => '',
+			],
+			'cookies'  => [],
+			'filename' => null,
+		];
+	},
+	10,
+	2
 );
 get_euribor_12m();
 check( 'user agent is not WordPress default', true, str_starts_with( $GLOBALS['ketunkoti_euribor_user_agent'], 'Ketunkoti/' ) );
@@ -167,16 +167,16 @@ remove_all_filters( 'pre_http_request' );
 reset_cache();
 
 if ( false !== $GLOBALS['ketunkoti_euribor_saved']['option'] ) {
-    update_option( 'ketunkoti_euribor_12m_last', $GLOBALS['ketunkoti_euribor_saved']['option'], false );
+	update_option( 'ketunkoti_euribor_12m_last', $GLOBALS['ketunkoti_euribor_saved']['option'], false );
 }
 
 if ( false !== $GLOBALS['ketunkoti_euribor_saved']['transient'] ) {
-    set_transient( 'ketunkoti_euribor_12m', $GLOBALS['ketunkoti_euribor_saved']['transient'], HOUR_IN_SECONDS );
+	set_transient( 'ketunkoti_euribor_12m', $GLOBALS['ketunkoti_euribor_saved']['transient'], HOUR_IN_SECONDS );
 }
 
 if ( $GLOBALS['ketunkoti_blocks_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_blocks_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

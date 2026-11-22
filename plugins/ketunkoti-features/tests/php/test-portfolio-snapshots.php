@@ -36,15 +36,15 @@ use function Ketunkoti\save_portfolio_snapshot;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // wp eval-file runs this file inside a method, so shared state lives in
 // $GLOBALS rather than in file-level variables.
-$GLOBALS['ketunkoti_test_failures'] = 0;
-$GLOBALS['ketunkoti_test_users']    = [];
-$GLOBALS['ketunkoti_test_posts']    = [];
-$GLOBALS['ketunkoti_test_terms']    = [];
+$GLOBALS['ketunkoti_test_failures']     = 0;
+$GLOBALS['ketunkoti_test_users']        = [];
+$GLOBALS['ketunkoti_test_posts']        = [];
+$GLOBALS['ketunkoti_test_terms']        = [];
 $GLOBALS['ketunkoti_test_old_timezone'] = get_option( 'timezone_string' );
 
 /**
@@ -59,19 +59,19 @@ $GLOBALS['ketunkoti_test_old_timezone'] = get_option( 'timezone_string' );
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
-        $passed = round( $expected, 2 ) === round( (float) $actual, 2 );
-    } else {
-        $passed = $expected === $actual;
-    }
+	if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
+		$passed = round( $expected, 2 ) === round( (float) $actual, 2 );
+	} else {
+		$passed = $expected === $actual;
+	}
 
-    if ( $passed ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $passed ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 /**
@@ -81,24 +81,24 @@ function check( string $name, $expected, $actual ): void {
  * @return int User ID.
  */
 function create_test_user( string $role ): int {
-    $login = 'portfolio-test-' . $role . '-' . wp_generate_password( 6, false );
-    $id    = wp_insert_user(
-        [
-            'user_login' => $login,
-            'user_pass'  => wp_generate_password(),
-            'user_email' => $login . '@example.invalid',
-            'role'       => $role,
-        ]
-    );
+	$login = 'portfolio-test-' . $role . '-' . wp_generate_password( 6, false );
+	$id    = wp_insert_user(
+		[
+			'user_login' => $login,
+			'user_pass'  => wp_generate_password(),
+			'user_email' => $login . '@example.invalid',
+			'role'       => $role,
+		]
+	);
 
-    if ( is_wp_error( $id ) ) {
-        echo 'Could not create test user: ', $id->get_error_message(), PHP_EOL;
-        exit( 1 );
-    }
+	if ( is_wp_error( $id ) ) {
+		echo 'Could not create test user: ', $id->get_error_message(), PHP_EOL;
+		exit( 1 );
+	}
 
-    $GLOBALS['ketunkoti_test_users'][] = $id;
+	$GLOBALS['ketunkoti_test_users'][] = $id;
 
-    return $id;
+	return $id;
 }
 
 /**
@@ -108,17 +108,17 @@ function create_test_user( string $role ): int {
  * @return int Post ID.
  */
 function create_test_portfolio( string $title = 'Testi' ): int {
-    $id = wp_insert_post(
-        [
-            'post_type'   => 'portfolio',
-            'post_status' => 'publish',
-            'post_title'  => $title,
-        ]
-    );
+	$id = wp_insert_post(
+		[
+			'post_type'   => 'portfolio',
+			'post_status' => 'publish',
+			'post_title'  => $title,
+		]
+	);
 
-    $GLOBALS['ketunkoti_test_posts'][] = (int) $id;
+	$GLOBALS['ketunkoti_test_posts'][] = (int) $id;
 
-    return (int) $id;
+	return (int) $id;
 }
 
 /**
@@ -128,24 +128,27 @@ function create_test_portfolio( string $title = 'Testi' ): int {
  * @return bool True when `wp_die()` was called.
  */
 function portfolio_test_dies( callable $callback ): bool {
-    $handler = static fn () => static function () {
-        throw new \RuntimeException( 'wp_die called' );
-    };
+	// Kept as two statements: phpcbf's EmptyPHPStatement fixer strips the
+	// semicolon after an arrow function that returns a closure.
+	$die     = static function () {
+		throw new \RuntimeException( 'wp_die called' );
+	};
+	$handler = static fn () => $die;
 
-    add_filter( 'wp_die_handler', $handler );
-    add_filter( 'wp_die_ajax_handler', $handler );
+	add_filter( 'wp_die_handler', $handler );
+	add_filter( 'wp_die_ajax_handler', $handler );
 
-    try {
-        $callback();
-        $died = false;
-    } catch ( \RuntimeException $e ) {
-        $died = 'wp_die called' === $e->getMessage();
-    }
+	try {
+		$callback();
+		$died = false;
+	} catch ( \RuntimeException $e ) {
+		$died = 'wp_die called' === $e->getMessage();
+	}
 
-    remove_filter( 'wp_die_handler', $handler );
-    remove_filter( 'wp_die_ajax_handler', $handler );
+	remove_filter( 'wp_die_handler', $handler );
+	remove_filter( 'wp_die_ajax_handler', $handler );
 
-    return $died;
+	return $died;
 }
 
 /**
@@ -157,21 +160,21 @@ function portfolio_test_dies( callable $callback ): bool {
  * @return array<string, mixed> Snapshot data.
  */
 function make_history_snapshot( string $month, float $value, ?float $leverage ): array {
-    return [
-        'month'      => $month,
-        'taken_at'   => $month . '-01 00:30:00',
-        'trigger'    => 'cron',
-        'combined'   => [
-            'count'           => 2,
-            'value'           => $value,
-            'debts'           => 100000.0,
-            'net_worth'       => $value - 100000.0,
-            'free_collateral' => 5000.0,
-            'leverage'        => $leverage,
-        ],
-        'groups'     => [],
-        'apartments' => [],
-    ];
+	return [
+		'month'      => $month,
+		'taken_at'   => $month . '-01 00:30:00',
+		'trigger'    => 'cron',
+		'combined'   => [
+			'count'           => 2,
+			'value'           => $value,
+			'debts'           => 100000.0,
+			'net_worth'       => $value - 100000.0,
+			'free_collateral' => 5000.0,
+			'leverage'        => $leverage,
+		],
+		'groups'     => [],
+		'apartments' => [],
+	];
 }
 
 /**
@@ -180,24 +183,24 @@ function make_history_snapshot( string $month, float $value, ?float $leverage ):
  * @return void
  */
 function teardown_test_data(): void {
-    require_once ABSPATH . 'wp-admin/includes/user.php';
+	require_once ABSPATH . 'wp-admin/includes/user.php';
 
-    foreach ( $GLOBALS['ketunkoti_test_posts'] as $post_id ) {
-        wp_delete_post( $post_id, true );
-    }
+	foreach ( $GLOBALS['ketunkoti_test_posts'] as $post_id ) {
+		wp_delete_post( $post_id, true );
+	}
 
-    foreach ( $GLOBALS['ketunkoti_test_terms'] as $term ) {
-        wp_delete_term( $term['id'], $term['taxonomy'] );
-    }
+	foreach ( $GLOBALS['ketunkoti_test_terms'] as $term ) {
+		wp_delete_term( $term['id'], $term['taxonomy'] );
+	}
 
-    wp_clear_scheduled_hook( 'ketunkoti_portfolio_monthly_snapshot' );
-    update_option( 'timezone_string', $GLOBALS['ketunkoti_test_old_timezone'] );
+	wp_clear_scheduled_hook( 'ketunkoti_portfolio_monthly_snapshot' );
+	update_option( 'timezone_string', $GLOBALS['ketunkoti_test_old_timezone'] );
 
-    foreach ( $GLOBALS['ketunkoti_test_users'] as $user_id ) {
-        wp_delete_user( $user_id );
-    }
+	foreach ( $GLOBALS['ketunkoti_test_users'] as $user_id ) {
+		wp_delete_user( $user_id );
+	}
 
-    wp_set_current_user( 0 );
+	wp_set_current_user( 0 );
 }
 
 // Setup.
@@ -209,8 +212,11 @@ $editor = create_test_user( 'editor' );
 $ts_nov = strtotime( '2026-11-30 21:59:00 UTC' );
 $ts_dec = strtotime( '2026-11-30 22:01:00 UTC' );
 
-$owner_term = wp_insert_term( 'Snapshot test owner', 'portfolio-owner' );
-$GLOBALS['ketunkoti_test_terms'][] = [ 'id' => $owner_term['term_id'], 'taxonomy' => 'portfolio-owner' ];
+$owner_term                        = wp_insert_term( 'Snapshot test owner', 'portfolio-owner' );
+$GLOBALS['ketunkoti_test_terms'][] = [
+	'id'       => $owner_term['term_id'],
+	'taxonomy' => 'portfolio-owner',
+];
 
 $apartment_id = create_test_portfolio( 'Snapshot apartment' );
 wp_set_object_terms( $apartment_id, [ (int) $owner_term['term_id'] ], 'portfolio-owner' );
@@ -219,12 +225,12 @@ update_post_meta( $apartment_id, 'portfolio_estimated_value', 200000 );
 update_post_meta( $apartment_id, 'portfolio_company_loan', 20000 );
 update_post_meta( $apartment_id, 'portfolio_bank_loan', 30000 );
 
-$draft_id = wp_insert_post(
-    [
-        'post_type'   => 'portfolio',
-        'post_status' => 'draft',
-        'post_title'  => 'Snapshot draft apartment',
-    ]
+$draft_id                          = wp_insert_post(
+	[
+		'post_type'   => 'portfolio',
+		'post_status' => 'draft',
+		'post_title'  => 'Snapshot draft apartment',
+	]
 );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $draft_id;
 update_post_meta( $draft_id, 'portfolio_estimated_value', 100000 );
@@ -256,7 +262,7 @@ check( 'groups hold name and totals', [ 'name', 'totals' ], array_keys( $data['g
 
 $rows = [];
 foreach ( $data['apartments'] as $row ) {
-    $rows[ $row['id'] ] = $row;
+	$rows[ $row['id'] ] = $row;
 }
 $counted_row = $rows[ $apartment_id ];
 $draft_row   = $rows[ $draft_id ];
@@ -276,9 +282,9 @@ check( 'draft net value', 90000.0, $draft_row['net_value'] );
 check( 'draft not in combined', 1, $data['combined']['count'] );
 
 // Checks: saving.
-$id1 = save_portfolio_snapshot( 'manual', $ts_nov );
+$id1                               = save_portfolio_snapshot( 'manual', $ts_nov );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $id1;
-$id2 = save_portfolio_snapshot( 'cron', $ts_nov );
+$id2                               = save_portfolio_snapshot( 'cron', $ts_nov );
 check( 'same month replaces', $id1, $id2 );
 check( 'trigger updated', 'cron', get_post_meta( $id1, 'portfolio_snapshot_data', true )['trigger'] );
 check( 'title is the month', '2026-11', get_post_field( 'post_title', $id1 ) );
@@ -289,7 +295,7 @@ check( 'lookup by month', $id1, get_portfolio_snapshot_id( '2026-11' ) );
 check( 'lookup of missing month', 0, get_portfolio_snapshot_id( '2020-01' ) );
 
 wp_set_current_user( $admin );
-$id3 = save_portfolio_snapshot( 'manual', $ts_dec );
+$id3                               = save_portfolio_snapshot( 'manual', $ts_dec );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $id3;
 check( 'new month new post', true, $id3 !== $id1 );
 check( 'author is current user', $admin, (int) get_post_field( 'post_author', $id3 ) );
@@ -328,33 +334,44 @@ check( 'save removes its insert filter', $filter_count_before, count( $GLOBALS['
 
 // A save_post hook that throws must not leave the filter attached.
 $thrower = static function ( int $post_id, \WP_Post $post ): void {
-    if ( 'portfolio_snapshot' === $post->post_type ) {
-        $GLOBALS['ketunkoti_test_posts'][] = $post_id;
-        throw new \RuntimeException( 'boom' );
-    }
+	if ( 'portfolio_snapshot' === $post->post_type ) {
+		$GLOBALS['ketunkoti_test_posts'][] = $post_id;
+		throw new \RuntimeException( 'boom' );
+	}
 };
 add_action( 'save_post', $thrower, 10, 2 );
 try {
-    save_portfolio_snapshot( 'manual', strtotime( '2027-02-11 10:00:00 UTC' ) );
+	save_portfolio_snapshot( 'manual', strtotime( '2027-02-11 10:00:00 UTC' ) );
 } catch ( \RuntimeException $e ) {
-    echo 'PASS exception propagates', PHP_EOL;
+	echo 'PASS exception propagates', PHP_EOL;
 }
 remove_action( 'save_post', $thrower, 10 );
 check( 'filter removed after exception', $filter_count_before, count( $GLOBALS['wp_filter']['wp_insert_post_data']->callbacks[10] ?? [] ) );
 $GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-02' );
 
 // Checks: one entry per month, newest post_date wins (dated in the past so they stay published).
-foreach ( [ '2026-05-01 08:00:00' => 'older', '2026-05-01 09:00:00' => 'newer' ] as $date => $label ) {
-    $dup_id = wp_insert_post(
-        [
-            'post_type'   => 'portfolio_snapshot',
-            'post_status' => 'publish',
-            'post_title'  => '2027-05',
-            'post_date'   => $date,
-        ]
-    );
-    $GLOBALS['ketunkoti_test_posts'][] = (int) $dup_id;
-    update_post_meta( $dup_id, 'portfolio_snapshot_data', [ 'month' => '2027-05', 'combined' => [], 'trigger' => $label ] );
+foreach ( [
+	'2026-05-01 08:00:00' => 'older',
+	'2026-05-01 09:00:00' => 'newer',
+] as $date => $label ) {
+	$dup_id                            = wp_insert_post(
+		[
+			'post_type'   => 'portfolio_snapshot',
+			'post_status' => 'publish',
+			'post_title'  => '2027-05',
+			'post_date'   => $date,
+		]
+	);
+	$GLOBALS['ketunkoti_test_posts'][] = (int) $dup_id;
+	update_post_meta(
+		$dup_id,
+		'portfolio_snapshot_data',
+		[
+			'month'    => '2027-05',
+			'combined' => [],
+			'trigger'  => $label,
+		]
+	);
 }
 $dups = get_portfolio_snapshots( '2027-05', '2027-05' );
 check( 'one entry per month', 1, count( $dups ) );
@@ -362,9 +379,24 @@ check( 'newest post_date wins', 'newer', $dups[0]['trigger'] ?? null );
 
 // Equal post_date: the higher post ID wins.
 foreach ( [ 'first', 'second' ] as $label ) {
-    $tie_id = wp_insert_post( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'publish', 'post_title' => '2027-07', 'post_date' => '2026-05-02 08:00:00' ] );
-    $GLOBALS['ketunkoti_test_posts'][] = (int) $tie_id;
-    update_post_meta( $tie_id, 'portfolio_snapshot_data', [ 'month' => '2027-07', 'combined' => [], 'trigger' => $label ] );
+	$tie_id                            = wp_insert_post(
+		[
+			'post_type'   => 'portfolio_snapshot',
+			'post_status' => 'publish',
+			'post_title'  => '2027-07',
+			'post_date'   => '2026-05-02 08:00:00',
+		]
+	);
+	$GLOBALS['ketunkoti_test_posts'][] = (int) $tie_id;
+	update_post_meta(
+		$tie_id,
+		'portfolio_snapshot_data',
+		[
+			'month'    => '2027-07',
+			'combined' => [],
+			'trigger'  => $label,
+		]
+	);
 }
 check( 'equal dates: higher ID wins', 'second', get_portfolio_snapshots( '2027-07', '2027-07' )[0]['trigger'] ?? null );
 
@@ -391,8 +423,18 @@ wp_trash_post( $draft_id );
 check( 'empty skips', 'empty', run_portfolio_snapshot_cron( $now ) );
 check( 'empty retries tomorrow', $now + DAY_IN_SECONDS, wp_next_scheduled( $event ) );
 check( 'empty saved nothing', 0, get_portfolio_snapshot_id( '2027-03' ) );
-wp_update_post( [ 'ID' => $apartment_id, 'post_status' => 'publish' ] );
-wp_update_post( [ 'ID' => $draft_id, 'post_status' => 'draft' ] );
+wp_update_post(
+	[
+		'ID'          => $apartment_id,
+		'post_status' => 'publish',
+	]
+);
+wp_update_post(
+	[
+		'ID'          => $draft_id,
+		'post_status' => 'draft',
+	]
+);
 
 check( 'first run saves', 'saved', run_portfolio_snapshot_cron( $now ) );
 check( 'saved schedules next 1st', '2027-04-01 00:30', wp_date( 'Y-m-d H:i', wp_next_scheduled( $event ) ) );
@@ -433,13 +475,28 @@ remove_action( 'save_post', $thrower, 10 );
 check( 'exception retry in an hour', $next_month_ts + HOUR_IN_SECONDS, wp_next_scheduled( $event ) );
 check( 'failed save still holds its month', true, get_portfolio_snapshot_id( '2027-04' ) > 0 );
 check( 'retry after exception finds the month', 'exists', run_portfolio_snapshot_cron( $next_month_ts ) );
-check( 'one published April post', 1, count( get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'publish', 'meta_key' => 'portfolio_snapshot_month', 'meta_value' => '2027-04', 'fields' => 'ids', 'posts_per_page' => -1 ] ) ) );
+check(
+	'one published April post',
+	1,
+	count(
+		get_posts(
+			[
+				'post_type'      => 'portfolio_snapshot',
+				'post_status'    => 'publish',
+				'meta_key'       => 'portfolio_snapshot_month',
+				'meta_value'     => '2027-04',
+				'fields'         => 'ids',
+				'posts_per_page' => -1,
+			]
+		)
+	)
+);
 
 // A saved snapshot that cannot be found by its month counts as failed.
 $strip_month = static function ( $check, $object_id, $meta_key ) {
-    return 'portfolio_snapshot_month' === $meta_key ? false : $check;
+	return 'portfolio_snapshot_month' === $meta_key ? false : $check;
 };
-$orphan_ts = strtotime( '2027-06-10 10:00:00 UTC' );
+$orphan_ts   = strtotime( '2027-06-10 10:00:00 UTC' );
 add_filter( 'update_post_metadata', $strip_month, 10, 3 );
 add_filter( 'add_post_metadata', $strip_month, 10, 3 );
 $old_log = ini_set( 'error_log', '/dev/null' );
@@ -448,8 +505,15 @@ ini_set( 'error_log', $old_log );
 remove_filter( 'update_post_metadata', $strip_month, 10 );
 remove_filter( 'add_post_metadata', $strip_month, 10 );
 check( 'unfindable save retries in an hour', $orphan_ts + HOUR_IN_SECONDS, wp_next_scheduled( $event ) );
-foreach ( get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => -1 ] ) as $leftover_id ) {
-    $GLOBALS['ketunkoti_test_posts'][] = (int) $leftover_id;
+foreach ( get_posts(
+	[
+		'post_type'      => 'portfolio_snapshot',
+		'post_status'    => 'any',
+		'fields'         => 'ids',
+		'posts_per_page' => -1,
+	]
+) as $leftover_id ) {
+	$GLOBALS['ketunkoti_test_posts'][] = (int) $leftover_id;
 }
 
 // Checks: Kehitys table.
@@ -514,21 +578,31 @@ $_REQUEST['_wpnonce'] = wp_create_nonce( 'ketunkoti_portfolio_snapshot' );
 check( 'non-admin refused', true, portfolio_test_dies( static fn() => handle_portfolio_snapshot_request() ) );
 wp_set_current_user( $admin_id );
 $_REQUEST['_wpnonce'] = wp_create_nonce( 'ketunkoti_portfolio_snapshot' );
-$redirect_to = '';
-$catch_redirect = static function ( $location ) {
-    $GLOBALS['ketunkoti_test_redirect'] = $location;
-    throw new \RuntimeException( 'redirect caught' );
+$redirect_to          = '';
+$catch_redirect       = static function ( $location ) {
+	$GLOBALS['ketunkoti_test_redirect'] = $location;
+	throw new \RuntimeException( 'redirect caught' );
 };
 add_filter( 'wp_redirect', $catch_redirect, 0 );
 try {
-    handle_portfolio_snapshot_request();
+	handle_portfolio_snapshot_request();
 } catch ( \RuntimeException $e ) {
-    $redirect_to = (string) ( $GLOBALS['ketunkoti_test_redirect'] ?? '' );
+	$redirect_to = (string) ( $GLOBALS['ketunkoti_test_redirect'] ?? '' );
 }
 remove_filter( 'wp_redirect', $catch_redirect, 0 );
 check( 'handler redirects to overview', true, str_contains( $redirect_to, 'page=portfolio-overview' ) );
-$GLOBALS['ketunkoti_test_posts'] = array_merge( $GLOBALS['ketunkoti_test_posts'], get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => -1 ] ) );
-$notice_html = get_portfolio_overview_html( get_portfolio_overview() );
+$GLOBALS['ketunkoti_test_posts'] = array_merge(
+	$GLOBALS['ketunkoti_test_posts'],
+	get_posts(
+		[
+			'post_type'      => 'portfolio_snapshot',
+			'post_status'    => 'any',
+			'fields'         => 'ids',
+			'posts_per_page' => -1,
+		]
+	)
+);
+$notice_html                     = get_portfolio_overview_html( get_portfolio_overview() );
 check( 'success notice shown', true, str_contains( $notice_html, 'Tilannekuva tallennettu kuukaudelle ' . get_portfolio_snapshot_month( time() ) . '.' ) );
 check( 'overview has form and history', true, str_contains( $notice_html, 'Tallenna tilannekuva nyt' ) && str_contains( $notice_html, '<h2>Kehitys</h2>' ) );
 $again_html = get_portfolio_overview_html( get_portfolio_overview() );
@@ -538,19 +612,19 @@ wp_set_current_user( 0 );
 // Checks: snapshot meta box and list columns.
 $box_ts = strtotime( '2027-09-15 09:00:00 UTC' );
 update_post_meta( $apartment_id, 'portfolio_estimated_value', 250000 );
-$box_id = save_portfolio_snapshot( 'cron', $box_ts );
+$box_id                            = save_portfolio_snapshot( 'cron', $box_ts );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $box_id;
 update_post_meta( $apartment_id, 'portfolio_estimated_value', 777777 );
-$box_data = get_post_meta( $box_id, 'portfolio_snapshot_data', true );
-$box_html = get_portfolio_snapshot_box_html( $box_id );
+$box_data         = get_post_meta( $box_id, 'portfolio_snapshot_data', true );
+$box_html         = get_portfolio_snapshot_box_html( $box_id );
 $stored_apartment = null;
 $stored_draft     = null;
 foreach ( $box_data['apartments'] as $row ) {
-    if ( $row['counted'] ) {
-        $stored_apartment = $row;
-    } else {
-        $stored_draft = $row;
-    }
+	if ( $row['counted'] ) {
+		$stored_apartment = $row;
+	} else {
+		$stored_draft = $row;
+	}
 }
 $stored_value = number_format( $stored_apartment['estimated_value'], 0, ',', "\u{00A0}" ) . "\u{00A0}€";
 $live_value   = number_format( (float) get_post_meta( $apartment_id, 'portfolio_estimated_value', true ), 0, ',', "\u{00A0}" ) . "\u{00A0}€";
@@ -568,27 +642,61 @@ check( 'box caption and region', true, str_contains( $box_html, '<caption' ) && 
 check( 'box has no form fields', 0, preg_match( '/<(input|select|textarea)/i', $box_html ) );
 check( 'column value', true, str_contains( get_portfolio_snapshot_column_html( 'portfolio_snapshot_value', $box_id ), number_format( $box_data['combined']['value'], 0, ',', "\u{00A0}" ) ) );
 check( 'column unknown key is empty', '', get_portfolio_snapshot_column_html( 'other', $box_id ) );
-$bad_id = wp_insert_post( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'publish', 'post_title' => '2020-01' ] );
+$bad_id                            = wp_insert_post(
+	[
+		'post_type'   => 'portfolio_snapshot',
+		'post_status' => 'publish',
+		'post_title'  => '2020-01',
+	]
+);
 $GLOBALS['ketunkoti_test_posts'][] = (int) $bad_id;
 update_post_meta( $bad_id, 'portfolio_snapshot_data', 'garbage' );
 check( 'malformed box notice', true, str_contains( get_portfolio_snapshot_box_html( $bad_id ), 'Tilannekuvan tiedot puuttuvat tai ovat virheelliset.' ) );
 check( 'malformed box has no table', false, str_contains( get_portfolio_snapshot_box_html( $bad_id ), '<table' ) );
 check( 'malformed column dash', '–', get_portfolio_snapshot_column_html( 'portfolio_snapshot_value', $bad_id ) );
-$partial_id = wp_insert_post( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'publish', 'post_title' => '2020-02' ] );
+$partial_id                        = wp_insert_post(
+	[
+		'post_type'   => 'portfolio_snapshot',
+		'post_status' => 'publish',
+		'post_title'  => '2020-02',
+	]
+);
 $GLOBALS['ketunkoti_test_posts'][] = (int) $partial_id;
-update_post_meta( $partial_id, 'portfolio_snapshot_data', [ 'month' => '2020-02', 'taken_at' => '2020-02-01T00:00:00+00:00', 'trigger' => 'cron', 'groups' => [ [ 'name' => 'X', 'totals' => [ 'count' => 1 ] ] ], 'combined' => [ 'count' => 1 ], 'apartments' => [ [ 'title' => 'A', 'owner' => 'X', 'counted' => true ] ] ] );
+update_post_meta(
+	$partial_id,
+	'portfolio_snapshot_data',
+	[
+		'month'      => '2020-02',
+		'taken_at'   => '2020-02-01T00:00:00+00:00',
+		'trigger'    => 'cron',
+		'groups'     => [
+			[
+				'name'   => 'X',
+				'totals' => [ 'count' => 1 ],
+			],
+		],
+		'combined'   => [ 'count' => 1 ],
+		'apartments' => [
+			[
+				'title'   => 'A',
+				'owner'   => 'X',
+				'counted' => true,
+			],
+		],
+	]
+);
 $partial_html = get_portfolio_snapshot_box_html( $partial_id );
 check( 'missing numbers render dash', true, str_contains( $partial_html, '<td>–</td>' ) && ! str_contains( $partial_html, '0&nbsp;€' ) && ! str_contains( $partial_html, "0\u{00A0}€" ) );
 
 // Checks: a future-dated save stays published (always a year ahead, so the guard stays tested).
-$future_ts = time() + YEAR_IN_SECONDS;
-$future_id = save_portfolio_snapshot( 'manual', $future_ts );
+$future_ts                         = time() + YEAR_IN_SECONDS;
+$future_id                         = save_portfolio_snapshot( 'manual', $future_ts );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $future_id;
 check( 'future-dated save is published', 'publish', get_post_status( $future_id ) );
 check( 'future-dated save is found', true, get_portfolio_snapshot_id( get_portfolio_snapshot_month( $future_ts ) ) > 0 );
 
 // Checks: untrash restores the previous status (a past-dated snapshot, like a real one).
-$past_id = save_portfolio_snapshot( 'manual', strtotime( '2026-01-15 10:00:00 UTC' ) );
+$past_id                           = save_portfolio_snapshot( 'manual', strtotime( '2026-01-15 10:00:00 UTC' ) );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $past_id;
 wp_trash_post( $past_id );
 check( 'trashed', 'trash', get_post_status( $past_id ) );
@@ -601,12 +709,27 @@ wp_untrash_post( $apt_trash );
 check( 'untrash of other post types unchanged', 'draft', get_post_status( $apt_trash ) );
 
 // Checks: Quick Edit and bulk edit are removed from the snapshots list.
-$row_actions = apply_filters( 'post_row_actions', [ 'edit' => 'e', 'inline hide-if-no-js' => 'q', 'trash' => 't' ], get_post( $future_id ) );
+$row_actions = apply_filters(
+	'post_row_actions',
+	[
+		'edit'                 => 'e',
+		'inline hide-if-no-js' => 'q',
+		'trash'                => 't',
+	],
+	get_post( $future_id )
+);
 check( 'snapshot row has no quick edit', false, array_key_exists( 'inline hide-if-no-js', $row_actions ) );
 check( 'snapshot row keeps other actions', [ 'edit', 'trash' ], array_keys( $row_actions ) );
 $other_actions = apply_filters( 'post_row_actions', [ 'inline hide-if-no-js' => 'q' ], get_post( $apt_trash ) );
 check( 'other post types keep quick edit', true, array_key_exists( 'inline hide-if-no-js', $other_actions ) );
-$bulk = apply_filters( 'bulk_actions-edit-portfolio_snapshot', [ 'edit' => 'Edit', 'trash' => 'Trash' ] );
+$bulk = apply_filters(
+	// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- core's dynamic bulk_actions-{$screen_id} hook.
+	'bulk_actions-edit-portfolio_snapshot',
+	[
+		'edit'  => 'Edit',
+		'trash' => 'Trash',
+	]
+);
 check( 'snapshot bulk edit removed', [ 'trash' ], array_keys( $bulk ) );
 
 // Checks: failure visibility.
@@ -626,13 +749,29 @@ check( 'error option is not autoloaded', true, in_array( $err_autoload, [ 'no', 
 $warn_html = get_portfolio_overview_html( get_portfolio_overview() );
 check( 'warning notice rendered', true, str_contains( $warn_html, 'notice-warning' ) && str_contains( $warn_html, 'Kuukauden tilannekuvan automaattinen tallennus epäonnistui (2028-02): ' ) );
 check( 'warning mentions retry', true, str_contains( $warn_html, 'Yritetään uudelleen tunnin päästä — voit myös tallentaa sen nyt painikkeesta.' ) );
-update_option( $err_option, [ 'time' => gmdate( 'c' ), 'month' => '2028-02', 'message' => '<b>x</b>' ], false );
+update_option(
+	$err_option,
+	[
+		'time'    => gmdate( 'c' ),
+		'month'   => '2028-02',
+		'message' => '<b>x</b>',
+	],
+	false
+);
 check( 'warning message escaped', false, str_contains( get_portfolio_overview_html( get_portfolio_overview() ), '<b>x</b>' ) );
 check( 'run after failure saves', 'saved', run_portfolio_snapshot_cron( $fail_ts ) );
 $GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2028-02' );
 check( 'saved clears the error', false, get_option( $err_option ) );
 check( 'no warning after success', false, str_contains( get_portfolio_overview_html( get_portfolio_overview() ), 'notice-warning' ) );
-update_option( $err_option, [ 'time' => gmdate( 'c' ), 'month' => '2028-02', 'message' => 'x' ], false );
+update_option(
+	$err_option,
+	[
+		'time'    => gmdate( 'c' ),
+		'month'   => '2028-02',
+		'message' => 'x',
+	],
+	false
+);
 check( 'exists clears the error', 'exists', run_portfolio_snapshot_cron( $fail_ts ) );
 check( 'exists cleared the option', false, get_option( $err_option ) );
 
@@ -643,8 +782,8 @@ check( 'snapshot not in sitemap', false, array_key_exists( 'portfolio_snapshot',
 teardown_test_data();
 
 if ( $GLOBALS['ketunkoti_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

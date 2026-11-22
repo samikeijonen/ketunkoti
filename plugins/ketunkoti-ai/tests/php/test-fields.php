@@ -28,7 +28,19 @@ check( 'unknown field', 'ketunkoti_ai_unknown_field', code( Home_Fields::prepare
 check( 'home-only key on rental', 'ketunkoti_ai_unknown_field', code( Home_Fields::prepare( $rental, [ 'home_debt_free_price' => 1 ] ) ) );
 check( 'bad date refused', 'ketunkoti_ai_invalid_value', code( Home_Fields::prepare( $home, [ 'home_available_from' => '2026-02-31' ] ) ) );
 check( 'bad year refused', 'ketunkoti_ai_invalid_value', code( Home_Fields::prepare( $home, [ 'home_year_built' => 'vanha' ] ) ) );
-check( 'one bad key fails all', 'ketunkoti_ai_unknown_field', code( Home_Fields::prepare( $home, [ 'home_area' => 60, 'nope' => 1 ] ) ) );
+check(
+	'one bad key fails all',
+	'ketunkoti_ai_unknown_field',
+	code(
+		Home_Fields::prepare(
+			$home,
+			[
+				'home_area' => 60,
+				'nope'      => 1,
+			]
+		)
+	)
+);
 
 // Accepted values.
 $prepared = Home_Fields::prepare( $home, [ 'home_maintenance_charge' => '1 285,50' ] );
@@ -50,8 +62,24 @@ check( 'zero on date refused', 'ketunkoti_ai_invalid_value', code( Home_Fields::
 check( 'zero on yes/no refused', 'ketunkoti_ai_invalid_value', code( Home_Fields::prepare( $home, [ 'home_elevator' => 0 ] ) ) );
 
 // Writing and reading back.
-Home_Fields::write( $home, Home_Fields::prepare( $home, [ 'home_area' => 61, 'home_floor' => '2/4' ] ) );
-check( 'write then values', [ 'home_area' => '61', 'home_floor' => '2/4' ], Home_Fields::values( $home, [ 'home_area', 'home_floor' ] ) );
+Home_Fields::write(
+	$home,
+	Home_Fields::prepare(
+		$home,
+		[
+			'home_area'  => 61,
+			'home_floor' => '2/4',
+		]
+	)
+);
+check(
+	'write then values',
+	[
+		'home_area'  => '61',
+		'home_floor' => '2/4',
+	],
+	Home_Fields::values( $home, [ 'home_area', 'home_floor' ] )
+);
 Home_Fields::write( $home, Home_Fields::prepare( $home, [ 'home_floor' => null ] ) );
 check( 'delete then values', [ 'home_floor' => null ], Home_Fields::values( $home, [ 'home_floor' ] ) );
 check( 'is_home', [ true, true, false ], [ Home_Fields::is_home( $home ), Home_Fields::is_home( $rental ), Home_Fields::is_home( self_page() ) ] );

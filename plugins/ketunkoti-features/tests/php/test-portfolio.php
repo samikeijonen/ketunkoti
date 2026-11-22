@@ -32,7 +32,7 @@ use function Ketunkoti\validate_portfolio_fields;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // wp eval-file runs this file inside a method, so shared state lives in
@@ -54,19 +54,19 @@ $GLOBALS['ketunkoti_test_terms']    = [];
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
-        $passed = round( $expected, 2 ) === round( (float) $actual, 2 );
-    } else {
-        $passed = $expected === $actual;
-    }
+	if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
+		$passed = round( $expected, 2 ) === round( (float) $actual, 2 );
+	} else {
+		$passed = $expected === $actual;
+	}
 
-    if ( $passed ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $passed ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 /**
@@ -76,24 +76,24 @@ function check( string $name, $expected, $actual ): void {
  * @return int User ID.
  */
 function create_test_user( string $role ): int {
-    $login = 'portfolio-test-' . $role . '-' . wp_generate_password( 6, false );
-    $id    = wp_insert_user(
-        [
-            'user_login' => $login,
-            'user_pass'  => wp_generate_password(),
-            'user_email' => $login . '@example.invalid',
-            'role'       => $role,
-        ]
-    );
+	$login = 'portfolio-test-' . $role . '-' . wp_generate_password( 6, false );
+	$id    = wp_insert_user(
+		[
+			'user_login' => $login,
+			'user_pass'  => wp_generate_password(),
+			'user_email' => $login . '@example.invalid',
+			'role'       => $role,
+		]
+	);
 
-    if ( is_wp_error( $id ) ) {
-        echo 'Could not create test user: ', $id->get_error_message(), PHP_EOL;
-        exit( 1 );
-    }
+	if ( is_wp_error( $id ) ) {
+		echo 'Could not create test user: ', $id->get_error_message(), PHP_EOL;
+		exit( 1 );
+	}
 
-    $GLOBALS['ketunkoti_test_users'][] = $id;
+	$GLOBALS['ketunkoti_test_users'][] = $id;
 
-    return $id;
+	return $id;
 }
 
 /**
@@ -103,17 +103,17 @@ function create_test_user( string $role ): int {
  * @return int Post ID.
  */
 function create_test_portfolio( string $title = 'Testi' ): int {
-    $id = wp_insert_post(
-        [
-            'post_type'   => 'portfolio',
-            'post_status' => 'publish',
-            'post_title'  => $title,
-        ]
-    );
+	$id = wp_insert_post(
+		[
+			'post_type'   => 'portfolio',
+			'post_status' => 'publish',
+			'post_title'  => $title,
+		]
+	);
 
-    $GLOBALS['ketunkoti_test_posts'][] = (int) $id;
+	$GLOBALS['ketunkoti_test_posts'][] = (int) $id;
 
-    return (int) $id;
+	return (int) $id;
 }
 
 /**
@@ -122,21 +122,21 @@ function create_test_portfolio( string $title = 'Testi' ): int {
  * @return void
  */
 function teardown_test_data(): void {
-    require_once ABSPATH . 'wp-admin/includes/user.php';
+	require_once ABSPATH . 'wp-admin/includes/user.php';
 
-    foreach ( $GLOBALS['ketunkoti_test_posts'] as $post_id ) {
-        wp_delete_post( $post_id, true );
-    }
+	foreach ( $GLOBALS['ketunkoti_test_posts'] as $post_id ) {
+		wp_delete_post( $post_id, true );
+	}
 
-    foreach ( $GLOBALS['ketunkoti_test_terms'] as $term ) {
-        wp_delete_term( $term['id'], $term['taxonomy'] );
-    }
+	foreach ( $GLOBALS['ketunkoti_test_terms'] as $term ) {
+		wp_delete_term( $term['id'], $term['taxonomy'] );
+	}
 
-    foreach ( $GLOBALS['ketunkoti_test_users'] as $user_id ) {
-        wp_delete_user( $user_id );
-    }
+	foreach ( $GLOBALS['ketunkoti_test_users'] as $user_id ) {
+		wp_delete_user( $user_id );
+	}
 
-    wp_set_current_user( 0 );
+	wp_set_current_user( 0 );
 }
 
 // Setup.
@@ -144,19 +144,19 @@ $admin  = create_test_user( 'administrator' );
 $editor = create_test_user( 'editor' );
 
 // Fixtures for the home ID checks: a page and a real home listing.
-$page_id = wp_insert_post(
-    [
-        'post_type'   => 'page',
-        'post_status' => 'draft',
-        'post_title'  => 'Portfolio test page',
-    ]
+$page_id                           = wp_insert_post(
+	[
+		'post_type'   => 'page',
+		'post_status' => 'draft',
+		'post_title'  => 'Portfolio test page',
+	]
 );
-$home_id = wp_insert_post(
-    [
-        'post_type'   => 'home',
-        'post_status' => 'draft',
-        'post_title'  => 'Portfolio test home',
-    ]
+$home_id                           = wp_insert_post(
+	[
+		'post_type'   => 'home',
+		'post_status' => 'draft',
+		'post_title'  => 'Portfolio test home',
+	]
 );
 $GLOBALS['ketunkoti_test_posts'][] = (int) $page_id;
 $GLOBALS['ketunkoti_test_posts'][] = (int) $home_id;
@@ -181,7 +181,16 @@ check( 'admin can edit', true, user_can( $admin, 'edit_post', $id ) );
 check( 'editor cannot create', false, user_can( $editor, get_post_type_object( 'portfolio' )->cap->create_posts ) );
 
 wp_set_current_user( 0 );
-check( "excluded from 'any' queries", 0, ( new WP_Query( [ 'p' => $id, 'post_type' => 'any' ] ) )->found_posts );
+check(
+	"excluded from 'any' queries",
+	0,
+	( new WP_Query(
+		[
+			'p'         => $id,
+			'post_type' => 'any',
+		]
+	) )->found_posts
+);
 
 // Checks: field values.
 update_post_meta( $id, 'portfolio_area', '44.5' );
@@ -191,9 +200,9 @@ check( 'unset is null', null, get_portfolio_field_values( $id )['portfolio_bank_
 // Checks: registration details.
 check( 'owner taxonomy not in quick edit', false, get_taxonomy( 'portfolio-owner' )->show_in_quick_edit );
 $registered_keys = array_filter(
-    get_registered_meta_keys( 'post', 'portfolio' ),
-    static fn ( $key ) => str_starts_with( $key, 'portfolio_' ),
-    ARRAY_FILTER_USE_KEY
+	get_registered_meta_keys( 'post', 'portfolio' ),
+	static fn ( $key ) => str_starts_with( $key, 'portfolio_' ),
+	ARRAY_FILTER_USE_KEY
 );
 check( 'all portfolio meta keys registered', 14, count( $registered_keys ) );
 check( 'no portfolio meta key in REST', [], array_keys( array_filter( $registered_keys, static fn ( $args ) => ! empty( $args['show_in_rest'] ) ) ) );
@@ -227,7 +236,13 @@ check( 'object refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio
 check( 'exponent refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => '1e3' ] )->get_error_code() );
 check( 'huge exponent refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => '1e999' ] )->get_error_code() );
 check( 'infinite float refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => INF ] )->get_error_code() );
-$trashed_home = wp_insert_post( [ 'post_type' => 'home', 'post_status' => 'trash', 'post_title' => 'Portfolio test trashed home' ] );
+$trashed_home                      = wp_insert_post(
+	[
+		'post_type'   => 'home',
+		'post_status' => 'trash',
+		'post_title'  => 'Portfolio test trashed home',
+	]
+);
 $GLOBALS['ketunkoti_test_posts'][] = (int) $trashed_home;
 check( 'trashed home refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_home_id' => $trashed_home ] )->get_error_code() );
 
@@ -239,44 +254,51 @@ check( 'only one owner', 1, count( wp_get_object_terms( $id, 'portfolio-owner' )
 check( 'owner matched by slug', $term, set_portfolio_owner( $id, 'testiomistaja' ) );
 check( 'empty owner refused', 'ketunkoti_portfolio_invalid_owner', set_portfolio_owner( $id, ' ' )->get_error_code() );
 foreach ( [ 'Testiomistaja', 'Toinen omistaja' ] as $owner_name ) {
-    $owner_term = get_term_by( 'name', $owner_name, 'portfolio-owner' );
-    if ( $owner_term ) {
-        $GLOBALS['ketunkoti_test_terms'][] = [
-            'id'       => $owner_term->term_id,
-            'taxonomy' => 'portfolio-owner',
-        ];
-    }
+	$owner_term = get_term_by( 'name', $owner_name, 'portfolio-owner' );
+	if ( $owner_term ) {
+		$GLOBALS['ketunkoti_test_terms'][] = [
+			'id'       => $owner_term->term_id,
+			'taxonomy' => 'portfolio-owner',
+		];
+	}
 }
 
 // Checks: meta box save, as admin with a valid nonce.
 wp_set_current_user( $admin );
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_area'            => '46,5',
-    'portfolio_owner'           => 'Testiomistaja',
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_area'            => '46,5',
+	'portfolio_owner'           => 'Testiomistaja',
 ];
 save_portfolio_meta_box( $id );
 check( 'meta box saved area', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
 check( 'meta box saved owner', 'Testiomistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
 
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_owner'           => 'Testiomistaja',
-    'portfolio_owner_new'       => 'Toinen omistaja',
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_owner'           => 'Testiomistaja',
+	'portfolio_owner_new'       => 'Toinen omistaja',
 ];
 save_portfolio_meta_box( $id );
 check( 'typed new owner wins over radio', 'Toinen omistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
 
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_area'            => '50',
-    'portfolio_bank_loan'       => 'paljon',
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_area'            => '50',
+	'portfolio_bank_loan'       => 'paljon',
 ];
 save_portfolio_meta_box( $id );
 check( 'invalid save writes nothing', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
 check( 'invalid save leaves notice', true, (bool) get_transient( 'ketunkoti_portfolio_error_' . $admin ) );
 $kept = get_transient( 'ketunkoti_portfolio_input_' . $admin );
-check( 'refused save keeps raw input', [ 'portfolio_area' => '50', 'portfolio_bank_loan' => 'paljon' ], $kept );
+check(
+	'refused save keeps raw input',
+	[
+		'portfolio_area'      => '50',
+		'portfolio_bank_loan' => 'paljon',
+	],
+	$kept
+);
 ob_start();
 render_portfolio_meta_box( get_post( $id ) );
 $prefilled = ob_get_clean();
@@ -295,8 +317,8 @@ check( 'no nonce no save', 46.5, get_portfolio_field_values( $id )['portfolio_ar
 
 wp_set_current_user( $editor );
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_area'            => '2',
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_area'            => '2',
 ];
 save_portfolio_meta_box( $id );
 check( 'editor cannot save', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
@@ -305,17 +327,17 @@ wp_set_current_user( $admin );
 $revision_id = wp_save_post_revision( $id );
 check( 'revision exists', true, (bool) $revision_id );
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_area'            => '3',
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_area'            => '3',
 ];
 save_portfolio_meta_box( (int) $revision_id );
 check( 'revision not written', '', (string) get_post_meta( (int) $revision_id, 'portfolio_area', true ) );
 
 // An invalid save leaves both the fields and the owner untouched.
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_bank_loan'       => 'paljon',
-    'portfolio_owner_new'       => 'Kolmas omistaja',
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_bank_loan'       => 'paljon',
+	'portfolio_owner_new'       => 'Kolmas omistaja',
 ];
 save_portfolio_meta_box( $id );
 check( 'invalid save keeps owner', 'Toinen omistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
@@ -325,9 +347,9 @@ delete_transient( 'ketunkoti_portfolio_input_' . $admin );
 
 // A tampered non-scalar value refuses the whole save.
 $_POST = [
-    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
-    'portfolio_area'            => '77',
-    'portfolio_address'         => [ 'x' ],
+	'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+	'portfolio_area'            => '77',
+	'portfolio_address'         => [ 'x' ],
 ];
 save_portfolio_meta_box( $id );
 check( 'tampered array writes nothing', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
@@ -341,12 +363,12 @@ update_post_meta( $id, 'portfolio_estimated_value', '189000' );
 update_post_meta( $id, 'portfolio_home_id', (string) $home_id );
 ob_start();
 render_portfolio_meta_box( get_post( $id ) );
-$html = ob_get_clean();
+$html      = ob_get_clean();
 $positions = [];
 foreach ( [ 'Perustiedot', 'Velat', 'Vuokra ja vastikkeet', 'Arvo ja vakuudet', 'Myynti-ilmoitus' ] as $heading ) {
-    check( 'heading once: ' . $heading, 1, preg_match_all( '#<h3[^>]*>' . preg_quote( $heading, '#' ) . '</h3>#', $html ) );
-    preg_match( '#<h3[^>]*>' . preg_quote( $heading, '#' ) . '</h3>#', $html, $m, PREG_OFFSET_CAPTURE );
-    $positions[] = $m[0][1] ?? -1;
+	check( 'heading once: ' . $heading, 1, preg_match_all( '#<h3[^>]*>' . preg_quote( $heading, '#' ) . '</h3>#', $html ) );
+	preg_match( '#<h3[^>]*>' . preg_quote( $heading, '#' ) . '</h3>#', $html, $m, PREG_OFFSET_CAPTURE );
+	$positions[] = $m[0][1] ?? -1;
 }
 $sorted = $positions;
 sort( $sorted );
@@ -357,12 +379,22 @@ check( 'number input is text decimal', true, str_contains( $html, 'inputmode="de
 check( 'owner radios in fieldset', true, str_contains( $html, '<fieldset' ) && str_contains( $html, '<legend' ) && str_contains( $html, 'type="radio"' ) );
 check( 'new owner input', true, str_contains( $html, 'name="portfolio_owner_new"' ) );
 check( 'home select with none option', true, str_contains( $html, '<select' ) && str_contains( $html, 'Ei ilmoitusta' ) );
-wp_update_post( [ 'ID' => $home_id, 'post_status' => 'trash' ] );
+wp_update_post(
+	[
+		'ID'          => $home_id,
+		'post_status' => 'trash',
+	]
+);
 ob_start();
 render_portfolio_meta_box( get_post( $id ) );
 $trashed_html = ob_get_clean();
 check( 'trashed saved home stays selected', true, 1 === preg_match( '#<option value="' . $home_id . '"[^>]* selected[^>]*>\s*Portfolio test home \(roskakorissa\)#', $trashed_html ) );
-wp_update_post( [ 'ID' => $home_id, 'post_status' => 'draft' ] );
+wp_update_post(
+	[
+		'ID'          => $home_id,
+		'post_status' => 'draft',
+	]
+);
 check( 'home select preselected', true, 1 === preg_match( '#<option value="' . $home_id . '"[^>]* selected#', $html ) );
 check( 'finnish formatted value', true, str_contains( $html, 'value="46,5"' ) );
 check( 'calculated line', true, str_contains( $html, 'Nettoarvo' ) && str_contains( $html, 'Vakuusarvo' ) && str_contains( $html, 'Vapaata vakuutta' ) );
@@ -371,19 +403,27 @@ check( 'save hooked', 10, has_action( 'save_post_portfolio', 'Ketunkoti\\save_po
 
 // Overview page. Clear fixtures of the earlier checks so the counts are exact.
 foreach ( $GLOBALS['ketunkoti_test_posts'] as $old_post_id ) {
-    wp_delete_post( $old_post_id, true );
+	wp_delete_post( $old_post_id, true );
 }
 $GLOBALS['ketunkoti_test_posts'] = [];
 
-$overview_owner = wp_insert_term( 'Overview test owner A', 'portfolio-owner' );
-$GLOBALS['ketunkoti_test_terms'][] = [ 'id' => $overview_owner['term_id'], 'taxonomy' => 'portfolio-owner' ];
+$overview_owner                    = wp_insert_term( 'Overview test owner A', 'portfolio-owner' );
+$GLOBALS['ketunkoti_test_terms'][] = [
+	'id'       => $overview_owner['term_id'],
+	'taxonomy' => 'portfolio-owner',
+];
 
 $p1 = create_test_portfolio( 'Overview apartment one' );
 $p2 = create_test_portfolio( 'Overview apartment two' );
 $p3 = create_test_portfolio( 'Overview apartment draft' );
 wp_set_object_terms( $p1, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
 wp_set_object_terms( $p3, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
-wp_update_post( [ 'ID' => $p3, 'post_status' => 'draft' ] );
+wp_update_post(
+	[
+		'ID'          => $p3,
+		'post_status' => 'draft',
+	]
+);
 update_post_meta( $p1, 'portfolio_estimated_value', '200000' );
 update_post_meta( $p1, 'portfolio_company_loan', '30000' );
 update_post_meta( $p1, 'portfolio_company_loan_checked', '2024-01-01' );
@@ -415,7 +455,12 @@ check( 'html scroll wrapper focusable region', true, str_contains( $html, 'tabin
 check( 'html summary caption id', true, str_contains( $html, '<caption id="ketunkoti-portfolio-caption-summary">' ) );
 check( 'html group caption ids unique', true, str_contains( $html, 'aria-labelledby="ketunkoti-portfolio-caption-0"' ) && str_contains( $html, '<caption id="ketunkoti-portfolio-caption-1">' ) );
 check( 'html links to edit screen', true, str_contains( $html, 'post=' . $p1 ) );
-$empty = get_portfolio_overview_html( [ 'combined' => calculate_portfolio_totals( [] ), 'groups' => [] ] );
+$empty = get_portfolio_overview_html(
+	[
+		'combined' => calculate_portfolio_totals( [] ),
+		'groups'   => [],
+	]
+);
 check( 'empty message', true, str_contains( $empty, 'Salkussa ei ole vielä asuntoja.' ) );
 check( 'empty leverage dash', true, str_contains( $empty, '–' ) );
 check( 'overview page hooked', 10, has_action( 'admin_menu', 'Ketunkoti\\add_portfolio_overview_page' ) );
@@ -425,12 +470,29 @@ $p4 = create_test_portfolio( 'Overview apartment private' );
 $p5 = create_test_portfolio( 'Overview apartment pending' );
 $p6 = create_test_portfolio( 'Overview apartment future' );
 foreach ( [ $p4, $p5, $p6 ] as $status_post ) {
-    wp_set_object_terms( $status_post, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
-    update_post_meta( $status_post, 'portfolio_estimated_value', '1000' );
+	wp_set_object_terms( $status_post, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
+	update_post_meta( $status_post, 'portfolio_estimated_value', '1000' );
 }
-wp_update_post( [ 'ID' => $p4, 'post_status' => 'private' ] );
-wp_update_post( [ 'ID' => $p5, 'post_status' => 'pending' ] );
-wp_update_post( [ 'ID' => $p6, 'post_status' => 'future', 'post_date' => gmdate( 'Y-m-d H:i:s', time() + YEAR_IN_SECONDS ), 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() + YEAR_IN_SECONDS ) ] );
+wp_update_post(
+	[
+		'ID'          => $p4,
+		'post_status' => 'private',
+	]
+);
+wp_update_post(
+	[
+		'ID'          => $p5,
+		'post_status' => 'pending',
+	]
+);
+wp_update_post(
+	[
+		'ID'            => $p6,
+		'post_status'   => 'future',
+		'post_date'     => gmdate( 'Y-m-d H:i:s', time() + YEAR_IN_SECONDS ),
+		'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() + YEAR_IN_SECONDS ),
+	]
+);
 check( 'future status set', 'future', get_post_status( $p6 ) );
 
 $o2    = get_portfolio_overview();
@@ -454,19 +516,22 @@ $dash_id = create_test_portfolio( 'Kalle - Kuja 5 & "A"' );
 $o3      = get_portfolio_overview();
 $titles  = [];
 foreach ( $o3['groups'] as $g ) {
-    foreach ( $g['apartments'] as $a ) {
-        $titles[ $a['id'] ] = $a['title'];
-    }
+	foreach ( $g['apartments'] as $a ) {
+		$titles[ $a['id'] ] = $a['title'];
+	}
 }
 check( 'title with dash unchanged', 'Kalle - Kuja 5 & "A"', $titles[ $dash_id ] ?? null );
 
 // Summary rows: an owner named like a fixed row cannot overwrite it.
-$clash = wp_insert_term( 'Yhteensä', 'portfolio-owner' );
-$GLOBALS['ketunkoti_test_terms'][] = [ 'id' => $clash['term_id'], 'taxonomy' => 'portfolio-owner' ];
+$clash                             = wp_insert_term( 'Yhteensä', 'portfolio-owner' );
+$GLOBALS['ketunkoti_test_terms'][] = [
+	'id'       => $clash['term_id'],
+	'taxonomy' => 'portfolio-owner',
+];
 wp_set_object_terms( $dash_id, [ (int) $clash['term_id'] ], 'portfolio-owner' );
-$o4    = get_portfolio_overview();
-$html4 = get_portfolio_overview_html( $o4 );
-$summary = substr( $html4, 0, (int) strpos( $html4, '</table>' ) );
+$o4        = get_portfolio_overview();
+$html4     = get_portfolio_overview_html( $o4 );
+$summary   = substr( $html4, 0, (int) strpos( $html4, '</table>' ) );
 $total_pos = (int) strrpos( $summary, '<tr class="ketunkoti-portfolio-total"><th scope="row">Yhteensä</th>' );
 check( 'summary Yhteensä row after owner names', true, $total_pos > 0 && $total_pos > (int) strpos( $summary, 'Overview test owner A' ) );
 check( 'summary Yhteensä row is the last row', 1, substr_count( substr( $summary, $total_pos ), '<tr' ) );
@@ -481,8 +546,8 @@ check( 'summary keeps combined and owner rows', true, preg_match_all( '#<th scop
 teardown_test_data();
 
 if ( $GLOBALS['ketunkoti_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

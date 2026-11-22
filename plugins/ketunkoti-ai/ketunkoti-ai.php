@@ -21,7 +21,7 @@ namespace Ketunkoti\AI;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
