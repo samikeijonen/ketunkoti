@@ -69,6 +69,12 @@ $draft = $create_ability->execute( [ 'title' => 'Testi C', 'owner' => $owner_nam
 track_post( (int) ( $draft['id'] ?? 0 ) );
 check( 'draft created', 'draft', $draft['status'] ?? '' );
 
+check( 'draft read has labelled fields', true, isset( $get_ability->execute( [ 'owner' => $owner_name ] )['groups'][0]['drafts'][0]['fields']['portfolio_bank_loan']['label'] ) );
+$draft_update = $update_ability->execute( [ 'id' => $draft['id'], 'fields' => [ 'portfolio_bank_loan' => '7 000' ] ] );
+$draft_read   = $get_ability->execute( [ 'owner' => $owner_name ] )['groups'][0]['drafts'][0] ?? [];
+check( 'draft field readable', 7000.0, $draft_read['fields']['portfolio_bank_loan']['value'] ?? null );
+check( 'draft has results', true, isset( $draft_read['results'] ) );
+
 $upd = $update_ability->execute( [ 'id' => $new['id'], 'fields' => [ 'portfolio_bank_loan' => 5000 ] ] );
 check( 'update saved', 5000.0, $upd['fields']['portfolio_bank_loan'] ?? null );
 $log = (array) get_post_meta( $new['id'], '_ketunkoti_ai_portfolio_log', true );

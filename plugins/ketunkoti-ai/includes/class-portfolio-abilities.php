@@ -148,6 +148,14 @@ final class Portfolio_Abilities {
                 $apartment['fields'] = self::label_fields( $apartment['fields'], $labels );
             }
             unset( $apartment );
+
+            // Drafts are read in full too, so a client can read before it updates one.
+            foreach ( $group['drafts'] as &$draft ) {
+                $draft_fields    = \Ketunkoti\get_portfolio_field_values( (int) $draft['id'] );
+                $draft['results'] = \Ketunkoti\calculate_portfolio_apartment( $draft_fields );
+                $draft['fields']  = self::label_fields( $draft_fields, $labels );
+            }
+            unset( $draft );
         }
         unset( $group );
 
@@ -261,17 +269,7 @@ final class Portfolio_Abilities {
         $before = array_intersect_key( $stored, $values );
         $after  = $values;
 
-        if ( null !== $title ) {
-            $before['post_title'] = get_the_title( $post_id );
-            $after['post_title']  = $title;
-            wp_update_post(
-                [
-                    'ID'         => $post_id,
-                    'post_title' => $title,
-                ]
-            );
-        }
-
+        // The owner goes first: it is the step most likely to fail, and nothing is written before it succeeds.
         if ( null !== $owner ) {
             $before['owner'] = self::owner_name( $post_id );
             $term_id         = \Ketunkoti\set_portfolio_owner( $post_id, $owner );
@@ -279,6 +277,23 @@ final class Portfolio_Abilities {
                 return $term_id;
             }
             $after['owner'] = self::owner_name( $post_id );
+        }
+
+        if ( null !== $title ) {
+            $before['post_title'] = get_the_title( $post_id );
+            $updated              = wp_update_post(
+                [
+                    'ID'         => $post_id,
+                    'post_title' => $title,
+                ],
+                true
+            );
+            if ( is_wp_error( $updated ) ) {
+                // The owner may already be saved: log it so the write is never invisible.
+                self::log_write( $post_id, array_diff_key( $before, [ 'post_title' => 1 ] ), array_diff_key( $after, [ 'post_title' => 1 ] ) );
+                return $updated;
+            }
+            $after['post_title'] = $title;
         }
 
         \Ketunkoti\write_portfolio_fields( $post_id, $values );
