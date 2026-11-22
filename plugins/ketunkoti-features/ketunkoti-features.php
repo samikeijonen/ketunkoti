@@ -73,6 +73,7 @@ function activate() {
     register_taxonomies();
     register_portfolio();
     register_portfolio_snapshots();
+    schedule_portfolio_snapshot_event();
     flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\activate' );
@@ -86,6 +87,7 @@ register_activation_hook( __FILE__, __NAMESPACE__ . '\activate' );
  * @return void
  */
 function deactivate() {
+    wp_clear_scheduled_hook( PORTFOLIO_SNAPSHOT_EVENT );
     flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate' );

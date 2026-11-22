@@ -20,10 +20,12 @@ use WP_Query;
 use WP_REST_Request;
 
 use function Ketunkoti\build_portfolio_snapshot_data;
+use function Ketunkoti\get_next_portfolio_snapshot_time;
 use function Ketunkoti\get_portfolio_overview;
 use function Ketunkoti\get_portfolio_snapshot_id;
 use function Ketunkoti\get_portfolio_snapshot_month;
 use function Ketunkoti\get_portfolio_snapshots;
+use function Ketunkoti\run_portfolio_snapshot_cron;
 use function Ketunkoti\save_portfolio_snapshot;
 
 // Only runnable through WP-CLI, never over HTTP.
@@ -129,6 +131,7 @@ function teardown_test_data(): void {
         wp_delete_term( $term['id'], $term['taxonomy'] );
     }
 
+    wp_clear_scheduled_hook( 'ketunkoti_portfolio_monthly_snapshot' );
     update_option( 'timezone_string', $GLOBALS['ketunkoti_test_old_timezone'] );
 
     foreach ( $GLOBALS['ketunkoti_test_users'] as $user_id ) {
@@ -257,6 +260,108 @@ check( 'malformed skipped', 0, count( get_portfolio_snapshots() ) );
 
 $bad = save_portfolio_snapshot( 'nope', $ts_nov );
 check( 'bad trigger', 'ketunkoti_portfolio_invalid_trigger', is_wp_error( $bad ) ? $bad->get_error_code() : null );
+
+// Checks: the save leaves no filter behind.
+$filter_count_before = count( $GLOBALS['wp_filter']['wp_insert_post_data']->callbacks[10] ?? [] );
+save_portfolio_snapshot( 'manual', strtotime( '2027-02-10 10:00:00 UTC' ) );
+$GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-02' );
+check( 'save removes its insert filter', $filter_count_before, count( $GLOBALS['wp_filter']['wp_insert_post_data']->callbacks[10] ?? [] ) );
+
+// A save_post hook that throws must not leave the filter attached.
+$thrower = static function ( int $post_id, \WP_Post $post ): void {
+    if ( 'portfolio_snapshot' === $post->post_type ) {
+        throw new \RuntimeException( 'boom' );
+    }
+};
+add_action( 'save_post', $thrower, 10, 2 );
+try {
+    save_portfolio_snapshot( 'manual', strtotime( '2027-02-11 10:00:00 UTC' ) );
+} catch ( \RuntimeException $e ) {
+    echo 'PASS exception propagates', PHP_EOL;
+}
+remove_action( 'save_post', $thrower, 10 );
+check( 'filter removed after exception', $filter_count_before, count( $GLOBALS['wp_filter']['wp_insert_post_data']->callbacks[10] ?? [] ) );
+$GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-02' );
+
+// Checks: one entry per month, newest post_date wins (dated in the past so they stay published).
+foreach ( [ '2026-05-01 08:00:00' => 'older', '2026-05-01 09:00:00' => 'newer' ] as $date => $label ) {
+    $dup_id = wp_insert_post(
+        [
+            'post_type'   => 'portfolio_snapshot',
+            'post_status' => 'publish',
+            'post_title'  => '2027-05',
+            'post_date'   => $date,
+        ]
+    );
+    $GLOBALS['ketunkoti_test_posts'][] = (int) $dup_id;
+    update_post_meta( $dup_id, 'portfolio_snapshot_data', [ 'month' => '2027-05', 'combined' => [], 'trigger' => $label ] );
+}
+$dups = get_portfolio_snapshots( '2027-05', '2027-05' );
+check( 'one entry per month', 1, count( $dups ) );
+check( 'newest post_date wins', 'newer', $dups[0]['trigger'] ?? null );
+
+// Checks: the monthly schedule.
+wp_clear_scheduled_hook( 'ketunkoti_portfolio_monthly_snapshot' );
+$t = get_next_portfolio_snapshot_time( strtotime( '2026-11-15 10:00:00 UTC' ) );
+check( 'next is 1 dec 00:30 helsinki', '2026-12-01 00:30', wp_date( 'Y-m-d H:i', $t ) );
+check( 'next from late 30 nov local', '2027-01-01 00:30', wp_date( 'Y-m-d H:i', get_next_portfolio_snapshot_time( strtotime( '2026-11-30 22:01:00 UTC' ) ) ) );
+
+$event = 'ketunkoti_portfolio_monthly_snapshot';
+check( 'init hook schedules', true, false !== has_action( 'init', 'Ketunkoti\schedule_portfolio_snapshot_event' ) );
+\Ketunkoti\schedule_portfolio_snapshot_event();
+check( 'event scheduled when missing', true, false !== wp_next_scheduled( $event ) );
+check( 'cron callback hooked', true, false !== has_action( $event, 'Ketunkoti\run_portfolio_snapshot_cron' ) );
+
+$now           = strtotime( '2027-03-10 10:00:00 UTC' );
+$next_month_ts = strtotime( '2027-04-10 10:00:00 UTC' );
+
+// Empty portfolio: trash every apartment.
+wp_trash_post( $apartment_id );
+wp_trash_post( $draft_id );
+check( 'empty skips', 'empty', run_portfolio_snapshot_cron( $now ) );
+check( 'empty retries tomorrow', $now + DAY_IN_SECONDS, wp_next_scheduled( $event ) );
+check( 'empty saved nothing', 0, get_portfolio_snapshot_id( '2027-03' ) );
+wp_update_post( [ 'ID' => $apartment_id, 'post_status' => 'publish' ] );
+wp_update_post( [ 'ID' => $draft_id, 'post_status' => 'draft' ] );
+
+check( 'first run saves', 'saved', run_portfolio_snapshot_cron( $now ) );
+check( 'saved schedules next 1st', '2027-04-01 00:30', wp_date( 'Y-m-d H:i', wp_next_scheduled( $event ) ) );
+$GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-03' );
+check( 'cron trigger stored', 'cron', get_portfolio_snapshots( '2027-03', '2027-03' )[0]['trigger'] );
+check( 'second run exists', 'exists', run_portfolio_snapshot_cron( $now ) );
+check( 'exists schedules next 1st', '2027-04-01 00:30', wp_date( 'Y-m-d H:i', wp_next_scheduled( $event ) ) );
+check( 'one event only', 1, count( array_filter( _get_cron_array(), fn( $e ) => isset( $e[ $event ] ) ) ) );
+
+// Stray extra event is cleared when the cron callback reschedules.
+wp_schedule_single_event( $now + 5000, $event );
+run_portfolio_snapshot_cron( $now );
+check( 'stray events cleared', 1, count( array_filter( _get_cron_array(), fn( $e ) => isset( $e[ $event ] ) ) ) );
+
+$march_id = get_portfolio_snapshot_id( '2027-03' );
+wp_trash_post( $march_id );
+check( 'after trash saves again', 'saved', run_portfolio_snapshot_cron( $now ) );
+$GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-03' );
+
+// April has no snapshot yet, so the forced failure takes the insert path.
+add_filter( 'wp_insert_post_empty_content', '__return_true' );
+$log_file = tempnam( sys_get_temp_dir(), 'snaplog' );
+$old_log  = ini_set( 'error_log', $log_file );
+check( 'failure retries in an hour', 'failed', run_portfolio_snapshot_cron( $next_month_ts ) );
+ini_set( 'error_log', $old_log );
+remove_filter( 'wp_insert_post_empty_content', '__return_true' );
+check( 'retry scheduled', $next_month_ts + HOUR_IN_SECONDS, wp_next_scheduled( $event ) );
+check( 'failure logged', true, '' !== trim( (string) file_get_contents( $log_file ) ) );
+unlink( $log_file );
+check( 'failure saved nothing', 0, get_portfolio_snapshot_id( '2027-04' ) );
+
+// An exception also counts as a failure.
+add_action( 'save_post', $thrower, 10, 2 );
+$old_log = ini_set( 'error_log', '/dev/null' );
+check( 'exception is failed', 'failed', run_portfolio_snapshot_cron( $next_month_ts ) );
+ini_set( 'error_log', $old_log );
+remove_action( 'save_post', $thrower, 10 );
+check( 'exception retry in an hour', $next_month_ts + HOUR_IN_SECONDS, wp_next_scheduled( $event ) );
+$GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-04' );
 
 // Teardown.
 teardown_test_data();

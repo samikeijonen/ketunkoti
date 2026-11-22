@@ -32,6 +32,11 @@ const PORTFOLIO_SNAPSHOT_MONTH_META = 'portfolio_snapshot_month';
 const PORTFOLIO_SNAPSHOT_DATA_META = 'portfolio_snapshot_data';
 
 /**
+ * Name of the WP-Cron event that takes the monthly snapshot.
+ */
+const PORTFOLIO_SNAPSHOT_EVENT = 'ketunkoti_portfolio_monthly_snapshot';
+
+/**
  * Registers the snapshot post type and its two meta keys.
  *
  * Registered like `portfolio` in privacy terms: no public output of any kind.
@@ -299,14 +304,17 @@ function save_portfolio_snapshot( string $trigger, ?int $timestamp = null ): int
     };
     add_filter( 'wp_insert_post_data', $keep_published );
 
-    if ( $existing > 0 ) {
-        $post['ID'] = $existing;
-        $post_id    = wp_update_post( wp_slash( $post ), true );
-    } else {
-        $post_id = wp_insert_post( wp_slash( $post ), true );
+    try {
+        if ( $existing > 0 ) {
+            $post['ID'] = $existing;
+            $post_id    = wp_update_post( wp_slash( $post ), true );
+        } else {
+            $post_id = wp_insert_post( wp_slash( $post ), true );
+        }
+    } finally {
+        // Always detach the filter, even when a save_post hook throws.
+        remove_filter( 'wp_insert_post_data', $keep_published );
     }
-
-    remove_filter( 'wp_insert_post_data', $keep_published );
 
     if ( is_wp_error( $post_id ) ) {
         return $post_id;
@@ -341,7 +349,8 @@ function get_portfolio_snapshots( ?string $from = null, ?string $to = null ): ar
         ]
     );
 
-    $snapshots = [];
+    // At most one entry per month: when a race left two, the newest post_date wins.
+    $by_month = [];
 
     foreach ( $ids as $id ) {
         $data = get_post_meta( (int) $id, PORTFOLIO_SNAPSHOT_DATA_META, true );
@@ -354,8 +363,19 @@ function get_portfolio_snapshots( ?string $from = null, ?string $to = null ): ar
             continue;
         }
 
-        $snapshots[] = $data;
+        $post_date = (string) get_post_field( 'post_date', (int) $id );
+
+        if ( isset( $by_month[ $data['month'] ] ) && strcmp( $post_date, $by_month[ $data['month'] ]['date'] ) <= 0 ) {
+            continue;
+        }
+
+        $by_month[ $data['month'] ] = [
+            'date' => $post_date,
+            'data' => $data,
+        ];
     }
+
+    $snapshots = array_column( $by_month, 'data' );
 
     usort(
         $snapshots,
@@ -364,3 +384,98 @@ function get_portfolio_snapshots( ?string $from = null, ?string $to = null ): ar
 
     return $snapshots;
 }
+
+/**
+ * Returns the time of the next monthly run.
+ *
+ * @param int $now Unix timestamp the next run is counted from.
+ * @return int UTC timestamp of 00:30 site time on the 1st of the month after `$now`'s site-time month.
+ */
+function get_next_portfolio_snapshot_time( int $now ): int {
+    return ( new \DateTimeImmutable( '@' . $now ) )
+        ->setTimezone( wp_timezone() )
+        ->modify( 'first day of next month' )
+        ->setTime( 0, 30 )
+        ->getTimestamp();
+}
+
+/**
+ * Schedules the monthly event when none is pending.
+ *
+ * Cheap enough for `init`: it only checks `wp_next_scheduled()`. The first run
+ * is scheduled for now, so the first snapshot is taken right after the code
+ * goes live.
+ *
+ * @return void
+ */
+function schedule_portfolio_snapshot_event(): void {
+    if ( false === wp_next_scheduled( PORTFOLIO_SNAPSHOT_EVENT ) ) {
+        wp_schedule_single_event( time(), PORTFOLIO_SNAPSHOT_EVENT );
+    }
+}
+add_action( 'init', __NAMESPACE__ . '\schedule_portfolio_snapshot_event' );
+
+/**
+ * Replaces the pending monthly event with a single one at a given time.
+ *
+ * @param int $timestamp UTC timestamp of the next run.
+ * @return void
+ */
+function reschedule_portfolio_snapshot_event( int $timestamp ): void {
+    wp_clear_scheduled_hook( PORTFOLIO_SNAPSHOT_EVENT );
+    wp_schedule_single_event( $timestamp, PORTFOLIO_SNAPSHOT_EVENT );
+}
+
+/**
+ * Cron callback: saves this month's snapshot if the month has none yet.
+ *
+ * Empty portfolio: nothing saved, retry in a day. Existing or saved: next run
+ * on the 1st of next month. Error or exception: logged, retry in an hour so a
+ * failed month is retried instead of skipped.
+ *
+ * @param int|null $now Current timestamp, time() when null (tests pass a fixed one).
+ * @return string Outcome: `saved`, `exists`, `empty` or `failed`.
+ */
+function run_portfolio_snapshot_cron( ?int $now = null ): string {
+    // WP-Cron passes no arguments, but guard against stray ones.
+    $now = is_int( $now ) ? $now : time();
+
+    $apartments = get_posts(
+        [
+            'post_type'              => PORTFOLIO_POST_TYPE,
+            'post_status'            => 'any',
+            'posts_per_page'         => 1,
+            'fields'                 => 'ids',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+        ]
+    );
+
+    if ( empty( $apartments ) ) {
+        reschedule_portfolio_snapshot_event( $now + DAY_IN_SECONDS );
+        return 'empty';
+    }
+
+    if ( get_portfolio_snapshot_id( get_portfolio_snapshot_month( $now ) ) > 0 ) {
+        reschedule_portfolio_snapshot_event( get_next_portfolio_snapshot_time( $now ) );
+        return 'exists';
+    }
+
+    try {
+        $result = save_portfolio_snapshot( 'cron', $now );
+    } catch ( \Throwable $error ) {
+        $result = new \WP_Error( 'ketunkoti_portfolio_snapshot_exception', $error->getMessage() );
+    }
+
+    if ( is_wp_error( $result ) ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Logged to WP_DEBUG_LOG on purpose.
+        error_log( 'Ketunkoti portfolio snapshot failed: ' . $result->get_error_message() );
+        reschedule_portfolio_snapshot_event( $now + HOUR_IN_SECONDS );
+        return 'failed';
+    }
+
+    reschedule_portfolio_snapshot_event( get_next_portfolio_snapshot_time( $now ) );
+    return 'saved';
+}
+add_action( PORTFOLIO_SNAPSHOT_EVENT, __NAMESPACE__ . '\run_portfolio_snapshot_cron' );
