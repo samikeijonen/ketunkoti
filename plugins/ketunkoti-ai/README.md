@@ -6,7 +6,7 @@ Home abilities for Claude. Lets Claude read, copy and fill in home listings: the
 
 - WordPress 7.1+ (Abilities API), PHP 8.2+.
 - Ketun koti Features active (`Requires Plugins`).
-- For Claude on your computer: the [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin and an MCP client connected to the site.
+- For Claude on your computer: the [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/) plugin and an MCP client connected to the site.
 
 The plugin works with or without Seravo AI Assistant. When Seravo AI Assistant is active, its chat offers these abilities too, and Seravo's own generic abilities cover the rest of a listing:
 
