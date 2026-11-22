@@ -289,6 +289,11 @@ function save_portfolio_snapshot( string $trigger, ?int $timestamp = null ): int
         'post_date'     => wp_date( 'Y-m-d H:i:s', $timestamp ),
         'post_date_gmt' => gmdate( 'Y-m-d H:i:s', $timestamp ),
         'post_author'   => get_current_user_id(),
+        // Stored before save_post hooks fire, so a failing hook can't leave a post without its month.
+        'meta_input'    => [
+            PORTFOLIO_SNAPSHOT_MONTH_META => $month,
+            PORTFOLIO_SNAPSHOT_DATA_META  => $data,
+        ],
     ];
 
     /*
@@ -319,10 +324,6 @@ function save_portfolio_snapshot( string $trigger, ?int $timestamp = null ): int
     if ( is_wp_error( $post_id ) ) {
         return $post_id;
     }
-
-    // Meta values are unslashed on save, so slash them to keep backslashes in titles.
-    update_post_meta( $post_id, PORTFOLIO_SNAPSHOT_MONTH_META, $month );
-    update_post_meta( $post_id, PORTFOLIO_SNAPSHOT_DATA_META, wp_slash( $data ) );
 
     return (int) $post_id;
 }
@@ -363,14 +364,16 @@ function get_portfolio_snapshots( ?string $from = null, ?string $to = null ): ar
             continue;
         }
 
+        // Compare post_date first and the higher post ID on a tie, so the pick is deterministic.
         $post_date = (string) get_post_field( 'post_date', (int) $id );
+        $order_key = $post_date . ' ' . str_pad( (string) $id, 20, '0', STR_PAD_LEFT );
 
-        if ( isset( $by_month[ $data['month'] ] ) && strcmp( $post_date, $by_month[ $data['month'] ]['date'] ) <= 0 ) {
+        if ( isset( $by_month[ $data['month'] ] ) && strcmp( $order_key, $by_month[ $data['month'] ]['date'] ) <= 0 ) {
             continue;
         }
 
         $by_month[ $data['month'] ] = [
-            'date' => $post_date,
+            'date' => $order_key,
             'data' => $data,
         ];
     }
@@ -471,6 +474,14 @@ function run_portfolio_snapshot_cron( ?int $now = null ): string {
     if ( is_wp_error( $result ) ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Logged to WP_DEBUG_LOG on purpose.
         error_log( 'Ketunkoti portfolio snapshot failed: ' . $result->get_error_message() );
+        reschedule_portfolio_snapshot_event( $now + HOUR_IN_SECONDS );
+        return 'failed';
+    }
+
+    // The save must be findable by its month, otherwise the next run would duplicate it.
+    if ( 0 === get_portfolio_snapshot_id( get_portfolio_snapshot_month( $now ) ) ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Logged to WP_DEBUG_LOG on purpose.
+        error_log( 'Ketunkoti portfolio snapshot failed: saved snapshot is not found by its month.' );
         reschedule_portfolio_snapshot_event( $now + HOUR_IN_SECONDS );
         return 'failed';
     }

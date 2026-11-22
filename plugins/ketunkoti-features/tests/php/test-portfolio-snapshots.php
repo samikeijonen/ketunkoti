@@ -270,6 +270,7 @@ check( 'save removes its insert filter', $filter_count_before, count( $GLOBALS['
 // A save_post hook that throws must not leave the filter attached.
 $thrower = static function ( int $post_id, \WP_Post $post ): void {
     if ( 'portfolio_snapshot' === $post->post_type ) {
+        $GLOBALS['ketunkoti_test_posts'][] = $post_id;
         throw new \RuntimeException( 'boom' );
     }
 };
@@ -300,11 +301,21 @@ $dups = get_portfolio_snapshots( '2027-05', '2027-05' );
 check( 'one entry per month', 1, count( $dups ) );
 check( 'newest post_date wins', 'newer', $dups[0]['trigger'] ?? null );
 
+// Equal post_date: the higher post ID wins.
+foreach ( [ 'first', 'second' ] as $label ) {
+    $tie_id = wp_insert_post( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'publish', 'post_title' => '2027-07', 'post_date' => '2026-05-02 08:00:00' ] );
+    $GLOBALS['ketunkoti_test_posts'][] = (int) $tie_id;
+    update_post_meta( $tie_id, 'portfolio_snapshot_data', [ 'month' => '2027-07', 'combined' => [], 'trigger' => $label ] );
+}
+check( 'equal dates: higher ID wins', 'second', get_portfolio_snapshots( '2027-07', '2027-07' )[0]['trigger'] ?? null );
+
 // Checks: the monthly schedule.
 wp_clear_scheduled_hook( 'ketunkoti_portfolio_monthly_snapshot' );
 $t = get_next_portfolio_snapshot_time( strtotime( '2026-11-15 10:00:00 UTC' ) );
 check( 'next is 1 dec 00:30 helsinki', '2026-12-01 00:30', wp_date( 'Y-m-d H:i', $t ) );
 check( 'next from late 30 nov local', '2027-01-01 00:30', wp_date( 'Y-m-d H:i', get_next_portfolio_snapshot_time( strtotime( '2026-11-30 22:01:00 UTC' ) ) ) );
+check( 'dst spring: 1 apr 00:30 helsinki', '2027-03-31 21:30', gmdate( 'Y-m-d H:i', get_next_portfolio_snapshot_time( strtotime( '2027-03-15 10:00:00 UTC' ) ) ) );
+check( 'dst autumn: 1 nov 00:30 helsinki', '2026-10-31 22:30', gmdate( 'Y-m-d H:i', get_next_portfolio_snapshot_time( strtotime( '2026-10-15 10:00:00 UTC' ) ) ) );
 
 $event = 'ketunkoti_portfolio_monthly_snapshot';
 check( 'init hook schedules', true, false !== has_action( 'init', 'Ketunkoti\schedule_portfolio_snapshot_event' ) );
@@ -361,7 +372,26 @@ check( 'exception is failed', 'failed', run_portfolio_snapshot_cron( $next_month
 ini_set( 'error_log', $old_log );
 remove_action( 'save_post', $thrower, 10 );
 check( 'exception retry in an hour', $next_month_ts + HOUR_IN_SECONDS, wp_next_scheduled( $event ) );
-$GLOBALS['ketunkoti_test_posts'][] = get_portfolio_snapshot_id( '2027-04' );
+check( 'failed save still holds its month', true, get_portfolio_snapshot_id( '2027-04' ) > 0 );
+check( 'retry after exception finds the month', 'exists', run_portfolio_snapshot_cron( $next_month_ts ) );
+check( 'one published April post', 1, count( get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'publish', 'meta_key' => 'portfolio_snapshot_month', 'meta_value' => '2027-04', 'fields' => 'ids', 'posts_per_page' => -1 ] ) ) );
+
+// A saved snapshot that cannot be found by its month counts as failed.
+$strip_month = static function ( $check, $object_id, $meta_key ) {
+    return 'portfolio_snapshot_month' === $meta_key ? false : $check;
+};
+$orphan_ts = strtotime( '2027-06-10 10:00:00 UTC' );
+add_filter( 'update_post_metadata', $strip_month, 10, 3 );
+add_filter( 'add_post_metadata', $strip_month, 10, 3 );
+$old_log = ini_set( 'error_log', '/dev/null' );
+check( 'unfindable save is failed', 'failed', run_portfolio_snapshot_cron( $orphan_ts ) );
+ini_set( 'error_log', $old_log );
+remove_filter( 'update_post_metadata', $strip_month, 10 );
+remove_filter( 'add_post_metadata', $strip_month, 10 );
+check( 'unfindable save retries in an hour', $orphan_ts + HOUR_IN_SECONDS, wp_next_scheduled( $event ) );
+foreach ( get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => -1 ] ) as $leftover_id ) {
+    $GLOBALS['ketunkoti_test_posts'][] = (int) $leftover_id;
+}
 
 // Teardown.
 teardown_test_data();
