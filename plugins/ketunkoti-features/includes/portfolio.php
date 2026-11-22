@@ -32,6 +32,11 @@ const PORTFOLIO_OWNER_TAXONOMY = 'portfolio-owner';
 const PORTFOLIO_NO_OWNER = 'Ei omistajaa';
 
 /**
+ * Post type key of a home listing that an apartment can link to.
+ */
+const PORTFOLIO_HOME_POST_TYPE = 'home';
+
+/**
  * Returns the portfolio meta fields in edit screen order.
  *
  * Each entry is keyed by meta key and holds the Finnish label, the value type
@@ -88,11 +93,6 @@ function get_portfolio_fields(): array {
             'type'  => 'number',
             'group' => $debts,
         ],
-        'portfolio_used_collateral'      => [
-            'label' => __( 'Käytetyt vakuudet', 'ketunkoti-features' ),
-            'type'  => 'number',
-            'group' => $value,
-        ],
         'portfolio_rent'                 => [
             'label' => __( 'Vuokra + vesi (€/kk)', 'ketunkoti-features' ),
             'type'  => 'number',
@@ -110,6 +110,11 @@ function get_portfolio_fields(): array {
         ],
         'portfolio_collateral_rate'      => [
             'label' => __( 'Vakuusarvo-%', 'ketunkoti-features' ),
+            'type'  => 'number',
+            'group' => $value,
+        ],
+        'portfolio_used_collateral'      => [
+            'label' => __( 'Käytetyt vakuudet', 'ketunkoti-features' ),
             'type'  => 'number',
             'group' => $value,
         ],
@@ -182,6 +187,11 @@ function register_portfolio(): void {
         $capabilities[ $capability ] = 'manage_options';
     }
 
+    /*
+     * Privacy relies on there being no public output: WP_Query does not gate
+     * published posts by capability, so nothing may ever query this post type
+     * for a visitor.
+     */
     register_post_type(
         PORTFOLIO_POST_TYPE,
         [
@@ -235,6 +245,7 @@ function register_portfolio(): void {
             'query_var'          => false,
             'rewrite'            => false,
             'meta_box_cb'        => false,
+            'show_in_quick_edit' => false,
             'capabilities'       => [
                 'manage_terms' => 'manage_options',
                 'edit_terms'   => 'manage_options',
@@ -290,4 +301,195 @@ function get_portfolio_field_values( int $post_id ): array {
     }
 
     return $values;
+}
+
+/**
+ * Builds the invalid value error for one field.
+ *
+ * @param string $meta_key Meta key of the refused field.
+ * @return \WP_Error Error carrying the field key in its data.
+ */
+function get_portfolio_invalid_value_error( string $meta_key ): \WP_Error {
+    $label = get_portfolio_fields()[ $meta_key ]['label'] ?? $meta_key;
+
+    return new \WP_Error(
+        'ketunkoti_portfolio_invalid_value',
+        sprintf(
+            /* translators: %s: field label. */
+            __( 'Kentän "%s" arvo ei kelpaa.', 'ketunkoti-features' ),
+            $label
+        ),
+        [ 'field' => $meta_key ]
+    );
+}
+
+/**
+ * Validates one non-blank raw value of a portfolio field.
+ *
+ * @param string $meta_key Meta key.
+ * @param string $type     Field type.
+ * @param mixed  $value    Raw value, trimmed when it is a string.
+ * @return float|int|string|null|\WP_Error Normalised value, null for "no value", or an error.
+ */
+function validate_portfolio_value( string $meta_key, string $type, $value ) {
+    if ( 'string' === $type ) {
+        return sanitize_text_field( (string) $value );
+    }
+
+    if ( 'date' === $type ) {
+        $date = sanitize_date( $value );
+
+        return '' === $date ? get_portfolio_invalid_value_error( $meta_key ) : $date;
+    }
+
+    if ( ! is_int( $value ) && ! is_float( $value ) && ! is_string( $value ) ) {
+        return get_portfolio_invalid_value_error( $meta_key );
+    }
+
+    // Finnish notation: spaces as thousands separators, a comma as the decimal separator.
+    $normalised = is_string( $value )
+        ? str_replace( [ ' ', "\xc2\xa0", "\xe2\x80\xaf" ], '', str_replace( ',', '.', $value ) )
+        : $value;
+
+    if ( ! is_numeric( $normalised ) || (float) $normalised < 0 ) {
+        return get_portfolio_invalid_value_error( $meta_key );
+    }
+
+    $number = (float) $normalised;
+
+    if ( 'number' === $type ) {
+        if ( 'portfolio_collateral_rate' === $meta_key && ( $number <= 0 || $number > 100 ) ) {
+            return get_portfolio_invalid_value_error( $meta_key );
+        }
+
+        return $number;
+    }
+
+    // Integer fields refuse decimals.
+    if ( floor( $number ) !== $number ) {
+        return get_portfolio_invalid_value_error( $meta_key );
+    }
+
+    if ( 'portfolio_year_built' === $meta_key ) {
+        $year = sanitize_year( (int) $number );
+
+        return 0 === $year ? get_portfolio_invalid_value_error( $meta_key ) : $year;
+    }
+
+    if ( 'portfolio_home_id' === $meta_key ) {
+        if ( 0.0 === $number ) {
+            return null;
+        }
+
+        return PORTFOLIO_HOME_POST_TYPE === get_post_type( (int) $number )
+            ? (int) $number
+            : get_portfolio_invalid_value_error( $meta_key );
+    }
+
+    return (int) $number;
+}
+
+/**
+ * Validates and normalises raw portfolio field input.
+ *
+ * Shared by the meta box and the abilities. A null or blank string means "no
+ * value" and is returned as null, which `write_portfolio_fields()` turns into
+ * a deleted meta row. Nothing is written here.
+ *
+ * @param array<string, mixed> $raw Meta key to raw value.
+ * @return array<string, float|int|string|null>|\WP_Error Meta key to normalised value, or the first error.
+ */
+function validate_portfolio_fields( array $raw ) {
+    $fields = get_portfolio_fields();
+    $clean  = [];
+
+    foreach ( $raw as $meta_key => $value ) {
+        if ( ! isset( $fields[ $meta_key ] ) ) {
+            return new \WP_Error(
+                'ketunkoti_portfolio_unknown_field',
+                sprintf(
+                    /* translators: %s: meta key. */
+                    __( 'Tuntematon kenttä "%s".', 'ketunkoti-features' ),
+                    (string) $meta_key
+                )
+            );
+        }
+
+        if ( is_string( $value ) ) {
+            $value = trim( $value );
+        }
+
+        if ( null === $value || '' === $value ) {
+            $clean[ $meta_key ] = null;
+            continue;
+        }
+
+        $result = validate_portfolio_value( $meta_key, $fields[ $meta_key ]['type'], $value );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        $clean[ $meta_key ] = $result;
+    }
+
+    return $clean;
+}
+
+/**
+ * Writes validated portfolio field values to post meta.
+ *
+ * @param int                                          $post_id Portfolio post ID.
+ * @param array<string, float|int|string|null> $values  Output of `validate_portfolio_fields()`.
+ * @return void
+ */
+function write_portfolio_fields( int $post_id, array $values ): void {
+    foreach ( $values as $meta_key => $value ) {
+        if ( null === $value ) {
+            delete_post_meta( $post_id, $meta_key );
+            continue;
+        }
+
+        update_post_meta( $post_id, $meta_key, $value );
+    }
+}
+
+/**
+ * Sets the one owner of an apartment.
+ *
+ * Matches an existing owner term by name or slug and creates it otherwise. The
+ * term replaces any previous owner, so an apartment never has two.
+ *
+ * @param int    $post_id Portfolio post ID.
+ * @param string $owner   Owner name or slug.
+ * @return int|\WP_Error Term ID, or an error for an empty name or a failed insert.
+ */
+function set_portfolio_owner( int $post_id, string $owner ) {
+    $owner = sanitize_text_field( $owner );
+
+    if ( '' === $owner ) {
+        return new \WP_Error( 'ketunkoti_portfolio_invalid_owner', __( 'Omistajan nimi puuttuu.', 'ketunkoti-features' ) );
+    }
+
+    $term = get_term_by( 'name', $owner, PORTFOLIO_OWNER_TAXONOMY );
+
+    if ( ! $term ) {
+        $term = get_term_by( 'slug', sanitize_title( $owner ), PORTFOLIO_OWNER_TAXONOMY );
+    }
+
+    if ( $term ) {
+        $term_id = (int) $term->term_id;
+    } else {
+        $inserted = wp_insert_term( $owner, PORTFOLIO_OWNER_TAXONOMY );
+
+        if ( is_wp_error( $inserted ) ) {
+            return $inserted;
+        }
+
+        $term_id = (int) $inserted['term_id'];
+    }
+
+    $result = wp_set_object_terms( $post_id, [ $term_id ], PORTFOLIO_OWNER_TAXONOMY );
+
+    return is_wp_error( $result ) ? $result : $term_id;
 }

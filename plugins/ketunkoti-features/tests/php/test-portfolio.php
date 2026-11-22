@@ -21,6 +21,10 @@ use WP_REST_Request;
 
 use function Ketunkoti\get_portfolio_field_values;
 use function Ketunkoti\get_portfolio_fields;
+use function Ketunkoti\render_portfolio_meta_box;
+use function Ketunkoti\save_portfolio_meta_box;
+use function Ketunkoti\set_portfolio_owner;
+use function Ketunkoti\validate_portfolio_fields;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
@@ -135,6 +139,24 @@ function teardown_test_data(): void {
 $admin  = create_test_user( 'administrator' );
 $editor = create_test_user( 'editor' );
 
+// Fixtures for the home ID checks: a page and a real home listing.
+$page_id = wp_insert_post(
+    [
+        'post_type'   => 'page',
+        'post_status' => 'draft',
+        'post_title'  => 'Portfolio test page',
+    ]
+);
+$home_id = wp_insert_post(
+    [
+        'post_type'   => 'home',
+        'post_status' => 'draft',
+        'post_title'  => 'Portfolio test home',
+    ]
+);
+$GLOBALS['ketunkoti_test_posts'][] = (int) $page_id;
+$GLOBALS['ketunkoti_test_posts'][] = (int) $home_id;
+
 // Checks: registration and privacy.
 check( 'post type registered', true, post_type_exists( 'portfolio' ) );
 check( 'not viewable', false, is_post_type_viewable( 'portfolio' ) );
@@ -155,12 +177,140 @@ check( 'admin can edit', true, user_can( $admin, 'edit_post', $id ) );
 check( 'editor cannot create', false, user_can( $editor, get_post_type_object( 'portfolio' )->cap->create_posts ) );
 
 wp_set_current_user( 0 );
-check( 'logged out query finds nothing', 0, ( new WP_Query( [ 'p' => $id, 'post_type' => 'any' ] ) )->found_posts );
+check( "excluded from 'any' queries", 0, ( new WP_Query( [ 'p' => $id, 'post_type' => 'any' ] ) )->found_posts );
 
 // Checks: field values.
 update_post_meta( $id, 'portfolio_area', '44.5' );
 check( 'typed value', 44.5, get_portfolio_field_values( $id )['portfolio_area'] );
 check( 'unset is null', null, get_portfolio_field_values( $id )['portfolio_bank_loan'] );
+
+// Checks: registration details.
+check( 'owner taxonomy not in quick edit', false, get_taxonomy( 'portfolio-owner' )->show_in_quick_edit );
+$registered_keys = array_filter(
+    get_registered_meta_keys( 'post', 'portfolio' ),
+    static fn ( $key ) => str_starts_with( $key, 'portfolio_' ),
+    ARRAY_FILTER_USE_KEY
+);
+check( 'all portfolio meta keys registered', 14, count( $registered_keys ) );
+check( 'no portfolio meta key in REST', [], array_keys( array_filter( $registered_keys, static fn ( $args ) => ! empty( $args['show_in_rest'] ) ) ) );
+
+// Checks: validation.
+check( 'finnish number', 1285.5, validate_portfolio_fields( [ 'portfolio_charges' => '1 285,50' ] )['portfolio_charges'] );
+check( 'nbsp thousands', 189000.0, validate_portfolio_fields( [ 'portfolio_estimated_value' => "189\u{00A0}000" ] )['portfolio_estimated_value'] );
+check( 'blank deletes', [ 'portfolio_floor' => null ], validate_portfolio_fields( [ 'portfolio_floor' => '  ' ] ) );
+check( 'negative refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_bank_loan' => '-5' ] )->get_error_code() );
+check( 'text number refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_bank_loan' => 'paljon' ] )->get_error_code() );
+check( 'rate over 100 refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_collateral_rate' => 120 ] )->get_error_code() );
+check( 'rate zero refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_collateral_rate' => 0 ] )->get_error_code() );
+check( 'rate 70 ok', 70.0, validate_portfolio_fields( [ 'portfolio_collateral_rate' => '70' ] )['portfolio_collateral_rate'] );
+check( 'bad date refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_company_loan_checked' => '2026-02-31' ] )->get_error_code() );
+check( 'good date ok', '2026-02-28', validate_portfolio_fields( [ 'portfolio_company_loan_checked' => '2026-02-28' ] )['portfolio_company_loan_checked'] );
+check( 'year ok', 1985, validate_portfolio_fields( [ 'portfolio_year_built' => '1985' ] )['portfolio_year_built'] );
+check( 'year zero refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_year_built' => '0' ] )->get_error_code() );
+check( 'decimal year refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_year_built' => '1985,5' ] )->get_error_code() );
+check( 'unknown refused', 'ketunkoti_portfolio_unknown_field', validate_portfolio_fields( [ 'home_area' => 1 ] )->get_error_code() );
+check( 'invalid value names the field', 'portfolio_bank_loan', validate_portfolio_fields( [ 'portfolio_bank_loan' => 'x' ] )->get_error_data()['field'] );
+check( 'home id of a page refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_home_id' => $page_id ] )->get_error_code() );
+check( 'home id of deleted post refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_home_id' => 999999 ] )->get_error_code() );
+check( 'home id of a home ok', (int) $home_id, validate_portfolio_fields( [ 'portfolio_home_id' => $home_id ] )['portfolio_home_id'] );
+check( 'home id zero means none', [ 'portfolio_home_id' => null ], validate_portfolio_fields( [ 'portfolio_home_id' => '0' ] ) );
+
+// Checks: owner.
+$term = set_portfolio_owner( $id, 'Testiomistaja' );
+check( 'owner created', true, is_int( $term ) );
+set_portfolio_owner( $id, 'Toinen omistaja' );
+check( 'only one owner', 1, count( wp_get_object_terms( $id, 'portfolio-owner' ) ) );
+check( 'owner matched by slug', $term, set_portfolio_owner( $id, 'testiomistaja' ) );
+check( 'empty owner refused', 'ketunkoti_portfolio_invalid_owner', set_portfolio_owner( $id, ' ' )->get_error_code() );
+foreach ( [ 'Testiomistaja', 'Toinen omistaja' ] as $owner_name ) {
+    $owner_term = get_term_by( 'name', $owner_name, 'portfolio-owner' );
+    if ( $owner_term ) {
+        $GLOBALS['ketunkoti_test_terms'][] = [
+            'id'       => $owner_term->term_id,
+            'taxonomy' => 'portfolio-owner',
+        ];
+    }
+}
+
+// Checks: meta box save, as admin with a valid nonce.
+wp_set_current_user( $admin );
+$_POST = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_area'            => '46,5',
+    'portfolio_owner'           => 'Testiomistaja',
+];
+save_portfolio_meta_box( $id );
+check( 'meta box saved area', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
+check( 'meta box saved owner', 'Testiomistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
+
+$_POST = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_owner'           => 'Testiomistaja',
+    'portfolio_owner_new'       => 'Toinen omistaja',
+];
+save_portfolio_meta_box( $id );
+check( 'typed new owner wins over radio', 'Toinen omistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
+
+$_POST = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_area'            => '50',
+    'portfolio_bank_loan'       => 'paljon',
+];
+save_portfolio_meta_box( $id );
+check( 'invalid save writes nothing', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
+check( 'invalid save leaves notice', true, (bool) get_transient( 'ketunkoti_portfolio_error_' . $admin ) );
+delete_transient( 'ketunkoti_portfolio_error_' . $admin );
+
+$_POST = [ 'portfolio_area' => '1' ];
+save_portfolio_meta_box( $id );
+check( 'no nonce no save', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
+
+wp_set_current_user( $editor );
+$_POST = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_area'            => '2',
+];
+save_portfolio_meta_box( $id );
+check( 'editor cannot save', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
+
+wp_set_current_user( $admin );
+$revision_id = wp_save_post_revision( $id );
+$_POST       = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_area'            => '3',
+];
+if ( $revision_id ) {
+    save_portfolio_meta_box( (int) $revision_id );
+    check( 'revision not written', '', (string) get_post_meta( (int) $revision_id, 'portfolio_area', true ) );
+}
+$_POST = [];
+
+// Checks: meta box markup.
+update_post_meta( $id, 'portfolio_estimated_value', '189000' );
+update_post_meta( $id, 'portfolio_home_id', (string) $home_id );
+ob_start();
+render_portfolio_meta_box( get_post( $id ) );
+$html = ob_get_clean();
+$positions = [];
+foreach ( [ 'Perustiedot', 'Velat', 'Vuokra ja vastikkeet', 'Arvo ja vakuudet', 'Myynti-ilmoitus' ] as $heading ) {
+    check( 'heading once: ' . $heading, 1, preg_match_all( '#<h3[^>]*>' . preg_quote( $heading, '#' ) . '</h3>#', $html ) );
+    preg_match( '#<h3[^>]*>' . preg_quote( $heading, '#' ) . '</h3>#', $html, $m, PREG_OFFSET_CAPTURE );
+    $positions[] = $m[0][1] ?? -1;
+}
+$sorted = $positions;
+sort( $sorted );
+check( 'headings in order', $sorted, $positions );
+check( 'nonce field', true, str_contains( $html, 'name="ketunkoti_portfolio_nonce"' ) );
+check( 'label tied to input', true, 1 === preg_match( '#<label for="portfolio_area">#', $html ) && str_contains( $html, 'id="portfolio_area"' ) );
+check( 'number input is text decimal', true, str_contains( $html, 'inputmode="decimal"' ) );
+check( 'owner radios in fieldset', true, str_contains( $html, '<fieldset' ) && str_contains( $html, '<legend' ) && str_contains( $html, 'type="radio"' ) );
+check( 'new owner input', true, str_contains( $html, 'name="portfolio_owner_new"' ) );
+check( 'home select with none option', true, str_contains( $html, '<select' ) && str_contains( $html, 'Ei ilmoitusta' ) );
+check( 'home select preselected', true, 1 === preg_match( '#<option value="' . $home_id . '"[^>]* selected#', $html ) );
+check( 'finnish formatted value', true, str_contains( $html, 'value="46,5"' ) );
+check( 'calculated line', true, str_contains( $html, 'Nettoarvo' ) && str_contains( $html, 'Vakuusarvo' ) && str_contains( $html, 'Vapaata vakuutta' ) );
+check( 'meta box hooked', 10, has_action( 'add_meta_boxes_portfolio', 'Ketunkoti\\add_portfolio_meta_box' ) );
+check( 'save hooked', 10, has_action( 'save_post_portfolio', 'Ketunkoti\\save_portfolio_meta_box' ) );
 
 // Teardown.
 teardown_test_data();
