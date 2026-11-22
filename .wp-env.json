@@ -1,5 +1,5 @@
 {
-	"core": null,
+	"core": "https://wordpress.org/wordpress-7.2-RC2.zip",
 	"themes": [ "./themes/ketunkoti", "./themes/foxventures" ],
 	"plugins": [ "./plugins/ketunkoti-features", "./plugins/ketunkoti-blocks", "./plugins/seravo-ai-assistant", "./plugins/ketunkoti-ai", "https://downloads.wordpress.org/plugin/mcp-adapter.0.7.2.zip" ],
 	"config": {
