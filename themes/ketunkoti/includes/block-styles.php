@@ -44,7 +44,7 @@ function ketunkoti_block_styles() {
 			'name'       => 'button-small',
 			'label'      => __( 'Small', 'ketunkoti' ),
 			'style_data' => array(
-				'spacing'    => array(
+				'spacing' => array(
 					'padding' => array(
 						'top'    => '0.625em',
 						'right'  => '1.5em',

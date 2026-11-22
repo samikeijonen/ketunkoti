@@ -13,7 +13,7 @@ namespace Ketunkoti;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -25,21 +25,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool
  */
 function has_contact_form() {
-    static $has_form = null;
+	static $has_form = null;
 
-    if ( null !== $has_form ) {
-        return $has_form;
-    }
+	if ( null !== $has_form ) {
+		return $has_form;
+	}
 
-    $has_form = false;
+	$has_form = false;
 
-    if ( is_singular() ) {
-        $content  = (string) get_post_field( 'post_content', get_queried_object_id() );
-        $has_form = has_shortcode( $content, 'contact-form-7' )
-            || has_block( 'contact-form-7/contact-form-selector', $content );
-    }
+	if ( is_singular() ) {
+		$content  = (string) get_post_field( 'post_content', get_queried_object_id() );
+		$has_form = has_shortcode( $content, 'contact-form-7' )
+			|| has_block( 'contact-form-7/contact-form-selector', $content );
+	}
 
-    return $has_form;
+	return $has_form;
 }
 
 /**
@@ -51,7 +51,7 @@ function has_contact_form() {
  * @return bool
  */
 function load_contact_form_assets( $load ) {
-    return $load && has_contact_form();
+	return $load && has_contact_form();
 }
 add_filter( 'wpcf7_load_js', __NAMESPACE__ . '\load_contact_form_assets' );
 add_filter( 'wpcf7_load_css', __NAMESPACE__ . '\load_contact_form_assets' );

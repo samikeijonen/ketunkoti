@@ -3,7 +3,7 @@
  * Plugin Name:       Ketun koti AI
  * Plugin URI:        https://ketunkoti.fi
  * Description:       Home abilities for Claude: read, copy and fill in home listings.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 7.1
  * Requires PHP:      8.2
  * Requires Plugins:  ketunkoti-features
@@ -21,7 +21,7 @@ namespace Ketunkoti\AI;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -34,6 +34,7 @@ require_once KETUNKOTI_AI_DIR . 'includes/class-home-reader.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-copier.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-registrar.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-abilities.php';
+require_once KETUNKOTI_AI_DIR . 'includes/class-portfolio-abilities.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-new-home-prompt.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-plugin.php';
 

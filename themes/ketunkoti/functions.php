@@ -4,7 +4,13 @@
  *
  * @link https://developer.wordpress.org/themes/basics/theme-functions/
  *
+ * @package Ketunkoti
  */
+
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 require_once get_parent_theme_file_path( 'includes/assets.php' );
 require_once get_parent_theme_file_path( 'includes/block-supports.php' );

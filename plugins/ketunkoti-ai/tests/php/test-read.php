@@ -14,13 +14,20 @@ require_once __DIR__ . '/bootstrap.php';
 $get_home   = wp_get_ability( 'ketunkoti/get-home' );
 $list_homes = wp_get_ability( 'ketunkoti/list-homes' );
 if ( ! $get_home || ! $list_homes ) {
-    check( 'read abilities registered', true, false );
-    finish();
-    return;
+	check( 'read abilities registered', true, false );
+	finish();
+	return;
 }
 
 make_user( 'editor' );
-$home = make_home( 'home', [ 'home_area' => 54.5, 'home_rent' => 780 ], [ 'home-city' => [ 'Lahti' ] ] );
+$home = make_home(
+	'home',
+	[
+		'home_area' => 54.5,
+		'home_rent' => 780,
+	],
+	[ 'home-city' => [ 'Lahti' ] ]
+);
 $res  = $get_home->execute( [ 'id' => $home ] );
 
 check( 'get-home area', '54.5', $res['fields']['home_area']['value'] ?? $res );
@@ -32,7 +39,7 @@ check( 'get-home calculated keys', [ 'home_rental_yield', 'home_cash_flow', 'hom
 check( 'get-home has no ai_owned', false, array_key_exists( 'ai_owned', is_array( $res ) ? $res : [] ) );
 check( 'get-home page refused', true, is_wp_error( $get_home->execute( [ 'id' => self_page() ] ) ) );
 
-$rental = make_home( 'rental', [ 'home_rent' => 700 ] );
+$rental     = make_home( 'rental', [ 'home_rent' => 700 ] );
 $rental_res = $get_home->execute( [ 'id' => $rental ] );
 check( 'get-home rental calculated null', true, is_array( $rental_res ) && array_key_exists( 'calculated', $rental_res ) && null === $rental_res['calculated'] );
 
@@ -40,17 +47,22 @@ $list = $list_homes->execute( [ 'search' => get_the_title( $home ) ] );
 check( 'list finds home', $home, $list['items'][0]['id'] ?? $list );
 check( 'list city', 'Lahti', $list['items'][0]['city'] ?? $list );
 check( 'list total', 1, $list['total'] ?? $list );
-$rentals = $list_homes->execute( [ 'post_type' => 'rental', 'search' => get_the_title( $rental ) ] );
+$rentals = $list_homes->execute(
+	[
+		'post_type' => 'rental',
+		'search'    => get_the_title( $rental ),
+	]
+);
 check( 'list by type', 'rental', $rentals['items'][0]['post_type'] ?? $rentals );
 
 $tools = Registrar::add_tools( [ 'tools' => [ 'other/tool' ] ] )['tools'];
 check( 'mcp tools keep existing', 'other/tool', $tools[0] );
 // Every tool ability in the category is listed; prompts are exposed as MCP prompts instead.
 $registered = array_keys(
-    array_filter(
-        wp_get_abilities( [ 'category' => 'ketunkoti' ] ),
-        static fn( $ability ) => 'tool' === ( $ability->get_meta()['mcp']['type'] ?? 'tool' )
-    )
+	array_filter(
+		wp_get_abilities( [ 'category' => 'ketunkoti' ] ),
+		static fn( $ability ) => 'tool' === ( $ability->get_meta()['mcp']['type'] ?? 'tool' )
+	)
 );
 $listed     = array_values( array_diff( $tools, [ 'other/tool' ] ) );
 sort( $registered );

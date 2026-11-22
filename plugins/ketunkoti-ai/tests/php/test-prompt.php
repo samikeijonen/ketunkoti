@@ -25,23 +25,23 @@ check( 'prompt category', 'ketunkoti', $prompt ? $prompt->get_category() : null 
 check( 'prompt not a tool', false, in_array( New_Home_Prompt::NAME, Registrar::add_tools( [] )['tools'], true ) );
 
 if ( class_exists( \WP\MCP\Abilities\McpAbilityExposure::class ) && $prompt ) {
-    check( 'mcp adapter sees it as public', true, \WP\MCP\Abilities\McpAbilityExposure::is_public( $prompt ) );
+	check( 'mcp adapter sees it as public', true, \WP\MCP\Abilities\McpAbilityExposure::is_public( $prompt ) );
 }
 
 // With Seravo: every tool of the workflow is named, the inputs are passed on, nothing publishes.
 $text = New_Home_Prompt::text( '123', 'Lahti, 3h+k, 72 m²', true );
 foreach ( [
-    'ketunkoti/list-homes',
-    'ketunkoti/get-home',
-    'ketunkoti/copy-home',
-    'ketunkoti/update-home-meta',
-    'seravo-ai-assistant/upload-media',
-    'seravo-ai-assistant/list-taxonomies',
-    'seravo-ai-assistant/list-terms',
-    'seravo-ai-assistant/update-post',
-    'seravo-ai-assistant/update-seo',
+	'ketunkoti/list-homes',
+	'ketunkoti/get-home',
+	'ketunkoti/copy-home',
+	'ketunkoti/update-home-meta',
+	'seravo-ai-assistant/upload-media',
+	'seravo-ai-assistant/list-taxonomies',
+	'seravo-ai-assistant/list-terms',
+	'seravo-ai-assistant/update-post',
+	'seravo-ai-assistant/update-seo',
 ] as $tool ) {
-    check( "names {$tool}", true, str_contains( $text, $tool ) );
+	check( "names {$tool}", true, str_contains( $text, $tool ) );
 }
 check( 'source passed on', true, str_contains( $text, 'Source home: 123' ) );
 check( 'details passed on', true, str_contains( $text, 'Lahti, 3h+k, 72 m²' ) );

@@ -14,7 +14,7 @@ namespace Ketunkoti;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -35,16 +35,16 @@ const FAQ_SCHEMA_ATTRIBUTE = 'ketunkotiFaqSchema';
  * @return array Filtered block type registration arguments.
  */
 function register_faq_schema_attribute( $args, $block_type ): array {
-    if ( 'core/accordion' !== $block_type ) {
-        return $args;
-    }
+	if ( 'core/accordion' !== $block_type ) {
+		return $args;
+	}
 
-    $args['attributes'][ FAQ_SCHEMA_ATTRIBUTE ] = [
-        'type'    => 'boolean',
-        'default' => false,
-    ];
+	$args['attributes'][ FAQ_SCHEMA_ATTRIBUTE ] = [
+		'type'    => 'boolean',
+		'default' => false,
+	];
 
-    return $args;
+	return $args;
 }
 add_filter( 'register_block_type_args', __NAMESPACE__ . '\register_faq_schema_attribute', 10, 2 );
 
@@ -58,13 +58,13 @@ add_filter( 'register_block_type_args', __NAMESPACE__ . '\register_faq_schema_at
  * @return array All question entities collected so far.
  */
 function faq_schema_questions( ?array $questions = null ): array {
-    static $collected = [];
+	static $collected = [];
 
-    if ( null !== $questions ) {
-        $collected = array_merge( $collected, $questions );
-    }
+	if ( null !== $questions ) {
+		$collected = array_merge( $collected, $questions );
+	}
 
-    return $collected;
+	return $collected;
 }
 
 /**
@@ -78,29 +78,29 @@ function faq_schema_questions( ?array $questions = null ): array {
  * @return string Plain text question, or an empty string.
  */
 function get_faq_question( string $html ): string {
-    $processor = new \WP_HTML_Tag_Processor( $html );
+	$processor = new \WP_HTML_Tag_Processor( $html );
 
-    if ( ! $processor->next_tag(
-        [
-            'tag_name'   => 'SPAN',
-            'class_name' => 'wp-block-accordion-heading__toggle-title',
-        ]
-    ) ) {
-        return '';
-    }
+	if ( ! $processor->next_tag(
+		[
+			'tag_name'   => 'SPAN',
+			'class_name' => 'wp-block-accordion-heading__toggle-title',
+		]
+	) ) {
+		return '';
+	}
 
-    $text  = '';
-    $depth = 1;
+	$text  = '';
+	$depth = 1;
 
-    while ( $depth > 0 && $processor->next_token() ) {
-        if ( '#text' === $processor->get_token_type() ) {
-            $text .= $processor->get_modifiable_text();
-        } elseif ( 'SPAN' === $processor->get_tag() ) {
-            $depth += $processor->is_tag_closer() ? -1 : 1;
-        }
-    }
+	while ( $depth > 0 && $processor->next_token() ) {
+		if ( '#text' === $processor->get_token_type() ) {
+			$text .= $processor->get_modifiable_text();
+		} elseif ( 'SPAN' === $processor->get_tag() ) {
+			$depth += $processor->is_tag_closer() ? -1 : 1;
+		}
+	}
 
-    return trim( preg_replace( '/\s+/u', ' ', $text ) );
+	return trim( preg_replace( '/\s+/u', ' ', $text ) );
 }
 
 /**
@@ -114,41 +114,41 @@ function get_faq_question( string $html ): string {
  * @return string Answer HTML, or an empty string when the panel has no text.
  */
 function get_faq_answer( array $panel ): string {
-    $html = '';
+	$html = '';
 
-    foreach ( $panel['innerBlocks'] as $inner_block ) {
-        $html .= render_block( $inner_block );
-    }
+	foreach ( $panel['innerBlocks'] as $inner_block ) {
+		$html .= render_block( $inner_block );
+	}
 
-    $allowed_tags = [
-        'a'      => [ 'href' => true ],
-        'b'      => [],
-        'br'     => [],
-        'div'    => [],
-        'em'     => [],
-        'h1'     => [],
-        'h2'     => [],
-        'h3'     => [],
-        'h4'     => [],
-        'h5'     => [],
-        'h6'     => [],
-        'i'      => [],
-        'li'     => [],
-        'ol'     => [],
-        'p'      => [],
-        'strong' => [],
-        'ul'     => [],
-    ];
+	$allowed_tags = [
+		'a'      => [ 'href' => true ],
+		'b'      => [],
+		'br'     => [],
+		'div'    => [],
+		'em'     => [],
+		'h1'     => [],
+		'h2'     => [],
+		'h3'     => [],
+		'h4'     => [],
+		'h5'     => [],
+		'h6'     => [],
+		'i'      => [],
+		'li'     => [],
+		'ol'     => [],
+		'p'      => [],
+		'strong' => [],
+		'ul'     => [],
+	];
 
-    // Block serialization leaves blank lines between blocks; one is enough.
-    $html = trim( preg_replace( '/\n\s*\n/', "\n", wp_kses( $html, $allowed_tags ) ) );
+	// Block serialization leaves blank lines between blocks; one is enough.
+	$html = trim( preg_replace( '/\n\s*\n/', "\n", wp_kses( $html, $allowed_tags ) ) );
 
-    // Panels left with only empty paragraphs count as unanswered.
-    if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
-        return '';
-    }
+	// Panels left with only empty paragraphs count as unanswered.
+	if ( '' === trim( wp_strip_all_tags( $html ) ) ) {
+		return '';
+	}
 
-    return $html;
+	return $html;
 }
 
 /**
@@ -163,45 +163,45 @@ function get_faq_answer( array $panel ): string {
  * @return string Unchanged block HTML.
  */
 function collect_faq_schema( $block_content, $block ): string {
-    if ( empty( $block['attrs'][ FAQ_SCHEMA_ATTRIBUTE ] ) ) {
-        return $block_content;
-    }
+	if ( empty( $block['attrs'][ FAQ_SCHEMA_ATTRIBUTE ] ) ) {
+		return $block_content;
+	}
 
-    $questions = [];
+	$questions = [];
 
-    foreach ( $block['innerBlocks'] as $item ) {
-        if ( 'core/accordion-item' !== $item['blockName'] ) {
-            continue;
-        }
+	foreach ( $block['innerBlocks'] as $item ) {
+		if ( 'core/accordion-item' !== $item['blockName'] ) {
+			continue;
+		}
 
-        $question = '';
-        $answer   = '';
+		$question = '';
+		$answer   = '';
 
-        foreach ( $item['innerBlocks'] as $inner_block ) {
-            if ( 'core/accordion-heading' === $inner_block['blockName'] ) {
-                $question = get_faq_question( $inner_block['innerHTML'] );
-            } elseif ( 'core/accordion-panel' === $inner_block['blockName'] ) {
-                $answer = get_faq_answer( $inner_block );
-            }
-        }
+		foreach ( $item['innerBlocks'] as $inner_block ) {
+			if ( 'core/accordion-heading' === $inner_block['blockName'] ) {
+				$question = get_faq_question( $inner_block['innerHTML'] );
+			} elseif ( 'core/accordion-panel' === $inner_block['blockName'] ) {
+				$answer = get_faq_answer( $inner_block );
+			}
+		}
 
-        if ( '' === $question || '' === $answer ) {
-            continue;
-        }
+		if ( '' === $question || '' === $answer ) {
+			continue;
+		}
 
-        $questions[] = [
-            '@type'          => 'Question',
-            'name'           => $question,
-            'acceptedAnswer' => [
-                '@type' => 'Answer',
-                'text'  => $answer,
-            ],
-        ];
-    }
+		$questions[] = [
+			'@type'          => 'Question',
+			'name'           => $question,
+			'acceptedAnswer' => [
+				'@type' => 'Answer',
+				'text'  => $answer,
+			],
+		];
+	}
 
-    faq_schema_questions( $questions );
+	faq_schema_questions( $questions );
 
-    return $block_content;
+	return $block_content;
 }
 add_filter( 'render_block_core/accordion', __NAMESPACE__ . '\collect_faq_schema', 10, 2 );
 
@@ -215,21 +215,21 @@ add_filter( 'render_block_core/accordion', __NAMESPACE__ . '\collect_faq_schema'
  * @return void
  */
 function print_faq_schema(): void {
-    $questions = faq_schema_questions();
+	$questions = faq_schema_questions();
 
-    if ( empty( $questions ) || ! is_singular() ) {
-        return;
-    }
+	if ( empty( $questions ) || ! is_singular() ) {
+		return;
+	}
 
-    $schema = [
-        '@context'   => 'https://schema.org',
-        '@type'      => 'FAQPage',
-        'mainEntity' => $questions,
-    ];
+	$schema = [
+		'@context'   => 'https://schema.org',
+		'@type'      => 'FAQPage',
+		'mainEntity' => $questions,
+	];
 
-    wp_print_inline_script_tag(
-        wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG ),
-        [ 'type' => 'application/ld+json' ]
-    );
+	wp_print_inline_script_tag(
+		wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG ),
+		[ 'type' => 'application/ld+json' ]
+	);
 }
 add_action( 'wp_footer', __NAMESPACE__ . '\print_faq_schema' );

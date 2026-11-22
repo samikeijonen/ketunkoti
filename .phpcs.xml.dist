@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<ruleset name="Ketun koti">
+    <description>Coding standard for the Ketun koti plugins and theme.</description>
+
+    <!-- WordPress core coding standards, with short array syntax allowed. -->
+    <rule ref="WordPress">
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+    </rule>
+
+    <!-- PHP only: JavaScript and CSS are linted with wp-scripts. -->
+    <arg name="extensions" value="php"/>
+
+    <!-- Build output and dependencies are not linted. -->
+    <exclude-pattern>*/build/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <!-- Each plugin and the theme use their own text domain. -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="ketunkoti-features"/>
+                <element value="ketunkoti-ai"/>
+                <element value="ketunkoti-blocks"/>
+                <element value="ketunkoti"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!--
+    The tests are WP-CLI eval-file harnesses, never loaded over HTTP: they print
+    plain results, toggle ini settings, log and use short local variable names.
+    These sniffs guard runtime code and are relaxed for tests only.
+    -->
+    <rule ref="WordPress.Security.EscapeOutput">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.DevelopmentFunctions">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.IniSet">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.WP.GlobalVariablesOverride">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.WP.AlternativeFunctions">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.DB.SlowDBQuery">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+</ruleset>

@@ -9,7 +9,7 @@ namespace Ketunkoti\AI;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -17,22 +17,23 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Plugin {
 
-    /**
-     * Adds the plugin's hooks. Runs on `plugins_loaded`.
-     *
-     * Needs only the Abilities API (WordPress core) and, for MCP, the MCP
-     * Adapter. No assistant plugin is required.
-     *
-     * @return void
-     */
-    public static function init(): void {
-        if ( ! function_exists( 'wp_register_ability' ) ) {
-            return;
-        }
+	/**
+	 * Adds the plugin's hooks. Runs on `plugins_loaded`.
+	 *
+	 * Needs only the Abilities API (WordPress core) and, for MCP, the MCP
+	 * Adapter. No assistant plugin is required.
+	 *
+	 * @return void
+	 */
+	public static function init(): void {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			return;
+		}
 
-        add_action( 'wp_abilities_api_categories_init', [ Registrar::class, 'register_category' ] );
-        add_action( 'wp_abilities_api_init', [ Home_Abilities::class, 'register' ] );
-        add_action( 'wp_abilities_api_init', [ New_Home_Prompt::class, 'register' ] );
-        add_filter( 'mcp_adapter_default_server_config', [ Registrar::class, 'add_tools' ] );
-    }
+		add_action( 'wp_abilities_api_categories_init', [ Registrar::class, 'register_category' ] );
+		add_action( 'wp_abilities_api_init', [ Home_Abilities::class, 'register' ] );
+		add_action( 'wp_abilities_api_init', [ Portfolio_Abilities::class, 'register' ] );
+		add_action( 'wp_abilities_api_init', [ New_Home_Prompt::class, 'register' ] );
+		add_filter( 'mcp_adapter_default_server_config', [ Registrar::class, 'add_tools' ] );
+	}
 }

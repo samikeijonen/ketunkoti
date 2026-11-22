@@ -31,7 +31,7 @@ use function Ketunkoti\sanitize_positive_number;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // number_format_i18n() must use the Finnish decimal comma.
@@ -53,19 +53,19 @@ $GLOBALS['ketunkoti_test_failures'] = 0;
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
-        $passed = round( $expected, 2 ) === round( (float) $actual, 2 );
-    } else {
-        $passed = $expected === $actual;
-    }
+	if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
+		$passed = round( $expected, 2 ) === round( (float) $actual, 2 );
+	} else {
+		$passed = $expected === $actual;
+	}
 
-    if ( $passed ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $passed ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_test_failures'];
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_test_failures'];
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 // Lahti, worked by hand on 25.10.2026.
@@ -155,18 +155,30 @@ check( 'annuity no rate', null, calculate_annuity_payment( 19500, null, 25 ) );
 check( 'lahti bank payment', 101.32, calculate_annuity_payment( 19500, 3.85, 25 ) );
 check( 'lahti leveraged cash flow', -73.34, calculate_leveraged_cash_flow( 780, 151.30, 600.72, 101.32 ) );
 $lahti = [
-    'rent'            => 780.0,
-    'maintenance'     => 151.30,
-    'capital'         => 600.72,
-    'selling_price'   => 26000.0,
-    'debt_free_price' => 138725.0,
-    'interest_rate'   => 4.3,
-    'own_capital'     => 6500.0,
-    'bank_rate'       => 3.85,
-    'years'           => 25.0,
+	'rent'            => 780.0,
+	'maintenance'     => 151.30,
+	'capital'         => 600.72,
+	'selling_price'   => 26000.0,
+	'debt_free_price' => 138725.0,
+	'interest_rate'   => 4.3,
+	'own_capital'     => 6500.0,
+	'bank_rate'       => 3.85,
+	'years'           => 25.0,
 ];
 check( 'lahti leveraged equity', 30.80, calculate_leveraged_equity_return( $lahti ) );
-check( 'no bank loan equals listing', 10.56, calculate_leveraged_equity_return( array_merge( $lahti, [ 'own_capital' => 26000.0, 'bank_rate' => null ] ) ) );
+check(
+	'no bank loan equals listing',
+	10.56,
+	calculate_leveraged_equity_return(
+		array_merge(
+			$lahti,
+			[
+				'own_capital' => 26000.0,
+				'bank_rate'   => null,
+			]
+		)
+	)
+);
 check( 'overfunded', round( ( ( 780 - 151.30 ) * 12 - calculate_first_year_interest( 112725, 4.3, 600.72 ) ) / 52000 * 100, 2 ), calculate_leveraged_equity_return( array_merge( $lahti, [ 'own_capital' => 52000.0 ] ) ) );
 check( 'leveraged equity no own capital', null, calculate_leveraged_equity_return( array_merge( $lahti, [ 'own_capital' => 0.0 ] ) ) );
 check( 'leveraged equity no bank rate', null, calculate_leveraged_equity_return( array_merge( $lahti, [ 'bank_rate' => null ] ) ) );
@@ -187,15 +199,22 @@ check( 'loan straight interest', 2350.11, $y['interest'] );
 $y = calculate_first_year_loan( 63000, 7.8, 25, 'fixed', 3.8 );
 check( 'fixed payment below interest keeps payment', 325.62, $y['payments'] / 12 );
 check( 'fixed payment below interest grows balance', true, is_finite( $y['interest'] ) && $y['interest'] > 63000 * 0.078 );
-check( 'loan none', [ 'payments' => 0.0, 'interest' => 0.0 ], calculate_first_year_loan( 0, 3.8, 25, 'annuity' ) );
+check(
+	'loan none',
+	[
+		'payments' => 0.0,
+		'interest' => 0.0,
+	],
+	calculate_first_year_loan( 0, 3.8, 25, 'annuity' )
+);
 check( 'loan short term', null, calculate_first_year_loan( 63000, 3.8, 0.5, 'annuity' ) );
 check( 'loan no rate', null, calculate_first_year_loan( 63000, null, 25, 'annuity' ) );
 check( 'loan unknown method', null, calculate_first_year_loan( 63000, 3.8, 25, 'bullet' ) );
 check( 'loan zero rate straight', 2520.0, calculate_first_year_loan( 63000, 0.0, 25, 'straight' )['payments'] );
 
 if ( $GLOBALS['ketunkoti_test_failures'] > 0 ) {
-    echo $GLOBALS['ketunkoti_test_failures'], ' check(s) failed.', PHP_EOL;
-    exit( 1 );
+	echo $GLOBALS['ketunkoti_test_failures'], ' check(s) failed.', PHP_EOL;
+	exit( 1 );
 }
 
 echo 'All checks passed.', PHP_EOL;

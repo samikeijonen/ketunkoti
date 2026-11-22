@@ -21,7 +21,7 @@ namespace Ketunkoti\Blocks;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -46,16 +46,16 @@ require_once KETUNKOTI_BLOCKS_DIR . 'includes/investment-calculator.php';
  * @return array[] Categories with Ketun koti prepended.
  */
 function register_block_category( array $categories ): array {
-    array_unshift(
-        $categories,
-        [
-            'slug'  => 'ketunkoti',
-            'title' => __( 'Ketun koti', 'ketunkoti-blocks' ),
-            'icon'  => null,
-        ]
-    );
+	array_unshift(
+		$categories,
+		[
+			'slug'  => 'ketunkoti',
+			'title' => __( 'Ketun koti', 'ketunkoti-blocks' ),
+			'icon'  => null,
+		]
+	);
 
-    return $categories;
+	return $categories;
 }
 add_filter( 'block_categories_all', __NAMESPACE__ . '\register_block_category' );
 
@@ -70,14 +70,14 @@ add_filter( 'block_categories_all', __NAMESPACE__ . '\register_block_category' )
  * @return void
  */
 function register_blocks(): void {
-    $block_files = glob( KETUNKOTI_BLOCKS_DIR . 'build/*/block.json' );
+	$block_files = glob( KETUNKOTI_BLOCKS_DIR . 'build/*/block.json' );
 
-    if ( ! $block_files ) {
-        return;
-    }
+	if ( ! $block_files ) {
+		return;
+	}
 
-    foreach ( $block_files as $block_file ) {
-        register_block_type( dirname( $block_file ) );
-    }
+	foreach ( $block_files as $block_file ) {
+		register_block_type( dirname( $block_file ) );
+	}
 }
 add_action( 'init', __NAMESPACE__ . '\register_blocks' );

@@ -17,22 +17,22 @@ namespace Ketunkoti\Blocks;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 if ( '' === trim( $content ) ) {
-    return;
+	return;
 }
 
 // role="list" keeps the list semantics in Safari, which drops them for lists
 // styled with list-style: none.
 $ketunkoti_wrapper_attributes = get_block_wrapper_attributes(
-    [
-        'class' => 'timeline',
-        'role'  => 'list',
-    ]
+	[
+		'class' => 'timeline',
+		'role'  => 'list',
+	]
 );
 ?>
 <ol <?php echo $ketunkoti_wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by get_block_wrapper_attributes(). ?>>
-    <?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered inner blocks. ?>
+	<?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered inner blocks. ?>
 </ol>

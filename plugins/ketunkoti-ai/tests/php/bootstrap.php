@@ -17,7 +17,7 @@ namespace Ketunkoti\AI\Tests;
 
 // Only runnable through WP-CLI, never over HTTP.
 if ( ! defined( 'WP_CLI' ) ) {
-    exit;
+	exit;
 }
 
 // wp eval-file runs the file inside a method, so state lives in $GLOBALS.
@@ -36,22 +36,22 @@ $GLOBALS['ketunkoti_ai_test_users']    = [];
  * @return void
  */
 function check( string $name, $expected, $actual ): void {
-    if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
-        $passed = round( $expected, 2 ) === round( (float) $actual, 2 );
-    } else {
-        $passed = $expected === $actual;
-    }
+	if ( is_float( $expected ) && ( is_float( $actual ) || is_int( $actual ) ) ) {
+		$passed = round( $expected, 2 ) === round( (float) $actual, 2 );
+	} else {
+		$passed = $expected === $actual;
+	}
 
-    if ( $passed ) {
-        echo 'PASS ', $name, PHP_EOL;
-        return;
-    }
+	if ( $passed ) {
+		echo 'PASS ', $name, PHP_EOL;
+		return;
+	}
 
-    ++$GLOBALS['ketunkoti_ai_test_failures'];
-    if ( $actual instanceof \WP_Error ) {
-        $actual = 'WP_Error ' . $actual->get_error_code() . ': ' . $actual->get_error_message();
-    }
-    echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
+	++$GLOBALS['ketunkoti_ai_test_failures'];
+	if ( $actual instanceof \WP_Error ) {
+		$actual = 'WP_Error ' . $actual->get_error_code() . ': ' . $actual->get_error_message();
+	}
+	echo 'FAIL ', $name, ': expected ', var_export( $expected, true ), ', got ', var_export( $actual, true ), PHP_EOL;
 }
 
 /**
@@ -61,18 +61,18 @@ function check( string $name, $expected, $actual ): void {
  * @return int User ID.
  */
 function make_user( string $role = 'editor' ): int {
-    $user_id = wp_insert_user(
-        [
-            'user_login' => 'ketunkoti-ai-test-' . wp_generate_password( 8, false ),
-            'user_pass'  => wp_generate_password(),
-            'role'       => $role,
-        ]
-    );
+	$user_id = wp_insert_user(
+		[
+			'user_login' => 'ketunkoti-ai-test-' . wp_generate_password( 8, false ),
+			'user_pass'  => wp_generate_password(),
+			'role'       => $role,
+		]
+	);
 
-    $GLOBALS['ketunkoti_ai_test_users'][] = $user_id;
-    wp_set_current_user( $user_id );
+	$GLOBALS['ketunkoti_ai_test_users'][] = $user_id;
+	wp_set_current_user( $user_id );
 
-    return $user_id;
+	return $user_id;
 }
 
 /**
@@ -84,26 +84,26 @@ function make_user( string $role = 'editor' ): int {
  * @return int Post ID.
  */
 function make_home( string $type = 'home', array $meta = [], array $terms = [] ): int {
-    $post_id = wp_insert_post(
-        [
-            'post_type'    => $type,
-            'post_status'  => 'publish',
-            'post_title'   => 'Testikoti ' . wp_generate_password( 6, false ),
-            'post_content' => "<!-- wp:paragraph -->\n<p>Valoisa koti.</p>\n<!-- /wp:paragraph -->",
-            'post_excerpt' => 'Lyhyt kuvaus.',
-        ]
-    );
+	$post_id = wp_insert_post(
+		[
+			'post_type'    => $type,
+			'post_status'  => 'publish',
+			'post_title'   => 'Testikoti ' . wp_generate_password( 6, false ),
+			'post_content' => "<!-- wp:paragraph -->\n<p>Valoisa koti.</p>\n<!-- /wp:paragraph -->",
+			'post_excerpt' => 'Lyhyt kuvaus.',
+		]
+	);
 
-    foreach ( $meta as $key => $value ) {
-        update_post_meta( $post_id, $key, $value );
-    }
-    foreach ( $terms as $taxonomy => $names ) {
-        wp_set_object_terms( $post_id, $names, $taxonomy );
-    }
+	foreach ( $meta as $key => $value ) {
+		update_post_meta( $post_id, $key, $value );
+	}
+	foreach ( $terms as $taxonomy => $names ) {
+		wp_set_object_terms( $post_id, $names, $taxonomy );
+	}
 
-    $GLOBALS['ketunkoti_ai_test_posts'][] = $post_id;
+	$GLOBALS['ketunkoti_ai_test_posts'][] = $post_id;
 
-    return $post_id;
+	return $post_id;
 }
 
 /**
@@ -112,17 +112,17 @@ function make_home( string $type = 'home', array $meta = [], array $terms = [] )
  * @return int Post ID.
  */
 function self_page(): int {
-    $post_id = wp_insert_post(
-        [
-            'post_type'   => 'page',
-            'post_status' => 'publish',
-            'post_title'  => 'Testisivu',
-        ]
-    );
+	$post_id = wp_insert_post(
+		[
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Testisivu',
+		]
+	);
 
-    $GLOBALS['ketunkoti_ai_test_posts'][] = $post_id;
+	$GLOBALS['ketunkoti_ai_test_posts'][] = $post_id;
 
-    return $post_id;
+	return $post_id;
 }
 
 /**
@@ -132,7 +132,7 @@ function self_page(): int {
  * @return void
  */
 function track_post( int $post_id ): void {
-    $GLOBALS['ketunkoti_ai_test_posts'][] = $post_id;
+	$GLOBALS['ketunkoti_ai_test_posts'][] = $post_id;
 }
 
 /**
@@ -143,7 +143,7 @@ function track_post( int $post_id ): void {
  * @return string Error code, or "not an error".
  */
 function code( $result ): string {
-    return $result instanceof \WP_Error ? (string) $result->get_error_code() : 'not an error';
+	return $result instanceof \WP_Error ? (string) $result->get_error_code() : 'not an error';
 }
 
 /**
@@ -152,19 +152,19 @@ function code( $result ): string {
  * @return void
  */
 function finish(): void {
-    foreach ( $GLOBALS['ketunkoti_ai_test_posts'] as $post_id ) {
-        wp_delete_post( $post_id, true );
-    }
+	foreach ( $GLOBALS['ketunkoti_ai_test_posts'] as $post_id ) {
+		wp_delete_post( $post_id, true );
+	}
 
-    require_once ABSPATH . 'wp-admin/includes/user.php';
-    foreach ( $GLOBALS['ketunkoti_ai_test_users'] as $user_id ) {
-        wp_delete_user( $user_id );
-    }
+	require_once ABSPATH . 'wp-admin/includes/user.php';
+	foreach ( $GLOBALS['ketunkoti_ai_test_users'] as $user_id ) {
+		wp_delete_user( $user_id );
+	}
 
-    if ( $GLOBALS['ketunkoti_ai_test_failures'] > 0 ) {
-        echo $GLOBALS['ketunkoti_ai_test_failures'], ' check(s) failed.', PHP_EOL;
-        exit( 1 );
-    }
+	if ( $GLOBALS['ketunkoti_ai_test_failures'] > 0 ) {
+		echo $GLOBALS['ketunkoti_ai_test_failures'], ' check(s) failed.', PHP_EOL;
+		exit( 1 );
+	}
 
-    echo 'ALL PASSED', PHP_EOL;
+	echo 'ALL PASSED', PHP_EOL;
 }

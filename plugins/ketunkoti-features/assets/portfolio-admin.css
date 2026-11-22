@@ -1,0 +1,89 @@
+/* Salkku overview page: wp-admin only. */
+.ketunkoti-portfolio-scroll {
+    max-width: 100%;
+    margin: 0 0 24px;
+    overflow-x: auto;
+}
+
+.ketunkoti-portfolio-table {
+    min-width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+}
+
+.ketunkoti-portfolio-table caption {
+    padding: 8px 10px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.ketunkoti-portfolio-table th,
+.ketunkoti-portfolio-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #dcdcde;
+    white-space: nowrap;
+    text-align: right;
+    vertical-align: top;
+}
+
+.ketunkoti-portfolio-table thead th {
+    background: #f6f7f7;
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.ketunkoti-portfolio-table th[scope="row"],
+.ketunkoti-portfolio-table thead th:first-child,
+.ketunkoti-portfolio-table td.ketunkoti-portfolio-text {
+    text-align: left;
+}
+
+.ketunkoti-portfolio-table .ketunkoti-portfolio-total th,
+.ketunkoti-portfolio-table .ketunkoti-portfolio-total td,
+.ketunkoti-portfolio-table tfoot th,
+.ketunkoti-portfolio-table tfoot td {
+    font-weight: 600;
+    background: #f6f7f7;
+}
+
+.ketunkoti-portfolio-scroll:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+.ketunkoti-portfolio-table a:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* #755100 on white is about 7.3:1. */
+.ketunkoti-portfolio-stale {
+    margin-left: 6px;
+    padding: 1px 6px;
+    color: #755100;
+    background: #fcf9e8;
+    border: 1px solid #755100;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.ketunkoti-portfolio-drafts a:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* #50575e on white is about 7.5:1; the sign carries the meaning, not the colour. */
+.ketunkoti-portfolio-change {
+    margin-left: 4px;
+    color: #50575e;
+    font-size: 12px;
+}
+
+.ketunkoti-portfolio-snapshot-form {
+    margin: 0 0 24px;
+}
+
+.ketunkoti-portfolio-snapshot-form .button:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}

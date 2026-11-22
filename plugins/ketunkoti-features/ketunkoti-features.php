@@ -3,7 +3,7 @@
  * Plugin Name:       Ketun koti Features
  * Plugin URI:        https://ketunkoti.fi
  * Description:       Site-specific features for Ketun koti: custom post types and related functionality.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 7.1
  * Requires PHP:      8.2
  * Author:            Sami Keijonen
@@ -20,13 +20,13 @@ namespace Ketunkoti;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
  * Plugin version, used for cache busting when assets are added later.
  */
-define( 'KETUNKOTI_FEATURES_VERSION', '1.0.0' );
+define( 'KETUNKOTI_FEATURES_VERSION', '1.1.0' );
 
 /**
  * Absolute path to the plugin directory, with a trailing slash.
@@ -42,6 +42,12 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/post-types.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/taxonomies.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/meta.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/investment.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-calculator.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-meta-box.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-admin.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-snapshots.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-snapshot-admin.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/bindings.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/faq-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/organization-schema.php';
@@ -64,9 +70,12 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/security.php';
  * @return void
  */
 function activate() {
-    register_post_types();
-    register_taxonomies();
-    flush_rewrite_rules();
+	register_post_types();
+	register_taxonomies();
+	register_portfolio();
+	register_portfolio_snapshots();
+	schedule_portfolio_snapshot_event();
+	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\activate' );
 
@@ -79,7 +88,8 @@ register_activation_hook( __FILE__, __NAMESPACE__ . '\activate' );
  * @return void
  */
 function deactivate() {
-    flush_rewrite_rules();
+	wp_clear_scheduled_hook( PORTFOLIO_SNAPSHOT_EVENT );
+	flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate' );
 
@@ -87,6 +97,7 @@ register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate' );
  * Enqueues the block editor assets.
  *
  * The script and its dependency list come from the build produced by
+ *
  * @wordpress/scripts. Nothing is enqueued when the build is missing, so a fresh
  * checkout without `npm run build` degrades to no editor panel rather than a
  * fatal error or a 404 for the script.
@@ -94,27 +105,27 @@ register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate' );
  * @return void
  */
 function enqueue_block_editor_assets() {
-    $asset_file = KETUNKOTI_FEATURES_DIR . 'build/index.asset.php';
+	$asset_file = KETUNKOTI_FEATURES_DIR . 'build/index.asset.php';
 
-    if ( ! file_exists( $asset_file ) ) {
-        return;
-    }
+	if ( ! file_exists( $asset_file ) ) {
+		return;
+	}
 
-    $asset = require $asset_file;
+	$asset = require $asset_file;
 
-    wp_enqueue_script(
-        'ketunkoti-features-editor',
-        KETUNKOTI_FEATURES_URL . 'build/index.js',
-        $asset['dependencies'],
-        $asset['version'],
-        true
-    );
+	wp_enqueue_script(
+		'ketunkoti-features-editor',
+		KETUNKOTI_FEATURES_URL . 'build/index.js',
+		$asset['dependencies'],
+		$asset['version'],
+		true
+	);
 
-    wp_enqueue_style(
-        'ketunkoti-features-editor',
-        KETUNKOTI_FEATURES_URL . 'build/index.css',
-        [],
-        $asset['version']
-    );
+	wp_enqueue_style(
+		'ketunkoti-features-editor',
+		KETUNKOTI_FEATURES_URL . 'build/index.css',
+		[],
+		$asset['version']
+	);
 }
 add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\enqueue_block_editor_assets' );

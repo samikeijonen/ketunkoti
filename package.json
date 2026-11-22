@@ -25,7 +25,9 @@
 		"format": "npm run format --workspaces --if-present",
 		"lint:js": "npm run lint:js --workspaces --if-present",
 		"start": "wp-env start",
-		"stop": "wp-env stop"
+		"stop": "wp-env stop",
+		"lint:php": "vendor/bin/phpcs -q plugins/ketunkoti-features plugins/ketunkoti-ai plugins/ketunkoti-blocks themes/ketunkoti",
+		"lint": "npm run lint:js && npm run lint:php"
 	},
 	"devDependencies": {
 		"@wordpress/env": "^10.34.0",

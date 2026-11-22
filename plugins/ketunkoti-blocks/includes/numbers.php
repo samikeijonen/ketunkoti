@@ -15,7 +15,7 @@ use function Ketunkoti\format_percentage;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
@@ -33,14 +33,14 @@ const CALCULATOR_DASH = '—';
  * @return float|null The number, or null when empty or not a number.
  */
 function parse_decimal( string $value ): ?float {
-    $normalised = str_replace( [ ' ', "\u{00A0}", "\u{202F}", "\t" ], '', $value );
-    $normalised = preg_replace( '/,/', '.', $normalised, 1 );
+	$normalised = str_replace( [ ' ', "\u{00A0}", "\u{202F}", "\t" ], '', $value );
+	$normalised = preg_replace( '/,/', '.', $normalised, 1 );
 
-    if ( '' === $normalised || ! is_numeric( $normalised ) ) {
-        return null;
-    }
+	if ( '' === $normalised || ! is_numeric( $normalised ) ) {
+		return null;
+	}
 
-    return (float) $normalised;
+	return (float) $normalised;
 }
 
 /**
@@ -55,7 +55,7 @@ function parse_decimal( string $value ): ?float {
  * @return string Normalised value.
  */
 function normalise_formatted_number( string $formatted ): string {
-    return str_replace( [ '&nbsp;', '&#160;', '-' ], [ "\u{00A0}", "\u{00A0}", "\u{2212}" ], $formatted );
+	return str_replace( [ '&nbsp;', '&#160;', '-' ], [ "\u{00A0}", "\u{00A0}", "\u{2212}" ], $formatted );
 }
 
 /**
@@ -67,7 +67,7 @@ function normalise_formatted_number( string $formatted ): string {
  * @return float|null The value, or null when not finite.
  */
 function finite_or_null( ?float $value ): ?float {
-    return null !== $value && is_finite( $value ) ? $value : null;
+	return null !== $value && is_finite( $value ) ? $value : null;
 }
 
 /**
@@ -77,7 +77,7 @@ function finite_or_null( ?float $value ): ?float {
  * @return string Formatted percentage, or a dash.
  */
 function format_percentage_or_dash( ?float $value ): string {
-    return null === $value ? CALCULATOR_DASH : normalise_formatted_number( format_percentage( $value ) );
+	return null === $value ? CALCULATOR_DASH : normalise_formatted_number( format_percentage( $value ) );
 }
 
 /**
@@ -90,7 +90,7 @@ function format_percentage_or_dash( ?float $value ): string {
  * @return string For example "780" or "151.3".
  */
 function format_field_number( float $value ): string {
-    return (string) round( $value, 2 );
+	return (string) round( $value, 2 );
 }
 
 /**
@@ -102,11 +102,11 @@ function format_field_number( float $value ): string {
  * @return string For example "27 000 €" or "22,69 €/m²/kk".
  */
 function format_euros( ?float $value, int $decimals = 0, string $suffix = '' ): string {
-    $value = finite_or_null( $value );
+	$value = finite_or_null( $value );
 
-    if ( null === $value ) {
-        return CALCULATOR_DASH;
-    }
+	if ( null === $value ) {
+		return CALCULATOR_DASH;
+	}
 
-    return normalise_formatted_number( number_format_i18n( $value, $decimals ) ) . "\u{00A0}€" . $suffix;
+	return normalise_formatted_number( number_format_i18n( $value, $decimals ) ) . "\u{00A0}€" . $suffix;
 }
