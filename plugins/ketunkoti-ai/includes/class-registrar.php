@@ -58,7 +58,9 @@ final class Registrar {
      *
      * @param string $name     Ability name, e.g. ketunkoti/get-home.
      * @param array  $args     Ability arguments, including `annotations`.
-     * @param string $mcp_type `tool` (default) or `prompt`. A prompt must be
+     * @param string $mcp_type `tool` (default), `mcp_tool` or `prompt`. An
+     *                         `mcp_tool` is a tool exposed to MCP clients only
+     *                         (not the Seravo chat, not REST). A prompt must be
      *                         read-only and is exposed to MCP clients only.
      * @return void
      */
@@ -66,12 +68,12 @@ final class Registrar {
         $annotations = $args['annotations'] ?? null;
         $is_prompt   = 'prompt' === $mcp_type;
 
-        if ( ! in_array( $mcp_type, [ 'tool', 'prompt' ], true ) ) {
+        if ( ! in_array( $mcp_type, [ 'tool', 'mcp_tool', 'prompt' ], true ) ) {
             _doing_it_wrong(
                 __METHOD__,
                 sprintf(
                     /* translators: 1: ability name, 2: MCP type. */
-                    esc_html__( 'Ability %1$s has an unknown MCP type "%2$s"; use tool or prompt.', 'ketunkoti-ai' ),
+                    esc_html__( 'Ability %1$s has an unknown MCP type "%2$s"; use tool, mcp_tool or prompt.', 'ketunkoti-ai' ),
                     esc_html( $name ),
                     esc_html( $mcp_type )
                 ),
@@ -124,22 +126,38 @@ final class Registrar {
         $args['category'] = self::CATEGORY;
         unset( $args['annotations'] );
 
-        // A prompt is MCP-only: it returns instructions for an MCP client, so it
-        // is neither a chat tool nor a REST ability, and it is not in NAMES.
-        $args['meta'] = array_replace_recursive(
-            $args['meta'] ?? [],
+        $args['meta'] = self::build_meta( $args['meta'] ?? [], $annotations, $mcp_type );
+
+        wp_register_ability( $name, $args );
+    }
+
+    /**
+     * Builds the ability meta for a registration type.
+     *
+     * A prompt or an `mcp_tool` is MCP-only: it is neither a chat tool nor a
+     * REST ability (`public` and `show_in_rest` are false). A prompt is also not
+     * in NAMES; an `mcp_tool` is listed there to reach the MCP server.
+     *
+     * @param array  $meta        Meta given by the caller.
+     * @param array  $annotations Validated annotations.
+     * @param string $mcp_type    `tool`, `mcp_tool` or `prompt`.
+     * @return array
+     */
+    public static function build_meta( array $meta, array $annotations, string $mcp_type ): array {
+        $mcp_only = in_array( $mcp_type, [ 'mcp_tool', 'prompt' ], true );
+
+        return array_replace_recursive(
+            $meta,
             [
                 'annotations'  => $annotations,
-                'show_in_rest' => ! $is_prompt,
-                'public'       => ! $is_prompt,
+                'show_in_rest' => ! $mcp_only,
+                'public'       => ! $mcp_only,
                 'mcp'          => [
-                    'public' => true === $annotations['readonly'],
-                    'type'   => $is_prompt ? 'prompt' : 'tool',
+                    'public' => true === ( $annotations['readonly'] ?? null ),
+                    'type'   => 'prompt' === $mcp_type ? 'prompt' : 'tool',
                 ],
             ]
         );
-
-        wp_register_ability( $name, $args );
     }
 
     /**
