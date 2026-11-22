@@ -3,8 +3,8 @@
  * Salkku overview page: "Yhteenveto" under the Salkku menu.
  *
  * Shows a summary table (combined and per owner) and one apartment table per
- * owner. Totals use published apartments only; drafts are listed under the
- * table. Capability `manage_options`, wp-admin only.
+ * owner. Totals use published and private apartments only; drafts, pending and
+ * scheduled apartments are listed under the table. Capability `manage_options`, wp-admin only.
  *
  * @package Ketunkoti\Features
  */
@@ -46,11 +46,38 @@ function is_portfolio_loan_check_stale( ?string $date, int $now ): bool {
 }
 
 /**
+ * Returns the statuses whose apartments count in the totals.
+ *
+ * @return string[] Post statuses: publish and private.
+ */
+function get_portfolio_counted_statuses(): array {
+    return [ 'publish', 'private' ];
+}
+
+/**
+ * Returns the Finnish label of a status that is listed but not counted.
+ *
+ * @param string $status Post status: draft, pending or future.
+ * @return string Label: luonnos, odottaa or ajastettu.
+ */
+function get_portfolio_status_label( string $status ): string {
+    switch ( $status ) {
+        case 'pending':
+            return __( 'odottaa', 'ketunkoti-features' );
+        case 'future':
+            return __( 'ajastettu', 'ketunkoti-features' );
+        default:
+            return __( 'luonnos', 'ketunkoti-features' );
+    }
+}
+
+/**
  * Collects the portfolio for the overview page.
  *
- * Published and draft apartments are grouped by owner term name (sorted), with
- * a "no owner" group last when it has posts. Totals and the combined totals
- * count published apartments only.
+ * Apartments are grouped by owner term name (sorted), with a "no owner" group
+ * last when it has posts. Published and private apartments are counted in the
+ * totals; draft, pending and scheduled ones are listed as `drafts` with their
+ * `status` and left out of the totals.
  *
  * @return array{combined: array<string, mixed>, groups: array<int, array<string, mixed>>} Overview data.
  */
@@ -58,7 +85,7 @@ function get_portfolio_overview(): array {
     $posts = get_posts(
         [
             'post_type'              => PORTFOLIO_POST_TYPE,
-            'post_status'            => [ 'publish', 'draft' ],
+            'post_status'            => array_merge( get_portfolio_counted_statuses(), [ 'draft', 'pending', 'future' ] ),
             'posts_per_page'         => -1,
             'orderby'                => 'title',
             'order'                  => 'ASC',
@@ -81,10 +108,14 @@ function get_portfolio_overview(): array {
             ];
         }
 
-        if ( 'publish' !== $post->post_status ) {
+        // Raw title: get_the_title() would add the "Private:" prefix and run texturize.
+        $title = (string) get_post_field( 'post_title', $post->ID );
+
+        if ( ! in_array( $post->post_status, get_portfolio_counted_statuses(), true ) ) {
             $by_owner[ $owner ]['drafts'][] = [
-                'id'    => (int) $post->ID,
-                'title' => get_the_title( $post ),
+                'id'     => (int) $post->ID,
+                'title'  => $title,
+                'status' => $post->post_status,
             ];
             continue;
         }
@@ -93,7 +124,7 @@ function get_portfolio_overview(): array {
 
         $by_owner[ $owner ]['apartments'][] = [
             'id'               => (int) $post->ID,
-            'title'            => get_the_title( $post ),
+            'title'            => $title,
             'fields'           => $fields,
             'results'          => calculate_portfolio_apartment( $fields ),
             'loan_check_stale' => is_portfolio_loan_check_stale( $fields['portfolio_company_loan_checked'], $now ),
@@ -157,29 +188,14 @@ function format_portfolio_cell_number( $number, int $decimals = 1 ): string {
 }
 
 /**
- * Returns the HTML of a free collateral amount, red when negative.
- *
- * @param float $amount Free collateral.
- * @return string Escaped HTML.
- */
-function get_portfolio_free_collateral_html( float $amount ): string {
-    $text = esc_html( format_portfolio_euros( $amount ) );
-
-    if ( round( $amount ) < 0 ) {
-        return '<span class="ketunkoti-portfolio-negative">' . $text . '</span>';
-    }
-
-    return $text;
-}
-
-/**
  * Returns the HTML of the summary table.
  *
  * @param array<string, mixed> $overview Overview data.
  * @return string Escaped HTML.
  */
 function get_portfolio_summary_html( array $overview ): string {
-    $rows   = [ __( 'Yhteensä', 'ketunkoti-features' ) => $overview['combined'] ];
+    // A list of [ label, totals ] pairs, so an owner named like a fixed row cannot overwrite it.
+    $rows   = [ [ __( 'Yhteensä', 'ketunkoti-features' ), $overview['combined'] ] ];
     $header = [
         __( 'Vapaata vakuutta', 'ketunkoti-features' ),
         __( 'Velat', 'ketunkoti-features' ),
@@ -189,12 +205,12 @@ function get_portfolio_summary_html( array $overview ): string {
     ];
 
     foreach ( $overview['groups'] as $group ) {
-        $rows[ $group['name'] ] = $group['totals'];
+        $rows[] = [ $group['name'], $group['totals'] ];
     }
 
-    $html  = '<div class="ketunkoti-portfolio-scroll" style="overflow-x: auto;">';
+    $html  = '<div class="ketunkoti-portfolio-scroll" style="overflow-x: auto;" tabindex="0" role="region" aria-labelledby="ketunkoti-portfolio-caption-summary">';
     $html .= '<table class="ketunkoti-portfolio-table ketunkoti-portfolio-summary">';
-    $html .= '<caption>' . esc_html__( 'Salkun yhteenveto', 'ketunkoti-features' ) . '</caption>';
+    $html .= '<caption id="ketunkoti-portfolio-caption-summary">' . esc_html__( 'Salkun yhteenveto', 'ketunkoti-features' ) . '</caption>';
     $html .= '<thead><tr><td><span class="screen-reader-text">' . esc_html__( 'Omistaja', 'ketunkoti-features' ) . '</span></td>';
 
     foreach ( $header as $label ) {
@@ -203,9 +219,9 @@ function get_portfolio_summary_html( array $overview ): string {
 
     $html .= '</tr></thead><tbody>';
 
-    foreach ( $rows as $name => $totals ) {
+    foreach ( $rows as [ $name, $totals ] ) {
         $html .= '<tr><th scope="row">' . esc_html( (string) $name ) . '</th>';
-        $html .= '<td>' . get_portfolio_free_collateral_html( $totals['free_collateral'] ) . '</td>';
+        $html .= '<td>' . esc_html( format_portfolio_euros( $totals['free_collateral'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['debts'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['net_worth'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['value'] ) ) . '</td>';
@@ -263,7 +279,7 @@ function get_portfolio_apartment_row_html( array $apartment ): string {
     $html .= '<td>' . esc_html( ( null !== $rate && $rate > 0 ? format_portfolio_cell_number( $rate ) : format_portfolio_cell_number( PORTFOLIO_DEFAULT_COLLATERAL_RATE ) ) . "\u{00A0}%" ) . '</td>';
     $html .= '<td>' . esc_html( format_portfolio_euros( $r['collateral_value'] ) ) . '</td>';
     $html .= '<td>' . esc_html( format_portfolio_cell_euros( $f['portfolio_used_collateral'] ) ) . '</td>';
-    $html .= '<td>' . get_portfolio_free_collateral_html( $r['free_collateral'] ) . '</td></tr>';
+    $html .= '<td>' . esc_html( format_portfolio_euros( $r['free_collateral'] ) ) . '</td></tr>';
 
     return $html;
 }
@@ -272,9 +288,10 @@ function get_portfolio_apartment_row_html( array $apartment ): string {
  * Returns the HTML of one owner group: heading, table and drafts line.
  *
  * @param array<string, mixed> $group Group data from the overview.
+ * @param int                  $index Position of the group, used for a unique caption ID.
  * @return string Escaped HTML.
  */
-function get_portfolio_group_html( array $group ): string {
+function get_portfolio_group_html( array $group, int $index = 0 ): string {
     $columns = [
         __( 'Asunto', 'ketunkoti-features' ),
         __( 'Osoite', 'ketunkoti-features' ),
@@ -300,10 +317,12 @@ function get_portfolio_group_html( array $group ): string {
     $html = '<h2>' . esc_html( $group['name'] ) . '</h2>';
 
     if ( ! empty( $group['apartments'] ) ) {
-        $html .= '<div class="ketunkoti-portfolio-scroll" style="overflow-x: auto;">';
+        $caption_id = 'ketunkoti-portfolio-caption-' . $index;
+
+        $html .= '<div class="ketunkoti-portfolio-scroll" style="overflow-x: auto;" tabindex="0" role="region" aria-labelledby="' . esc_attr( $caption_id ) . '">';
         $html .= '<table class="ketunkoti-portfolio-table">';
         /* translators: %s: owner name. */
-        $html .= '<caption>' . esc_html( sprintf( __( 'Asunnot: %s', 'ketunkoti-features' ), $group['name'] ) ) . '</caption>';
+        $html .= '<caption id="' . esc_attr( $caption_id ) . '">' . esc_html( sprintf( __( 'Asunnot: %s', 'ketunkoti-features' ), $group['name'] ) ) . '</caption>';
         $html .= '<thead><tr>';
 
         foreach ( $columns as $label ) {
@@ -326,7 +345,7 @@ function get_portfolio_group_html( array $group ): string {
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['value'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['net_worth'] ) ) . '</td>';
         $html .= '<td></td><td></td><td></td>';
-        $html .= '<td>' . get_portfolio_free_collateral_html( $totals['free_collateral'] ) . '</td>';
+        $html .= '<td>' . esc_html( format_portfolio_euros( $totals['free_collateral'] ) ) . '</td>';
         $html .= '</tr></tfoot></table></div>';
     }
 
@@ -336,9 +355,10 @@ function get_portfolio_group_html( array $group ): string {
         foreach ( $group['drafts'] as $draft ) {
             $title     = '' !== $draft['title'] ? $draft['title'] : __( '(ei nimeä)', 'ketunkoti-features' );
             $edit_link = get_edit_post_link( $draft['id'] );
-            $links[]   = $edit_link
+            $label     = ' (' . esc_html( get_portfolio_status_label( (string) ( $draft['status'] ?? 'draft' ) ) ) . ')';
+            $links[]   = ( $edit_link
                 ? '<a href="' . esc_url( $edit_link ) . '">' . esc_html( $title ) . '</a>'
-                : esc_html( $title );
+                : esc_html( $title ) ) . $label;
         }
 
         $html .= '<p class="ketunkoti-portfolio-drafts">' . esc_html__( 'Luonnokset (ei mukana summissa): ', 'ketunkoti-features' ) . implode( ', ', $links ) . '</p>';
@@ -360,8 +380,8 @@ function get_portfolio_overview_html( array $overview ): string {
         return $html . '<p>' . esc_html__( 'Salkussa ei ole vielä asuntoja.', 'ketunkoti-features' ) . '</p>';
     }
 
-    foreach ( $overview['groups'] as $group ) {
-        $html .= get_portfolio_group_html( $group );
+    foreach ( $overview['groups'] as $index => $group ) {
+        $html .= get_portfolio_group_html( $group, (int) $index );
     }
 
     return $html;

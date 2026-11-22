@@ -3,7 +3,7 @@
  * Plugin Name:       Ketun koti Features
  * Plugin URI:        https://ketunkoti.fi
  * Description:       Site-specific features for Ketun koti: custom post types and related functionality.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 7.1
  * Requires PHP:      8.2
  * Author:            Sami Keijonen
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin version, used for cache busting when assets are added later.
  */
-define( 'KETUNKOTI_FEATURES_VERSION', '1.0.0' );
+define( 'KETUNKOTI_FEATURES_VERSION', '1.1.0' );
 
 /**
  * Absolute path to the plugin directory, with a trailing slash.

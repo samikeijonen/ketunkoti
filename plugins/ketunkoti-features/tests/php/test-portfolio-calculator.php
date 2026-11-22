@@ -65,11 +65,11 @@ check( 'a collateral default 75', 150000.0, calculate_portfolio_apartment( $a )[
 check( 'a free', 25000.0, calculate_portfolio_apartment( $a )['free_collateral'] );
 check( 'b collateral 80', 80000.0, calculate_portfolio_apartment( $b )['collateral_value'] );
 check( 'b free zero', 0.0, calculate_portfolio_apartment( $b )['free_collateral'] );
-check( 'c free negative', -1000.0, calculate_portfolio_apartment( $c )['free_collateral'] );
+check( 'c free floored at zero', 0.0, calculate_portfolio_apartment( $c )['free_collateral'] );
 check( 'zero rate means 75', 75000.0, calculate_portfolio_apartment( [ 'portfolio_estimated_value' => 100000, 'portfolio_collateral_rate' => 0 ] )['collateral_value'] );
 
 $t = calculate_portfolio_totals( [ $a, $c ] );
-check( 'totals free incl negative', 24000.0, $t['free_collateral'] );
+check( 'totals free floors each apartment', 25000.0, $t['free_collateral'] );
 check( 'totals debts', 196000.0, $t['debts'] );
 check( 'totals net worth', 104000.0, $t['net_worth'] );
 check( 'totals value', 300000.0, $t['value'] );

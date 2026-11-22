@@ -44,15 +44,14 @@
     background: #f6f7f7;
 }
 
-.ketunkoti-portfolio-table a:focus-visible {
+.ketunkoti-portfolio-scroll:focus-visible {
     outline: 2px solid #2271b1;
     outline-offset: 2px;
 }
 
-/* #b32d2e on white is about 6.5:1, above the AA minimum of 4.5:1. */
-.ketunkoti-portfolio-negative {
-    color: #b32d2e;
-    font-weight: 600;
+.ketunkoti-portfolio-table a:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
 }
 
 /* #755100 on white is about 7.3:1. */

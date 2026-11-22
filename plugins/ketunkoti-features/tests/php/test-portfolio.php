@@ -275,6 +275,18 @@ $_POST = [
 save_portfolio_meta_box( $id );
 check( 'invalid save writes nothing', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
 check( 'invalid save leaves notice', true, (bool) get_transient( 'ketunkoti_portfolio_error_' . $admin ) );
+$kept = get_transient( 'ketunkoti_portfolio_input_' . $admin );
+check( 'refused save keeps raw input', [ 'portfolio_area' => '50', 'portfolio_bank_loan' => 'paljon' ], $kept );
+ob_start();
+render_portfolio_meta_box( get_post( $id ) );
+$prefilled = ob_get_clean();
+check( 'render prefills posted area', true, str_contains( $prefilled, 'id="portfolio_area" value="50"' ) );
+check( 'render prefills invalid text as typed', true, str_contains( $prefilled, 'id="portfolio_bank_loan" value="paljon"' ) );
+check( 'input transient deleted after render', false, get_transient( 'ketunkoti_portfolio_input_' . $admin ) );
+ob_start();
+render_portfolio_meta_box( get_post( $id ) );
+$second = ob_get_clean();
+check( 'prefill only once', true, str_contains( $second, 'id="portfolio_area" value="46,5"' ) );
 delete_transient( 'ketunkoti_portfolio_error_' . $admin );
 
 $_POST = [ 'portfolio_area' => '1' ];
@@ -309,6 +321,7 @@ save_portfolio_meta_box( $id );
 check( 'invalid save keeps owner', 'Toinen omistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
 check( 'invalid save creates no owner term', false, (bool) get_term_by( 'name', 'Kolmas omistaja', 'portfolio-owner' ) );
 delete_transient( 'ketunkoti_portfolio_error_' . $admin );
+delete_transient( 'ketunkoti_portfolio_input_' . $admin );
 
 // A tampered non-scalar value refuses the whole save.
 $_POST = [
@@ -320,6 +333,7 @@ save_portfolio_meta_box( $id );
 check( 'tampered array writes nothing', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
 check( 'tampered array leaves notice', true, (bool) get_transient( 'ketunkoti_portfolio_error_' . $admin ) );
 delete_transient( 'ketunkoti_portfolio_error_' . $admin );
+delete_transient( 'ketunkoti_portfolio_input_' . $admin );
 $_POST = [];
 
 // Checks: meta box markup.
@@ -393,12 +407,66 @@ $html = get_portfolio_overview_html( $o );
 check( 'html has drafts line', true, str_contains( $html, 'Luonnokset (ei mukana summissa)' ) );
 check( 'html has caption', true, str_contains( $html, '<caption' ) );
 check( 'html has stale marker', true, str_contains( $html, '<span class="ketunkoti-portfolio-stale">tarkista</span>' ) );
-check( 'html negative free collateral', true, str_contains( $html, '<span class="ketunkoti-portfolio-negative">' ) );
+check( 'html has no negative styling', false, str_contains( $html, 'ketunkoti-portfolio-negative' ) );
+check( 'over-used free collateral floors at zero', 0.0, $o['groups'][0]['apartments'][0]['results']['free_collateral'] );
+check( 'group free collateral floors at zero', 0.0, $o['groups'][0]['totals']['free_collateral'] );
+check( 'html has no minus sign', false, str_contains( $html, "\u{2212}" ) );
+check( 'html scroll wrapper focusable region', true, str_contains( $html, 'tabindex="0" role="region" aria-labelledby="ketunkoti-portfolio-caption-summary"' ) );
+check( 'html summary caption id', true, str_contains( $html, '<caption id="ketunkoti-portfolio-caption-summary">' ) );
+check( 'html group caption ids unique', true, str_contains( $html, 'aria-labelledby="ketunkoti-portfolio-caption-0"' ) && str_contains( $html, '<caption id="ketunkoti-portfolio-caption-1">' ) );
 check( 'html links to edit screen', true, str_contains( $html, 'post=' . $p1 ) );
 $empty = get_portfolio_overview_html( [ 'combined' => calculate_portfolio_totals( [] ), 'groups' => [] ] );
 check( 'empty message', true, str_contains( $empty, 'Salkussa ei ole vielä asuntoja.' ) );
 check( 'empty leverage dash', true, str_contains( $empty, '–' ) );
 check( 'overview page hooked', 10, has_action( 'admin_menu', 'Ketunkoti\\add_portfolio_overview_page' ) );
+
+// Statuses: private counts like publish; pending and future are listed, not counted.
+$p4 = create_test_portfolio( 'Overview apartment private' );
+$p5 = create_test_portfolio( 'Overview apartment pending' );
+$p6 = create_test_portfolio( 'Overview apartment future' );
+foreach ( [ $p4, $p5, $p6 ] as $status_post ) {
+    wp_set_object_terms( $status_post, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
+    update_post_meta( $status_post, 'portfolio_estimated_value', '1000' );
+}
+wp_update_post( [ 'ID' => $p4, 'post_status' => 'private' ] );
+wp_update_post( [ 'ID' => $p5, 'post_status' => 'pending' ] );
+wp_update_post( [ 'ID' => $p6, 'post_status' => 'future', 'post_date' => gmdate( 'Y-m-d H:i:s', time() + YEAR_IN_SECONDS ), 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() + YEAR_IN_SECONDS ) ] );
+check( 'future status set', 'future', get_post_status( $p6 ) );
+
+$o2    = get_portfolio_overview();
+$owner = $o2['groups'][0];
+check( 'private counted in group', 2, $owner['totals']['count'] );
+check( 'private value in totals', 201000.0, $owner['totals']['value'] );
+check( 'private in apartments table', true, in_array( $p4, wp_list_pluck( $owner['apartments'], 'id' ), true ) );
+check( 'pending and future listed with draft', 3, count( $owner['drafts'] ) );
+$draft_statuses = wp_list_pluck( $owner['drafts'], 'status', 'id' );
+check( 'draft status key', 'draft', $draft_statuses[ $p3 ] );
+check( 'pending status key', 'pending', $draft_statuses[ $p5 ] );
+check( 'future status key', 'future', $draft_statuses[ $p6 ] );
+$html2 = get_portfolio_overview_html( $o2 );
+check( 'html draft label', true, str_contains( $html2, 'Overview apartment draft</a> (luonnos)' ) );
+check( 'html pending label', true, str_contains( $html2, 'Overview apartment pending</a> (odottaa)' ) );
+check( 'html future label', true, str_contains( $html2, 'Overview apartment future</a> (ajastettu)' ) );
+check( 'private title has no prefix', 'Overview apartment private', wp_list_pluck( $owner['apartments'], 'title', 'id' )[ $p4 ] );
+
+// Titles come back raw: no texturize, no "Private:" prefix.
+$dash_id = create_test_portfolio( 'Kalle - Kuja 5 & "A"' );
+$o3      = get_portfolio_overview();
+$titles  = [];
+foreach ( $o3['groups'] as $g ) {
+    foreach ( $g['apartments'] as $a ) {
+        $titles[ $a['id'] ] = $a['title'];
+    }
+}
+check( 'title with dash unchanged', 'Kalle - Kuja 5 & "A"', $titles[ $dash_id ] ?? null );
+
+// Summary rows: an owner named like a fixed row cannot overwrite it.
+$clash = wp_insert_term( 'Yhteensä', 'portfolio-owner' );
+$GLOBALS['ketunkoti_test_terms'][] = [ 'id' => $clash['term_id'], 'taxonomy' => 'portfolio-owner' ];
+wp_set_object_terms( $dash_id, [ (int) $clash['term_id'] ], 'portfolio-owner' );
+$o4    = get_portfolio_overview();
+$html4 = get_portfolio_overview_html( $o4 );
+check( 'summary keeps combined and owner rows', true, preg_match_all( '#<th scope="row">Yhteensä</th>#', substr( $html4, 0, (int) strpos( $html4, '</table>' ) ) ) >= 2 );
 
 // Teardown.
 teardown_test_data();

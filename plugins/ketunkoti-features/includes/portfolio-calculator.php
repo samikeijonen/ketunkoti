@@ -30,8 +30,8 @@ const PORTFOLIO_DEFAULT_COLLATERAL_RATE = 75.0;
  * - net_value: estimated value - debts.
  * - collateral_value: estimated value * collateral rate, 75 % when the rate
  *   is empty or not above 0.
- * - free_collateral: collateral value - debts - used collateral. May be
- *   negative, which is real and returned as it stands.
+ * - free_collateral: collateral value - debts - used collateral, never below
+ *   0 (the owner's decision: over-used collateral shows as 0, not negative).
  *
  * Missing numbers count as 0 and string values from meta are cast to float.
  *
@@ -56,7 +56,7 @@ function calculate_portfolio_apartment( array $fields ): array {
         'debts'            => $debts,
         'net_value'        => $value - $debts,
         'collateral_value' => $collateral_value,
-        'free_collateral'  => $collateral_value - $debts - $used_collateral,
+        'free_collateral'  => max( 0.0, $collateral_value - $debts - $used_collateral ),
     ];
 }
 

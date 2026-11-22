@@ -57,14 +57,42 @@ function format_portfolio_input_number( $value ): string {
 }
 
 /**
+ * Returns the transient key that keeps the posted input of a refused save.
+ *
+ * @return string Transient key for the current user.
+ */
+function get_portfolio_input_transient_key(): string {
+    return 'ketunkoti_portfolio_input_' . get_current_user_id();
+}
+
+/**
+ * Returns and removes the posted input kept after a refused save.
+ *
+ * @return array<string, string> Raw posted values keyed by input name, empty when none.
+ */
+function pull_portfolio_refused_input(): array {
+    $key   = get_portfolio_input_transient_key();
+    $input = get_transient( $key );
+
+    if ( false === $input ) {
+        return [];
+    }
+
+    delete_transient( $key );
+
+    return is_array( $input ) ? $input : [];
+}
+
+/**
  * Prints the input control of one field.
  *
  * @param string                  $meta_key Meta key, also the input name and ID.
  * @param array<string, string>   $field    Field definition.
- * @param float|int|string|null   $value    Stored value.
+ * @param float|int|string|null   $value    Stored value, or the raw posted string when `$raw` is true.
+ * @param bool                    $raw      Whether `$value` is a raw posted string to show as it was typed.
  * @return void
  */
-function render_portfolio_field( string $meta_key, array $field, $value ): void {
+function render_portfolio_field( string $meta_key, array $field, $value, bool $raw = false ): void {
     if ( 'portfolio_home_id' === $meta_key ) {
         $homes = get_posts(
             [
@@ -106,7 +134,11 @@ function render_portfolio_field( string $meta_key, array $field, $value ): void 
         $mode = 'integer' === $field['type'] ? ' inputmode="numeric"' : '';
     }
 
-    $display = 'number' === $field['type'] ? format_portfolio_input_number( $value ) : (string) ( $value ?? '' );
+    if ( $raw ) {
+        $display = (string) $value;
+    } else {
+        $display = 'number' === $field['type'] ? format_portfolio_input_number( $value ) : (string) ( $value ?? '' );
+    }
     ?>
     <input type="<?php echo esc_attr( $type ); ?>"<?php echo $mode; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed literal. ?> name="<?php echo esc_attr( $meta_key ); ?>" id="<?php echo esc_attr( $meta_key ); ?>" value="<?php echo esc_attr( $display ); ?>" class="regular-text">
     <?php
@@ -120,6 +152,7 @@ function render_portfolio_field( string $meta_key, array $field, $value ): void 
  */
 function render_portfolio_meta_box( \WP_Post $post ): void {
     $values = get_portfolio_field_values( $post->ID );
+    $posted = pull_portfolio_refused_input();
     $groups = [];
 
     // Collect by group in first-seen order, so each heading appears once.
@@ -136,14 +169,22 @@ function render_portfolio_meta_box( \WP_Post $post ): void {
             <?php foreach ( $fields as $meta_key => $field ) : ?>
                 <tr>
                     <th scope="row"><label for="<?php echo esc_attr( $meta_key ); ?>"><?php echo esc_html( $field['label'] ); ?></label></th>
-                    <td><?php render_portfolio_field( $meta_key, $field, $values[ $meta_key ] ); ?></td>
+                    <td>
+                        <?php
+                        if ( isset( $posted[ $meta_key ] ) ) {
+                            render_portfolio_field( $meta_key, $field, $posted[ $meta_key ], true );
+                        } else {
+                            render_portfolio_field( $meta_key, $field, $values[ $meta_key ] );
+                        }
+                        ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         </table>
         <?php
 
         if ( array_key_first( $groups ) === $group ) {
-            render_portfolio_owner_fieldset( $post->ID );
+            render_portfolio_owner_fieldset( $post->ID, $posted );
         }
     }
 
@@ -168,10 +209,11 @@ function render_portfolio_meta_box( \WP_Post $post ): void {
  * Existing owner terms are radio buttons, so an apartment can only have one.
  * A typed new owner wins over the radio selection on save.
  *
- * @param int $post_id Portfolio post ID.
+ * @param int                  $post_id Portfolio post ID.
+ * @param array<string, string> $posted  Raw input kept after a refused save, to pre-fill the owner inputs.
  * @return void
  */
-function render_portfolio_owner_fieldset( int $post_id ): void {
+function render_portfolio_owner_fieldset( int $post_id, array $posted = [] ): void {
     $terms   = get_terms(
         [
             'taxonomy'   => PORTFOLIO_OWNER_TAXONOMY,
@@ -181,20 +223,24 @@ function render_portfolio_owner_fieldset( int $post_id ): void {
     $current = wp_get_object_terms( $post_id, PORTFOLIO_OWNER_TAXONOMY, [ 'fields' => 'ids' ] );
     $current = is_array( $current ) ? array_map( 'intval', $current ) : [];
     $terms   = is_array( $terms ) ? $terms : [];
+
+    // After a refused save the posted owner choice wins over the stored one.
+    $posted_slug = $posted['portfolio_owner'] ?? null;
+    $new_owner   = $posted['portfolio_owner_new'] ?? '';
     ?>
     <fieldset class="ketunkoti-portfolio-owner">
         <legend><strong><?php esc_html_e( 'Omistaja', 'ketunkoti-features' ); ?></strong></legend>
         <?php foreach ( $terms as $term ) : ?>
             <p>
                 <label>
-                    <input type="radio" name="portfolio_owner" value="<?php echo esc_attr( $term->slug ); ?>" <?php checked( in_array( (int) $term->term_id, $current, true ) ); ?>>
+                    <input type="radio" name="portfolio_owner" value="<?php echo esc_attr( $term->slug ); ?>" <?php checked( null !== $posted_slug ? $posted_slug === $term->slug : in_array( (int) $term->term_id, $current, true ) ); ?>>
                     <?php echo esc_html( $term->name ); ?>
                 </label>
             </p>
         <?php endforeach; ?>
         <p>
             <label for="portfolio_owner_new"><?php esc_html_e( 'Uusi omistaja', 'ketunkoti-features' ); ?></label>
-            <input type="text" name="portfolio_owner_new" id="portfolio_owner_new" value="" class="regular-text">
+            <input type="text" name="portfolio_owner_new" id="portfolio_owner_new" value="<?php echo esc_attr( $new_owner ); ?>" class="regular-text">
         </p>
     </fieldset>
     <?php
@@ -250,6 +296,17 @@ function save_portfolio_meta_box( int $post_id ): void {
 
     if ( is_wp_error( $values ) ) {
         set_transient( 'ketunkoti_portfolio_error_' . get_current_user_id(), $values->get_error_message(), 5 * MINUTE_IN_SECONDS );
+
+        // Keep what was typed, so the next edit screen load can pre-fill it.
+        $input = [];
+
+        foreach ( array_merge( array_keys( get_portfolio_fields() ), [ 'portfolio_owner', 'portfolio_owner_new' ] ) as $input_key ) {
+            if ( isset( $_POST[ $input_key ] ) && is_string( $_POST[ $input_key ] ) ) {
+                $input[ $input_key ] = wp_unslash( $_POST[ $input_key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Shown only through esc_attr().
+            }
+        }
+
+        set_transient( get_portfolio_input_transient_key(), $input, 5 * MINUTE_IN_SECONDS );
         return;
     }
 
