@@ -29,6 +29,17 @@ final class Portfolio_Abilities {
     public const LOG_META = '_ketunkoti_ai_portfolio_log';
 
     /**
+     * Whether the features plugin can read snapshots.
+     *
+     * A hand-copied rollout may run an older features plugin without them.
+     *
+     * @return bool True when `Ketunkoti\get_portfolio_snapshots` exists.
+     */
+    public static function has_history_support(): bool {
+        return function_exists( 'Ketunkoti\get_portfolio_snapshots' );
+    }
+
+    /**
      * Registers every ability. Runs on `wp_abilities_api_init`.
      *
      * @return void
@@ -98,45 +109,48 @@ final class Portfolio_Abilities {
             'mcp_tool'
         );
 
-        Registrar::register(
-            'ketunkoti/get-portfolio-history',
-            [
-                'label'               => __( 'Get portfolio history', 'ketunkoti-ai' ),
-                'description'         => __( 'Returns the monthly frozen snapshots of the private apartment portfolio (Salkku), oldest month first: month, taken_at, trigger, combined totals and the totals per owner (groups). Figures are as they were when the snapshot was saved. Pass from and/or to (YYYY-MM) to limit the months, owner (name or slug, also a name an owner had earlier) to get that owner only; combined is then that owner\'s totals, zero when the owner had no apartments that month. Pass include_apartments to add the apartments of each month (large). Read-only.', 'ketunkoti-ai' ),
-                'input_schema'        => [
-                    'type'                 => 'object',
-                    'additionalProperties' => false,
-                    'properties'           => [
-                        'from'               => [
-                            'type'        => 'string',
-                            'pattern'     => '^\\d{4}-(0[1-9]|1[0-2])$',
-                            'description' => __( 'First month to include, YYYY-MM. Default: from the first snapshot.', 'ketunkoti-ai' ),
-                        ],
-                        'to'                 => [
-                            'type'        => 'string',
-                            'pattern'     => '^\\d{4}-(0[1-9]|1[0-2])$',
-                            'description' => __( 'Last month to include, YYYY-MM. Default: up to the latest snapshot.', 'ketunkoti-ai' ),
-                        ],
-                        'owner'              => [
-                            'type'        => 'string',
-                            'description' => __( 'Owner name or slug, also a name used in an earlier snapshot. Default: every owner.', 'ketunkoti-ai' ),
-                        ],
-                        'include_apartments' => [
-                            'type'        => 'boolean',
-                            'description' => __( 'Add the apartments of each month. Default: false.', 'ketunkoti-ai' ),
+        // An older hand-copied features plugin has no snapshots to read.
+        if ( self::has_history_support() ) {
+            Registrar::register(
+                'ketunkoti/get-portfolio-history',
+                [
+                    'label'               => __( 'Get portfolio history', 'ketunkoti-ai' ),
+                    'description'         => __( 'Returns the monthly frozen snapshots of the private apartment portfolio (Salkku), oldest month first: month, taken_at, trigger, combined totals and the totals per owner (groups). Figures are as they were when the snapshot was saved. Pass from and/or to (YYYY-MM) to limit the months, owner (name or slug, also a name an owner had earlier) to get that owner only; combined is then that owner\'s totals, zero when the owner had no apartments that month. Pass include_apartments to add the apartments of each month (large). Read-only.', 'ketunkoti-ai' ),
+                    'input_schema'        => [
+                        'type'                 => 'object',
+                        'additionalProperties' => false,
+                        'properties'           => [
+                            'from'               => [
+                                'type'        => 'string',
+                                'pattern'     => '^\\d{4}-(0[1-9]|1[0-2])$',
+                                'description' => __( 'First month to include, YYYY-MM. Default: from the first snapshot.', 'ketunkoti-ai' ),
+                            ],
+                            'to'                 => [
+                                'type'        => 'string',
+                                'pattern'     => '^\\d{4}-(0[1-9]|1[0-2])$',
+                                'description' => __( 'Last month to include, YYYY-MM. Default: up to the latest snapshot.', 'ketunkoti-ai' ),
+                            ],
+                            'owner'              => [
+                                'type'        => 'string',
+                                'description' => __( 'Owner name or slug, also a name used in an earlier snapshot. Default: every owner.', 'ketunkoti-ai' ),
+                            ],
+                            'include_apartments' => [
+                                'type'        => 'boolean',
+                                'description' => __( 'Add the apartments of each month. Default: false.', 'ketunkoti-ai' ),
+                            ],
                         ],
                     ],
+                    'execute_callback'    => [ self::class, 'get_portfolio_history' ],
+                    'permission_callback' => [ self::class, 'can_manage' ],
+                    'annotations'         => [
+                        'readonly'    => true,
+                        'destructive' => false,
+                        'idempotent'  => true,
+                    ],
                 ],
-                'execute_callback'    => [ self::class, 'get_portfolio_history' ],
-                'permission_callback' => [ self::class, 'can_manage' ],
-                'annotations'         => [
-                    'readonly'    => true,
-                    'destructive' => false,
-                    'idempotent'  => true,
-                ],
-            ],
-            'mcp_tool'
-        );
+                'mcp_tool'
+            );
+        }
     }
 
     /**

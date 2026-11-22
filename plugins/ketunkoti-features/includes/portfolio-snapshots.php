@@ -37,6 +37,11 @@ const PORTFOLIO_SNAPSHOT_DATA_META = 'portfolio_snapshot_data';
 const PORTFOLIO_SNAPSHOT_EVENT = 'ketunkoti_portfolio_monthly_snapshot';
 
 /**
+ * Name of the option that holds the last failed cron save.
+ */
+const PORTFOLIO_SNAPSHOT_ERROR_OPTION = 'ketunkoti_portfolio_snapshot_last_error';
+
+/**
  * Registers the snapshot post type and its two meta keys.
  *
  * Registered like `portfolio` in privacy terms: no public output of any kind.
@@ -125,6 +130,45 @@ function register_portfolio_snapshots(): void {
     );
 }
 add_action( 'init', __NAMESPACE__ . '\register_portfolio_snapshots', 11 );
+
+/**
+ * Restores a snapshot to its previous status when it is untrashed.
+ *
+ * WordPress untrashes to draft by default, which would hide the month from
+ * the history. Only snapshots are affected.
+ *
+ * @param string $new_status      Status WordPress would restore to.
+ * @param int    $post_id         Post ID.
+ * @param string $previous_status Status the post had before it was trashed.
+ * @return string Status to restore to.
+ */
+function restore_portfolio_snapshot_status( string $new_status, int $post_id, string $previous_status ): string {
+    if ( PORTFOLIO_SNAPSHOT_POST_TYPE !== get_post_type( $post_id ) ) {
+        return $new_status;
+    }
+
+    return $previous_status;
+}
+add_filter( 'wp_untrash_post_status', __NAMESPACE__ . '\restore_portfolio_snapshot_status', 10, 3 );
+
+/**
+ * Stores the last failed cron save so the summary page can show it.
+ *
+ * @param int    $now     Timestamp of the failed run.
+ * @param string $message Error message.
+ * @return void
+ */
+function record_portfolio_snapshot_failure( int $now, string $message ): void {
+    update_option(
+        PORTFOLIO_SNAPSHOT_ERROR_OPTION,
+        [
+            'time'    => gmdate( 'c', $now ),
+            'month'   => get_portfolio_snapshot_month( $now ),
+            'message' => $message,
+        ],
+        false
+    );
+}
 
 /**
  * Returns the month of a timestamp in the site timezone.
@@ -461,6 +505,7 @@ function run_portfolio_snapshot_cron( ?int $now = null ): string {
     }
 
     if ( get_portfolio_snapshot_id( get_portfolio_snapshot_month( $now ) ) > 0 ) {
+        delete_option( PORTFOLIO_SNAPSHOT_ERROR_OPTION );
         reschedule_portfolio_snapshot_event( get_next_portfolio_snapshot_time( $now ) );
         return 'exists';
     }
@@ -474,6 +519,7 @@ function run_portfolio_snapshot_cron( ?int $now = null ): string {
     if ( is_wp_error( $result ) ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Logged to WP_DEBUG_LOG on purpose.
         error_log( 'Ketunkoti portfolio snapshot failed: ' . $result->get_error_message() );
+        record_portfolio_snapshot_failure( $now, $result->get_error_message() );
         reschedule_portfolio_snapshot_event( $now + HOUR_IN_SECONDS );
         return 'failed';
     }
@@ -482,10 +528,12 @@ function run_portfolio_snapshot_cron( ?int $now = null ): string {
     if ( 0 === get_portfolio_snapshot_id( get_portfolio_snapshot_month( $now ) ) ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Logged to WP_DEBUG_LOG on purpose.
         error_log( 'Ketunkoti portfolio snapshot failed: saved snapshot is not found by its month.' );
+        record_portfolio_snapshot_failure( $now, 'saved snapshot is not found by its month' );
         reschedule_portfolio_snapshot_event( $now + HOUR_IN_SECONDS );
         return 'failed';
     }
 
+    delete_option( PORTFOLIO_SNAPSHOT_ERROR_OPTION );
     reschedule_portfolio_snapshot_event( get_next_portfolio_snapshot_time( $now ) );
     return 'saved';
 }

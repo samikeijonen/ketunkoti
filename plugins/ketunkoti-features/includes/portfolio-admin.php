@@ -379,7 +379,7 @@ function get_portfolio_group_html( array $group, int $index = 0 ): string {
  * @return string Escaped HTML.
  */
 function get_portfolio_overview_html( array $overview ): string {
-    $html = get_portfolio_snapshot_notice_html() . get_portfolio_summary_html( $overview );
+    $html = get_portfolio_snapshot_notice_html() . get_portfolio_snapshot_failure_notice_html() . get_portfolio_summary_html( $overview );
 
     if ( empty( $overview['groups'] ) ) {
         $html .= '<p>' . esc_html__( 'Salkussa ei ole vielä asuntoja.', 'ketunkoti-features' ) . '</p>';
@@ -390,6 +390,28 @@ function get_portfolio_overview_html( array $overview ): string {
     }
 
     return $html . get_portfolio_snapshot_form_html() . get_portfolio_history_html( get_portfolio_snapshots() );
+}
+
+/**
+ * Returns the warning of the last failed automatic save, while one is stored.
+ *
+ * @return string Escaped notice HTML, or an empty string when there is none.
+ */
+function get_portfolio_snapshot_failure_notice_html(): string {
+    $error = get_option( PORTFOLIO_SNAPSHOT_ERROR_OPTION );
+
+    if ( ! is_array( $error ) || empty( $error['message'] ) ) {
+        return '';
+    }
+
+    $message = sprintf(
+        /* translators: 1: month as YYYY-MM, 2: error message. */
+        __( 'Kuukauden tilannekuvan automaattinen tallennus epäonnistui (%1$s): %2$s. Yritetään uudelleen tunnin päästä — voit myös tallentaa sen nyt painikkeesta.', 'ketunkoti-features' ),
+        (string) ( $error['month'] ?? '' ),
+        (string) $error['message']
+    );
+
+    return '<div class="notice notice-warning"><p>' . esc_html( $message ) . '</p></div>';
 }
 
 /**
@@ -444,7 +466,7 @@ function format_portfolio_euro_change( float $delta ): string {
 /**
  * Formats the change of a percentage as percentage points.
  *
- * @param float $delta Current minus previous percentage.
+ * @param float $delta Current minus previous percentage, in percentage points.
  * @return string `+x,y %-yks.`, `−x,y %-yks.` or `±0 %-yks.`.
  */
 function format_portfolio_points_change( float $delta ): string {
@@ -462,15 +484,22 @@ function format_portfolio_points_change( float $delta ): string {
 /**
  * Returns a money cell of the history table: value and change from the previous row.
  *
- * @param float      $value    Current value.
- * @param float|null $previous Previous snapshot's value, or null for the oldest row.
+ * A figure that is missing from the stored data renders as "–" and shows no
+ * change, as does a change whose previous figure is missing.
+ *
+ * @param array<string, mixed>      $totals   Stored totals of this row.
+ * @param array<string, mixed>|null $previous Stored totals of the previous snapshot, or null for the oldest row.
+ * @param string                    $key      Key of the figure.
  * @return string Escaped cell HTML.
  */
-function get_portfolio_history_money_cell_html( float $value, ?float $previous ): string {
-    $html = '<td>' . esc_html( format_portfolio_euros( $value ) );
+function get_portfolio_history_money_cell_html( array $totals, ?array $previous, string $key ): string {
+    $html = '<td>' . esc_html( format_portfolio_snapshot_euros( $totals, $key ) );
 
-    if ( null !== $previous ) {
-        $html .= ' <span class="ketunkoti-portfolio-change">(' . esc_html( format_portfolio_euro_change( $value - $previous ) ) . ')</span>';
+    $has_value    = isset( $totals[ $key ] ) && is_numeric( $totals[ $key ] );
+    $has_previous = null !== $previous && isset( $previous[ $key ] ) && is_numeric( $previous[ $key ] );
+
+    if ( $has_value && $has_previous ) {
+        $html .= ' <span class="ketunkoti-portfolio-change">(' . esc_html( format_portfolio_euro_change( (float) $totals[ $key ] - (float) $previous[ $key ] ) ) . ')</span>';
     }
 
     return $html . '</td>';
@@ -512,7 +541,7 @@ function get_portfolio_history_html( array $snapshots ): string {
 
     // Newest first; the change compares each row to the previous snapshot in the list.
     for ( $i = count( $snapshots ) - 1; $i >= 0; $i-- ) {
-        // Stored data may be incomplete (malformed): missing figures read as zero.
+        // Stored data may be incomplete (malformed): missing figures render as a dash.
         $totals   = (array) $snapshots[ $i ]['combined'];
         $previous = $i > 0 ? (array) $snapshots[ $i - 1 ]['combined'] : null;
 
@@ -520,18 +549,19 @@ function get_portfolio_history_html( array $snapshots ): string {
         $html .= '<td>' . esc_html( (string) (int) ( $totals['count'] ?? 0 ) ) . '</td>';
 
         foreach ( [ 'value', 'debts', 'net_worth', 'free_collateral' ] as $key ) {
-            $html .= get_portfolio_history_money_cell_html( (float) ( $totals[ $key ] ?? 0 ), null === $previous ? null : (float) ( $previous[ $key ] ?? 0 ) );
+            $html .= get_portfolio_history_money_cell_html( $totals, $previous, $key );
         }
 
         $leverage = $totals['leverage'] ?? null;
 
-        if ( null === $leverage ) {
+        if ( null === $leverage || ! is_numeric( $leverage ) ) {
             $html .= '<td>–</td>';
         } else {
+            // Leverage is stored as a ratio (debts / value); the change is in percentage points.
             $html .= '<td>' . esc_html( format_portfolio_percent( (float) $leverage ) );
 
-            if ( null !== $previous && null !== ( $previous['leverage'] ?? null ) ) {
-                $html .= ' <span class="ketunkoti-portfolio-change">(' . esc_html( format_portfolio_points_change( (float) $leverage - (float) $previous['leverage'] ) ) . ')</span>';
+            if ( null !== $previous && is_numeric( $previous['leverage'] ?? null ) ) {
+                $html .= ' <span class="ketunkoti-portfolio-change">(' . esc_html( format_portfolio_points_change( ( (float) $leverage - (float) $previous['leverage'] ) * 100 ) ) . ')</span>';
             }
 
             $html .= '</td>';

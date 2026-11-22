@@ -320,3 +320,32 @@ function render_portfolio_snapshot_column( string $column, int $post_id ): void 
     echo get_portfolio_snapshot_column_html( $column, $post_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped when built.
 }
 add_action( 'manage_' . PORTFOLIO_SNAPSHOT_POST_TYPE . '_posts_custom_column', __NAMESPACE__ . '\render_portfolio_snapshot_column', 10, 2 );
+
+/**
+ * Removes Quick Edit from the snapshot rows, so a month can't be hidden by accident.
+ *
+ * @param array<string, string> $actions Row actions.
+ * @param \WP_Post              $post    Row post.
+ * @return array<string, string> Row actions.
+ */
+function remove_portfolio_snapshot_quick_edit( array $actions, \WP_Post $post ): array {
+    if ( PORTFOLIO_SNAPSHOT_POST_TYPE === $post->post_type ) {
+        unset( $actions['inline hide-if-no-js'] );
+    }
+
+    return $actions;
+}
+add_filter( 'post_row_actions', __NAMESPACE__ . '\remove_portfolio_snapshot_quick_edit', 10, 2 );
+
+/**
+ * Removes the bulk "Edit" action from the snapshots list.
+ *
+ * @param array<string, string> $actions Bulk actions.
+ * @return array<string, string> Bulk actions.
+ */
+function remove_portfolio_snapshot_bulk_edit( array $actions ): array {
+    unset( $actions['edit'] );
+
+    return $actions;
+}
+add_filter( 'bulk_actions-edit-' . PORTFOLIO_SNAPSHOT_POST_TYPE, __NAMESPACE__ . '\remove_portfolio_snapshot_bulk_edit' );

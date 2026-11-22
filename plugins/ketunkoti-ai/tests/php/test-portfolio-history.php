@@ -98,6 +98,12 @@ check( 'slug maps to current name', 1, $by_slug[1]['combined']['count'] ?? null 
 
 check( 'unknown owner', 'ketunkoti_ai_unknown_owner', code( $history->execute( [ 'owner' => 'Ei ole' ] ) ) );
 
+// Registration is guarded for an older features plugin without snapshots.
+check( 'history support detected', true, \Ketunkoti\AI\Portfolio_Abilities::has_history_support() );
+$ability_source = (string) file_get_contents( dirname( __DIR__, 2 ) . '/includes/class-portfolio-abilities.php' );
+check( 'registration is guarded by function_exists', 1, preg_match( "/if \( self::has_history_support\(\) \) \{\s+Registrar::register\(\s+'ketunkoti\/get-portfolio-history'/", $ability_source ) );
+check( 'guard checks get_portfolio_snapshots', true, str_contains( $ability_source, "function_exists( 'Ketunkoti\\get_portfolio_snapshots' )" ) );
+
 // MCP only.
 check( 'not in chat list', false, array_key_exists( 'ketunkoti/get-portfolio-history', wp_get_abilities( [ 'meta' => [ 'public' => true ] ] ) ) );
 check( 'in MCP tools', true, in_array( 'ketunkoti/get-portfolio-history', Registrar::add_tools( [] )['tools'], true ) );
