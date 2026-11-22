@@ -97,6 +97,46 @@ final class Portfolio_Abilities {
             ],
             'mcp_tool'
         );
+
+        Registrar::register(
+            'ketunkoti/get-portfolio-history',
+            [
+                'label'               => __( 'Get portfolio history', 'ketunkoti-ai' ),
+                'description'         => __( 'Returns the monthly frozen snapshots of the private apartment portfolio (Salkku), oldest month first: month, taken_at, trigger, combined totals and the totals per owner (groups). Figures are as they were when the snapshot was saved. Pass from and/or to (YYYY-MM) to limit the months, owner (name or slug, also a name an owner had earlier) to get that owner only; combined is then that owner\'s totals, zero when the owner had no apartments that month. Pass include_apartments to add the apartments of each month (large). Read-only.', 'ketunkoti-ai' ),
+                'input_schema'        => [
+                    'type'                 => 'object',
+                    'additionalProperties' => false,
+                    'properties'           => [
+                        'from'               => [
+                            'type'        => 'string',
+                            'pattern'     => '^\\d{4}-(0[1-9]|1[0-2])$',
+                            'description' => __( 'First month to include, YYYY-MM. Default: from the first snapshot.', 'ketunkoti-ai' ),
+                        ],
+                        'to'                 => [
+                            'type'        => 'string',
+                            'pattern'     => '^\\d{4}-(0[1-9]|1[0-2])$',
+                            'description' => __( 'Last month to include, YYYY-MM. Default: up to the latest snapshot.', 'ketunkoti-ai' ),
+                        ],
+                        'owner'              => [
+                            'type'        => 'string',
+                            'description' => __( 'Owner name or slug, also a name used in an earlier snapshot. Default: every owner.', 'ketunkoti-ai' ),
+                        ],
+                        'include_apartments' => [
+                            'type'        => 'boolean',
+                            'description' => __( 'Add the apartments of each month. Default: false.', 'ketunkoti-ai' ),
+                        ],
+                    ],
+                ],
+                'execute_callback'    => [ self::class, 'get_portfolio_history' ],
+                'permission_callback' => [ self::class, 'can_manage' ],
+                'annotations'         => [
+                    'readonly'    => true,
+                    'destructive' => false,
+                    'idempotent'  => true,
+                ],
+            ],
+            'mcp_tool'
+        );
     }
 
     /**
@@ -160,6 +200,90 @@ final class Portfolio_Abilities {
         unset( $group );
 
         return $overview;
+    }
+
+    /**
+     * Executes ketunkoti/get-portfolio-history.
+     *
+     * @param array $input Ability input: optional `from`, `to`, `owner`, `include_apartments`.
+     * @return array|\WP_Error The months oldest first, or an error for a bad range or unknown owner.
+     */
+    public static function get_portfolio_history( array $input = [] ) {
+        $from = isset( $input['from'] ) ? trim( (string) $input['from'] ) : '';
+        $to   = isset( $input['to'] ) ? trim( (string) $input['to'] ) : '';
+
+        foreach ( [ $from, $to ] as $month ) {
+            if ( '' !== $month && ! preg_match( '/^\d{4}-(0[1-9]|1[0-2])$/', $month ) ) {
+                return new \WP_Error(
+                    'ketunkoti_ai_invalid_range',
+                    __( 'from and to must be months in the format YYYY-MM.', 'ketunkoti-ai' )
+                );
+            }
+        }
+
+        if ( '' !== $from && '' !== $to && $from > $to ) {
+            return new \WP_Error(
+                'ketunkoti_ai_invalid_range',
+                __( 'from must not be after to.', 'ketunkoti-ai' )
+            );
+        }
+
+        $owner_input = isset( $input['owner'] ) ? trim( (string) $input['owner'] ) : '';
+        $owner       = null;
+
+        if ( '' !== $owner_input ) {
+            $owner = self::resolve_history_owner( $owner_input );
+            if ( null === $owner ) {
+                return new \WP_Error(
+                    'ketunkoti_ai_unknown_owner',
+                    /* translators: %s: owner name given by the client. */
+                    sprintf( __( 'There is no portfolio owner "%s" in the history or among the current owners. Call ketunkoti/get-portfolio-history without owner to see the owners.', 'ketunkoti-ai' ), $owner_input )
+                );
+            }
+        }
+
+        $include_apartments = ! empty( $input['include_apartments'] );
+        $months             = [];
+
+        foreach ( \Ketunkoti\get_portfolio_snapshots( '' !== $from ? $from : null, '' !== $to ? $to : null ) as $snapshot ) {
+            $groups   = (array) ( $snapshot['groups'] ?? [] );
+            $combined = $snapshot['combined'];
+
+            if ( null !== $owner ) {
+                $groups   = array_values(
+                    array_filter(
+                        $groups,
+                        static fn( $group ): bool => is_array( $group ) && ( $group['name'] ?? null ) === $owner
+                    )
+                );
+                $combined = $groups ? $groups[0]['totals'] : \Ketunkoti\calculate_portfolio_totals( [] );
+            }
+
+            $row = [
+                'month'    => $snapshot['month'],
+                'taken_at' => $snapshot['taken_at'] ?? '',
+                'trigger'  => $snapshot['trigger'] ?? '',
+                'combined' => $combined,
+                'groups'   => $groups,
+            ];
+
+            if ( $include_apartments ) {
+                $apartments = (array) ( $snapshot['apartments'] ?? [] );
+                if ( null !== $owner ) {
+                    $apartments = array_values(
+                        array_filter(
+                            $apartments,
+                            static fn( $apartment ): bool => is_array( $apartment ) && ( $apartment['owner'] ?? null ) === $owner
+                        )
+                    );
+                }
+                $row['apartments'] = $apartments;
+            }
+
+            $months[] = $row;
+        }
+
+        return $months;
     }
 
     /**
@@ -401,6 +525,25 @@ final class Portfolio_Abilities {
         }
 
         return $term ? $term->name : null;
+    }
+
+    /**
+     * Resolves an owner for the history: a name stored in any snapshot
+     * (exact, case-sensitive), else a current owner name or slug.
+     *
+     * @param string $owner Owner name or slug.
+     * @return string|null The name to match in the snapshots, or null when unknown.
+     */
+    private static function resolve_history_owner( string $owner ): ?string {
+        foreach ( \Ketunkoti\get_portfolio_snapshots() as $snapshot ) {
+            foreach ( (array) ( $snapshot['groups'] ?? [] ) as $group ) {
+                if ( is_array( $group ) && ( $group['name'] ?? null ) === $owner ) {
+                    return $owner;
+                }
+            }
+        }
+
+        return self::resolve_owner_name( $owner );
     }
 
     /**

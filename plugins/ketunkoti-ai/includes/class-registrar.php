@@ -34,6 +34,7 @@ final class Registrar {
         'ketunkoti/get-portfolio',
         'ketunkoti/create-portfolio-apartment',
         'ketunkoti/update-portfolio-apartment',
+        'ketunkoti/get-portfolio-history',
     ];
 
     /**
