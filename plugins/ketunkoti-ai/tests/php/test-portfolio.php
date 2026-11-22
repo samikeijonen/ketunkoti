@@ -86,6 +86,8 @@ check( 'log before empty', null, $last['before']['portfolio_bank_loan'] ?? null 
 $retitled = $update_ability->execute( [ 'id' => $new['id'], 'title' => 'Testi A2' ] );
 check( 'title updated', 'Testi A2', get_the_title( $new['id'] ) );
 
+// Update never creates an owner, so the second owner is created first.
+wp_insert_term( 'Toinen ' . $owner_name, 'portfolio-owner' );
 $moved = $update_ability->execute( [ 'id' => $new['id'], 'owner' => 'Toinen ' . $owner_name ] );
 check( 'owner changed', 'Toinen ' . $owner_name, $moved['owner'] ?? '' );
 check( 'one owner only', 1, count( wp_get_object_terms( $new['id'], 'portfolio-owner' ) ) );
@@ -116,6 +118,43 @@ check( 'unknown owner', 'ketunkoti_ai_unknown_owner', code( $get_ability->execut
 
 $all = $get_ability->execute( [] );
 check( 'get without owner has groups', true, count( $all['groups'] ) >= 1 );
+
+// Owner typo: update refuses an unknown owner, create still creates one.
+$typo = $update_ability->execute( [ 'id' => $new['id'], 'owner' => 'Toinen ' . $owner_name . 'x' ] );
+check( 'update unknown owner refused', 'ketunkoti_ai_unknown_owner', code( $typo ) );
+check( 'unknown owner creates no term', false, (bool) get_term_by( 'name', 'Toinen ' . $owner_name . 'x', 'portfolio-owner' ) );
+check( 'unknown owner changed nothing', 'Toinen ' . $owner_name, $get_ability->execute( [ 'owner' => 'Toinen ' . $owner_name ] )['groups'][0]['name'] ?? '' );
+$by_slug_owner = $update_ability->execute( [ 'id' => $new['id'], 'owner' => sanitize_title( $owner_name ) ] );
+check( 'update owner by slug works', $owner_name, $by_slug_owner['owner'] ?? '' );
+check( 'update description mentions unknown owner', true, str_contains( $update_ability->get_description(), 'unknown owner is refused' ) );
+
+// Titles are returned raw, in results and in the log.
+$dash = $create_ability->execute( [ 'title' => 'Kuja - Katu 5', 'owner' => $owner_name ] );
+track_post( (int) ( $dash['id'] ?? 0 ) );
+check( 'create result title unchanged', 'Kuja - Katu 5', $dash['title'] ?? '' );
+$dash_up = $update_ability->execute( [ 'id' => $dash['id'], 'title' => 'Kuja - Katu 6' ] );
+check( 'update result title unchanged', 'Kuja - Katu 6', $dash_up['title'] ?? '' );
+$dash_log = (array) get_post_meta( $dash['id'], '_ketunkoti_ai_portfolio_log', true );
+check( 'log before title unchanged', 'Kuja - Katu 5', end( $dash_log )['before']['post_title'] ?? '' );
+
+// null clears a field through the update ability.
+$update_ability->execute( [ 'id' => $new['id'], 'fields' => [ 'portfolio_bank_loan' => 4000 ] ] );
+$cleared = $update_ability->execute( [ 'id' => $new['id'], 'fields' => [ 'portfolio_bank_loan' => null ] ] );
+check( 'null clears field result', true, array_key_exists( 'portfolio_bank_loan', $cleared['fields'] ?? [] ) && null === $cleared['fields']['portfolio_bank_loan'] );
+check( 'null clears field stored', null, \Ketunkoti\get_portfolio_field_values( $new['id'] )['portfolio_bank_loan'] );
+
+// A pending apartment is read as a draft row with a status.
+$pending_id = (int) $draft['id'];
+wp_update_post( [ 'ID' => $pending_id, 'post_status' => 'pending' ] );
+$pending_row = $get_ability->execute( [ 'owner' => $owner_name ] )['groups'][0]['drafts'][0] ?? [];
+check( 'pending listed with status', 'pending', $pending_row['status'] ?? '' );
+check( 'pending read in full', true, isset( $pending_row['fields']['portfolio_bank_loan']['label'], $pending_row['results'] ) );
+
+// A trashed apartment cannot be updated.
+$trash_id = (int) $dash['id'];
+wp_trash_post( $trash_id );
+check( 'trashed update refused', 'ketunkoti_ai_trashed', code( $update_ability->execute( [ 'id' => $trash_id, 'title' => 'Ei' ] ) ) );
+check( 'trashed title unchanged', 'Kuja - Katu 6', get_post_field( 'post_title', $trash_id ) );
 
 // Exposure: MCP only, never a chat tool or REST ability.
 foreach ( [ 'get-portfolio', 'create-portfolio-apartment', 'update-portfolio-apartment' ] as $slug ) {

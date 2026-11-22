@@ -3,7 +3,7 @@
  * Plugin Name:       Ketun koti AI
  * Plugin URI:        https://ketunkoti.fi
  * Description:       Home abilities for Claude: read, copy and fill in home listings.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 7.1
  * Requires PHP:      8.2
  * Requires Plugins:  ketunkoti-features

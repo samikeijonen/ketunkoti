@@ -1,6 +1,6 @@
 # Ketun koti AI
 
-Home abilities for Claude. Lets Claude read, copy and fill in home listings: the `home` (for sale and investment flats) and `rental` post types of Ketun koti Features. The abilities are registered with the WordPress Abilities API and exposed on the MCP Adapter's default server, so Claude on your computer can use them over MCP.
+Home abilities for Claude. Lets Claude read, copy and fill in home listings: the `home` (for sale and investment flats) and `rental` post types of Ketun koti Features. It also has three abilities for the private Salkku apartment portfolio (read, add and change apartments, administrators only; see below). The abilities are registered with the WordPress Abilities API and exposed on the MCP Adapter's default server, so Claude on your computer can use them over MCP.
 
 ## Requirements
 
@@ -111,9 +111,9 @@ Three abilities for the private apartment portfolio (Salkku) of Ketun koti Featu
 
 | Ability | Input | What it does |
 |---|---|---|
-| `ketunkoti/get-portfolio` | `owner` (optional, name or slug) | Returns the overview: per owner the published apartments with every field as `label` and `value` plus the calculated results, the drafts (left out of the totals), and the totals per owner and combined. With `owner`, only that owner is returned and `combined` is that owner's totals. An unknown owner gives `ketunkoti_ai_unknown_owner`. Read-only. |
+| `ketunkoti/get-portfolio` | `owner` (optional, name or slug) | Returns the overview: per owner the published and private apartments with every field as `label` and `value` plus the calculated results, the drafts, pending and scheduled apartments (each with a `status`, left out of the totals), and the totals per owner and combined. With `owner`, only that owner is returned and `combined` is that owner's totals. An unknown owner gives `ketunkoti_ai_unknown_owner`. Read-only. |
 | `ketunkoti/create-portfolio-apartment` | `title`, `owner` (both required), `status` (`publish` by default or `draft`), `fields` | Adds an apartment. The owner is created when new. One invalid value refuses the whole call and nothing is created. |
-| `ketunkoti/update-portfolio-apartment` | `id`, and `title`, `owner`, `fields` | Changes an apartment and saves at once. Refused for a post that is not an apartment (`ketunkoti_ai_not_portfolio`) and while another user has it open in the editor (`ketunkoti_ai_locked`). The client reads first, shows "label: before → after" and writes only after the user agrees. |
+| `ketunkoti/update-portfolio-apartment` | `id`, and `title`, `owner`, `fields` | Changes an apartment and saves at once. Refused for a post that is not an apartment (`ketunkoti_ai_not_portfolio`), an apartment in the trash (`ketunkoti_ai_trashed`), an owner that does not exist (`ketunkoti_ai_unknown_owner`; update never creates an owner, create does) and while another user has it open in the editor (`ketunkoti_ai_locked`). The client reads first, shows "label: before → after" and writes only after the user agrees. |
 
 | Ability | `readonly` | `destructive` | `idempotent` |
 |---|---|---|---|
@@ -121,7 +121,7 @@ Three abilities for the private apartment portfolio (Salkku) of Ketun koti Featu
 | `create-portfolio-apartment` | false | false | false |
 | `update-portfolio-apartment` | false | true | true |
 
-Numbers may use Finnish formatting (`150 000`, `1 285,50`); `null` or `""` clears a field. Values are validated by Ketun koti Features (`validate_portfolio_fields()`), the same code the meta box uses.
+Numbers may use Finnish formatting (`150 000`, `1 285,50`); `null` or `""` clears a field. Free collateral is never negative (floored at 0 per apartment). Unknown field keys are refused by the input schema (`ability_invalid_input`). Values are validated by Ketun koti Features (`validate_portfolio_fields()`), the same code the meta box uses.
 
 Every write appends a row to the post meta `_ketunkoti_ai_portfolio_log` (one list per apartment): `user`, `time` (ISO 8601, UTC), `before` and `after`.
 

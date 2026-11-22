@@ -42,7 +42,7 @@ final class Portfolio_Abilities {
             'ketunkoti/get-portfolio',
             [
                 'label'               => __( 'Get portfolio', 'ketunkoti-ai' ),
-                'description'         => __( 'Returns the private apartment portfolio (Salkku): per owner the published apartments with every field (label and value) and the calculated results, the drafts that are left out of the totals, and the totals per owner and combined. Pass owner (name or slug) to get one owner only; combined is then that owner\'s totals. Read-only.', 'ketunkoti-ai' ),
+                'description'         => __( 'Returns the private apartment portfolio (Salkku): per owner the published and private apartments with every field (label and value) and the calculated results, the drafts, pending and scheduled apartments (each with a status) that are left out of the totals, and the totals per owner and combined. Pass owner (name or slug) to get one owner only; combined is then that owner\'s totals. Read-only.', 'ketunkoti-ai' ),
                 'input_schema'        => [
                     'type'                 => 'object',
                     'additionalProperties' => false,
@@ -85,7 +85,7 @@ final class Portfolio_Abilities {
             'ketunkoti/update-portfolio-apartment',
             [
                 'label'               => __( 'Update portfolio apartment', 'ketunkoti-ai' ),
-                'description'         => __( 'Changes the title, the owner or portfolio fields of an apartment in the private portfolio (Salkku) and saves at once. Before calling, read the portfolio with ketunkoti/get-portfolio and show the user each change as "label: before → after", and call only after the user agrees. null or an empty string clears a field. One invalid value refuses the whole call. Refused while another user has the apartment open in the editor. Every change is logged on the apartment with its before and after values. Returns the values as saved.', 'ketunkoti-ai' ),
+                'description'         => __( 'Changes the title, the owner or portfolio fields of an apartment in the private portfolio (Salkku) and saves at once. Before calling, read the portfolio with ketunkoti/get-portfolio and show the user each change as "label: before → after", and call only after the user agrees. null or an empty string clears a field. The owner must already exist (name or slug); an unknown owner is refused, so a typo cannot create a new owner. An apartment in the trash is refused. One invalid value refuses the whole call. Refused while another user has the apartment open in the editor. Every change is logged on the apartment with its before and after values. Returns the values as saved.', 'ketunkoti-ai' ),
                 'input_schema'        => self::update_schema(),
                 'execute_callback'    => [ self::class, 'update_apartment' ],
                 'permission_callback' => [ self::class, 'can_manage' ],
@@ -240,6 +240,14 @@ final class Portfolio_Abilities {
             );
         }
 
+        if ( 'trash' === get_post_status( $post_id ) ) {
+            return new \WP_Error(
+                'ketunkoti_ai_trashed',
+                /* translators: %d: post ID. */
+                sprintf( __( 'Apartment %d is in the trash. Nothing was changed. Ask the user to restore it in wp-admin first.', 'ketunkoti-ai' ), $post_id )
+            );
+        }
+
         $title = isset( $input['title'] ) ? sanitize_text_field( (string) $input['title'] ) : null;
         $owner = isset( $input['owner'] ) ? sanitize_text_field( (string) $input['owner'] ) : null;
 
@@ -253,6 +261,15 @@ final class Portfolio_Abilities {
 
         if ( '' === $owner ) {
             return new \WP_Error( 'ketunkoti_portfolio_invalid_owner', __( 'The apartment needs an owner.', 'ketunkoti-ai' ) );
+        }
+
+        // Update never creates an owner: a typo would silently start a new one.
+        if ( null !== $owner && ! self::owner_term_exists( $owner ) ) {
+            return new \WP_Error(
+                'ketunkoti_ai_unknown_owner',
+                /* translators: %s: owner name given by the client. */
+                sprintf( __( 'There is no portfolio owner "%s". Nothing was changed. Call ketunkoti/get-portfolio to see the owners.', 'ketunkoti-ai' ), $owner )
+            );
         }
 
         $values = \Ketunkoti\validate_portfolio_fields( (array) ( $input['fields'] ?? [] ) );
@@ -280,7 +297,7 @@ final class Portfolio_Abilities {
         }
 
         if ( null !== $title ) {
-            $before['post_title'] = get_the_title( $post_id );
+            $before['post_title'] = (string) get_post_field( 'post_title', $post_id );
             $updated              = wp_update_post(
                 [
                     'ID'         => $post_id,
@@ -312,7 +329,7 @@ final class Portfolio_Abilities {
     private static function result( int $post_id, array $keys ): array {
         return [
             'id'     => $post_id,
-            'title'  => get_the_title( $post_id ),
+            'title'  => (string) get_post_field( 'post_title', $post_id ),
             'status' => get_post_status( $post_id ),
             'owner'  => self::owner_name( $post_id ),
             'fields' => array_intersect_key( \Ketunkoti\get_portfolio_field_values( $post_id ), array_flip( $keys ) ),
@@ -351,6 +368,20 @@ final class Portfolio_Abilities {
         $terms = get_the_terms( $post_id, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
 
         return ( is_array( $terms ) && $terms ) ? $terms[0]->name : '';
+    }
+
+    /**
+     * Whether an owner term exists with this name or slug.
+     *
+     * @param string $owner Owner name or slug.
+     * @return bool
+     */
+    private static function owner_term_exists( string $owner ): bool {
+        if ( get_term_by( 'name', $owner, \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY ) ) {
+            return true;
+        }
+
+        return (bool) get_term_by( 'slug', sanitize_title( $owner ), \Ketunkoti\PORTFOLIO_OWNER_TAXONOMY );
     }
 
     /**
@@ -502,7 +533,7 @@ final class Portfolio_Abilities {
                 'title'  => [ 'type' => 'string' ],
                 'owner'  => [
                     'type'        => 'string',
-                    'description' => __( 'Owner name or slug. A new name creates the owner.', 'ketunkoti-ai' ),
+                    'description' => __( 'Name or slug of an existing owner. An unknown owner is refused.', 'ketunkoti-ai' ),
                 ],
                 'fields' => self::fields_schema(),
             ],
