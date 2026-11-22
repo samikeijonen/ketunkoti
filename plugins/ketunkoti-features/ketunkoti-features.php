@@ -45,6 +45,7 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/investment.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-calculator.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-meta-box.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/portfolio-admin.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/bindings.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/faq-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/organization-schema.php';

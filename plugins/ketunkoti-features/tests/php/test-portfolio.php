@@ -19,8 +19,12 @@ namespace Ketunkoti\Tests;
 use WP_Query;
 use WP_REST_Request;
 
+use function Ketunkoti\calculate_portfolio_totals;
 use function Ketunkoti\get_portfolio_field_values;
 use function Ketunkoti\get_portfolio_fields;
+use function Ketunkoti\get_portfolio_overview;
+use function Ketunkoti\get_portfolio_overview_html;
+use function Ketunkoti\is_portfolio_loan_check_stale;
 use function Ketunkoti\render_portfolio_meta_box;
 use function Ketunkoti\save_portfolio_meta_box;
 use function Ketunkoti\set_portfolio_owner;
@@ -350,6 +354,51 @@ check( 'finnish formatted value', true, str_contains( $html, 'value="46,5"' ) );
 check( 'calculated line', true, str_contains( $html, 'Nettoarvo' ) && str_contains( $html, 'Vakuusarvo' ) && str_contains( $html, 'Vapaata vakuutta' ) );
 check( 'meta box hooked', 10, has_action( 'add_meta_boxes_portfolio', 'Ketunkoti\\add_portfolio_meta_box' ) );
 check( 'save hooked', 10, has_action( 'save_post_portfolio', 'Ketunkoti\\save_portfolio_meta_box' ) );
+
+// Overview page. Clear fixtures of the earlier checks so the counts are exact.
+foreach ( $GLOBALS['ketunkoti_test_posts'] as $old_post_id ) {
+    wp_delete_post( $old_post_id, true );
+}
+$GLOBALS['ketunkoti_test_posts'] = [];
+
+$overview_owner = wp_insert_term( 'Overview test owner A', 'portfolio-owner' );
+$GLOBALS['ketunkoti_test_terms'][] = [ 'id' => $overview_owner['term_id'], 'taxonomy' => 'portfolio-owner' ];
+
+$p1 = create_test_portfolio( 'Overview apartment one' );
+$p2 = create_test_portfolio( 'Overview apartment two' );
+$p3 = create_test_portfolio( 'Overview apartment draft' );
+wp_set_object_terms( $p1, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
+wp_set_object_terms( $p3, [ (int) $overview_owner['term_id'] ], 'portfolio-owner' );
+wp_update_post( [ 'ID' => $p3, 'post_status' => 'draft' ] );
+update_post_meta( $p1, 'portfolio_estimated_value', '200000' );
+update_post_meta( $p1, 'portfolio_company_loan', '30000' );
+update_post_meta( $p1, 'portfolio_company_loan_checked', '2024-01-01' );
+update_post_meta( $p1, 'portfolio_bank_loan', '90000' );
+update_post_meta( $p1, 'portfolio_used_collateral', '50000' );
+update_post_meta( $p2, 'portfolio_estimated_value', '100000' );
+update_post_meta( $p3, 'portfolio_estimated_value', '999000' );
+
+$o = get_portfolio_overview();
+check( 'no owner group exists', true, in_array( 'Ei omistajaa', wp_list_pluck( $o['groups'], 'name' ), true ) );
+check( 'no owner group is last', 'Ei omistajaa', end( $o['groups'] )['name'] );
+check( 'combined counts no-owner', 2, $o['combined']['count'] );
+check( 'combined value excludes draft', 300000.0, $o['combined']['value'] );
+check( 'draft not counted', 1, $o['groups'][0]['totals']['count'] );
+check( 'draft listed', 1, count( $o['groups'][0]['drafts'] ) );
+check( 'owner group stale flag', true, $o['groups'][0]['apartments'][0]['loan_check_stale'] );
+check( 'stale old', true, is_portfolio_loan_check_stale( '2024-01-01', strtotime( '2026-06-01' ) ) );
+check( 'stale fresh', false, is_portfolio_loan_check_stale( '2026-05-01', strtotime( '2026-06-01' ) ) );
+check( 'stale empty', true, is_portfolio_loan_check_stale( null, time() ) );
+$html = get_portfolio_overview_html( $o );
+check( 'html has drafts line', true, str_contains( $html, 'Luonnokset (ei mukana summissa)' ) );
+check( 'html has caption', true, str_contains( $html, '<caption' ) );
+check( 'html has stale marker', true, str_contains( $html, '<span class="ketunkoti-portfolio-stale">tarkista</span>' ) );
+check( 'html negative free collateral', true, str_contains( $html, '<span class="ketunkoti-portfolio-negative">' ) );
+check( 'html links to edit screen', true, str_contains( $html, 'post=' . $p1 ) );
+$empty = get_portfolio_overview_html( [ 'combined' => calculate_portfolio_totals( [] ), 'groups' => [] ] );
+check( 'empty message', true, str_contains( $empty, 'Salkussa ei ole vielä asuntoja.' ) );
+check( 'empty leverage dash', true, str_contains( $empty, '–' ) );
+check( 'overview page hooked', 10, has_action( 'admin_menu', 'Ketunkoti\\add_portfolio_overview_page' ) );
 
 // Teardown.
 teardown_test_data();
