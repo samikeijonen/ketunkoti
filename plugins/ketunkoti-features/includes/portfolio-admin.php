@@ -197,6 +197,7 @@ function get_portfolio_summary_html( array $overview ): string {
     // A list of [ label, totals, is total ] triples, so an owner named like a fixed row cannot overwrite it.
     $rows   = [];
     $header = [
+        __( 'Asuntoja', 'ketunkoti-features' ),
         __( 'Vapaata vakuutta', 'ketunkoti-features' ),
         __( 'Velat', 'ketunkoti-features' ),
         __( 'Nettovarallisuus', 'ketunkoti-features' ),
@@ -224,6 +225,7 @@ function get_portfolio_summary_html( array $overview ): string {
 
     foreach ( $rows as [ $name, $totals, $is_total ] ) {
         $html .= '<tr' . ( $is_total ? ' class="ketunkoti-portfolio-total"' : '' ) . '><th scope="row">' . esc_html( (string) $name ) . '</th>';
+        $html .= '<td>' . esc_html( (string) (int) $totals['count'] ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['free_collateral'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['debts'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['net_worth'] ) ) . '</td>';

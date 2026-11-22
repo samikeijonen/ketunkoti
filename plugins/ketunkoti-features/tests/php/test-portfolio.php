@@ -470,6 +470,10 @@ $summary = substr( $html4, 0, (int) strpos( $html4, '</table>' ) );
 $total_pos = (int) strrpos( $summary, '<tr class="ketunkoti-portfolio-total"><th scope="row">Yhteensä</th>' );
 check( 'summary Yhteensä row after owner names', true, $total_pos > 0 && $total_pos > (int) strpos( $summary, 'Overview test owner A' ) );
 check( 'summary Yhteensä row is the last row', 1, substr_count( substr( $summary, $total_pos ), '<tr' ) );
+check( 'summary header Asuntoja after label column', true, str_contains( $summary, '</td><th scope="col">Asuntoja</th><th scope="col">Vapaata vakuutta</th>' ) );
+check( 'summary owner row shows count', true, 1 === preg_match( '#<th scope="row">Overview test owner A</th><td>2</td>#', $summary ) );
+check( 'summary total row shows count', true, 1 === preg_match( '#<th scope="row">Yhteensä</th><td>4</td>#', $summary ) );
+check( 'empty summary count zero', true, str_contains( $empty, '<th scope="row">Yhteensä</th><td>0</td>' ) );
 check( 'summary has one total row', 1, substr_count( $summary, 'ketunkoti-portfolio-total' ) );
 check( 'summary keeps combined and owner rows', true, preg_match_all( '#<th scope="row">Yhteensä</th>#', substr( $html4, 0, (int) strpos( $html4, '</table>' ) ) ) >= 2 );
 
