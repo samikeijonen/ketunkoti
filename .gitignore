@@ -13,3 +13,6 @@ node_modules/
 plugins/meom-ai-assistant/
 plugins/meom-ai-translate/
 plugins/seravo-ai-assistant/
+
+# Composer dependencies (PHP linting)
+vendor/
