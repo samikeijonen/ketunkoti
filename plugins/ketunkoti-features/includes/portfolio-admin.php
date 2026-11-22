@@ -602,9 +602,13 @@ function render_portfolio_overview_page(): void {
  * @return void
  */
 function enqueue_portfolio_overview_styles( string $hook_suffix ): void {
-    $hook = get_portfolio_overview_hook();
+    $hook   = get_portfolio_overview_hook();
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 
-    if ( '' === $hook || $hook !== $hook_suffix ) {
+    // The overview page and the snapshot edit screen share the table styles.
+    $is_snapshot_edit = $screen && 'post' === $screen->base && PORTFOLIO_SNAPSHOT_POST_TYPE === $screen->post_type;
+
+    if ( ! $is_snapshot_edit && ( '' === $hook || $hook !== $hook_suffix ) ) {
         return;
     }
 
