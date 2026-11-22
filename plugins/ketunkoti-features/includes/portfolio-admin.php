@@ -194,8 +194,8 @@ function format_portfolio_cell_number( $number, int $decimals = 1 ): string {
  * @return string Escaped HTML.
  */
 function get_portfolio_summary_html( array $overview ): string {
-    // A list of [ label, totals ] pairs, so an owner named like a fixed row cannot overwrite it.
-    $rows   = [ [ __( 'Yhteensä', 'ketunkoti-features' ), $overview['combined'] ] ];
+    // A list of [ label, totals, is total ] triples, so an owner named like a fixed row cannot overwrite it.
+    $rows   = [];
     $header = [
         __( 'Vapaata vakuutta', 'ketunkoti-features' ),
         __( 'Velat', 'ketunkoti-features' ),
@@ -205,8 +205,11 @@ function get_portfolio_summary_html( array $overview ): string {
     ];
 
     foreach ( $overview['groups'] as $group ) {
-        $rows[] = [ $group['name'], $group['totals'] ];
+        $rows[] = [ $group['name'], $group['totals'], false ];
     }
+
+    // The combined row comes last, as the total row.
+    $rows[] = [ __( 'Yhteensä', 'ketunkoti-features' ), $overview['combined'], true ];
 
     $html  = '<div class="ketunkoti-portfolio-scroll" style="overflow-x: auto;" tabindex="0" role="region" aria-labelledby="ketunkoti-portfolio-caption-summary">';
     $html .= '<table class="ketunkoti-portfolio-table ketunkoti-portfolio-summary">';
@@ -219,8 +222,8 @@ function get_portfolio_summary_html( array $overview ): string {
 
     $html .= '</tr></thead><tbody>';
 
-    foreach ( $rows as [ $name, $totals ] ) {
-        $html .= '<tr><th scope="row">' . esc_html( (string) $name ) . '</th>';
+    foreach ( $rows as [ $name, $totals, $is_total ] ) {
+        $html .= '<tr' . ( $is_total ? ' class="ketunkoti-portfolio-total"' : '' ) . '><th scope="row">' . esc_html( (string) $name ) . '</th>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['free_collateral'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['debts'] ) ) . '</td>';
         $html .= '<td>' . esc_html( format_portfolio_euros( $totals['net_worth'] ) ) . '</td>';

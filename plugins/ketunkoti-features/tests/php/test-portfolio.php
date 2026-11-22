@@ -466,6 +466,11 @@ $GLOBALS['ketunkoti_test_terms'][] = [ 'id' => $clash['term_id'], 'taxonomy' => 
 wp_set_object_terms( $dash_id, [ (int) $clash['term_id'] ], 'portfolio-owner' );
 $o4    = get_portfolio_overview();
 $html4 = get_portfolio_overview_html( $o4 );
+$summary = substr( $html4, 0, (int) strpos( $html4, '</table>' ) );
+$total_pos = (int) strrpos( $summary, '<tr class="ketunkoti-portfolio-total"><th scope="row">Yhteensä</th>' );
+check( 'summary Yhteensä row after owner names', true, $total_pos > 0 && $total_pos > (int) strpos( $summary, 'Overview test owner A' ) );
+check( 'summary Yhteensä row is the last row', 1, substr_count( substr( $summary, $total_pos ), '<tr' ) );
+check( 'summary has one total row', 1, substr_count( $summary, 'ketunkoti-portfolio-total' ) );
 check( 'summary keeps combined and owner rows', true, preg_match_all( '#<th scope="row">Yhteensä</th>#', substr( $html4, 0, (int) strpos( $html4, '</table>' ) ) ) >= 2 );
 
 // Teardown.

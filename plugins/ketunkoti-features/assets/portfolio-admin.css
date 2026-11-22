@@ -38,6 +38,8 @@
     text-align: left;
 }
 
+.ketunkoti-portfolio-table .ketunkoti-portfolio-total th,
+.ketunkoti-portfolio-table .ketunkoti-portfolio-total td,
 .ketunkoti-portfolio-table tfoot th,
 .ketunkoti-portfolio-table tfoot td {
     font-weight: 600;
