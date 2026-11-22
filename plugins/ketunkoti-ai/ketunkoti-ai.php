@@ -34,6 +34,7 @@ require_once KETUNKOTI_AI_DIR . 'includes/class-home-reader.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-copier.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-registrar.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-home-abilities.php';
+require_once KETUNKOTI_AI_DIR . 'includes/class-portfolio-abilities.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-new-home-prompt.php';
 require_once KETUNKOTI_AI_DIR . 'includes/class-plugin.php';
 

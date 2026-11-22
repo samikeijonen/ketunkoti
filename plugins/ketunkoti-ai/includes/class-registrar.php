@@ -31,6 +31,9 @@ final class Registrar {
         'ketunkoti/copy-home',
         'ketunkoti/update-home-meta',
         'ketunkoti/trash-home',
+        'ketunkoti/get-portfolio',
+        'ketunkoti/create-portfolio-apartment',
+        'ketunkoti/update-portfolio-apartment',
     ];
 
     /**

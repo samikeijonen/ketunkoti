@@ -105,12 +105,32 @@ Every successful `update-home-meta` call is logged on the home in the post meta 
 
 Older rows, from before 1.1.0, have `proposal_id` and `applied` instead of `changed`.
 
+## Salkku (portfolio) abilities
+
+Three abilities for the private apartment portfolio (Salkku) of Ketun koti Features. They are MCP-only: never a Seravo chat tool and never a REST ability. They need `manage_options` (administrators), because the portfolio is private. The fields come from `get_portfolio_fields()`, so a new `portfolio_*` field needs no change here.
+
+| Ability | Input | What it does |
+|---|---|---|
+| `ketunkoti/get-portfolio` | `owner` (optional, name or slug) | Returns the overview: per owner the published apartments with every field as `label` and `value` plus the calculated results, the drafts (left out of the totals), and the totals per owner and combined. With `owner`, only that owner is returned and `combined` is that owner's totals. An unknown owner gives `ketunkoti_ai_unknown_owner`. Read-only. |
+| `ketunkoti/create-portfolio-apartment` | `title`, `owner` (both required), `status` (`publish` by default or `draft`), `fields` | Adds an apartment. The owner is created when new. One invalid value refuses the whole call and nothing is created. |
+| `ketunkoti/update-portfolio-apartment` | `id`, and `title`, `owner`, `fields` | Changes an apartment and saves at once. Refused for a post that is not an apartment (`ketunkoti_ai_not_portfolio`) and while another user has it open in the editor (`ketunkoti_ai_locked`). The client reads first, shows "label: before → after" and writes only after the user agrees. |
+
+| Ability | `readonly` | `destructive` | `idempotent` |
+|---|---|---|---|
+| `get-portfolio` | true | false | true |
+| `create-portfolio-apartment` | false | false | false |
+| `update-portfolio-apartment` | false | true | true |
+
+Numbers may use Finnish formatting (`150 000`, `1 285,50`); `null` or `""` clears a field. Values are validated by Ketun koti Features (`validate_portfolio_fields()`), the same code the meta box uses.
+
+Every write appends a row to the post meta `_ketunkoti_ai_portfolio_log` (one list per apartment): `user`, `time` (ISO 8601, UTC), `before` and `after`.
+
 ## Tests
 
 The tests run in the wp-env tests environment and clean up after themselves:
 
 ```bash
-for t in fields read copy write; do
+for t in fields read copy write registrar prompt portfolio; do
     npx wp-env run tests-cli wp eval-file wp-content/plugins/ketunkoti-ai/tests/php/test-$t.php
 done
 ```
