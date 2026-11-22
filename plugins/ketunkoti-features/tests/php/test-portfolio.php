@@ -215,6 +215,18 @@ check( 'home id of deleted post refused', 'ketunkoti_portfolio_invalid_value', v
 check( 'home id of a home ok', (int) $home_id, validate_portfolio_fields( [ 'portfolio_home_id' => $home_id ] )['portfolio_home_id'] );
 check( 'home id zero means none', [ 'portfolio_home_id' => null ], validate_portfolio_fields( [ 'portfolio_home_id' => '0' ] ) );
 
+check( 'array on string field refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_address' => [ 'x' ] ] )->get_error_code() );
+check( 'array on date field refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_company_loan_checked' => [ '2026-01-01' ] ] )->get_error_code() );
+check( 'true on number field refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => true ] )->get_error_code() );
+check( 'true on string field refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_floor' => true ] )->get_error_code() );
+check( 'object refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => new \stdClass() ] )->get_error_code() );
+check( 'exponent refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => '1e3' ] )->get_error_code() );
+check( 'huge exponent refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => '1e999' ] )->get_error_code() );
+check( 'infinite float refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_area' => INF ] )->get_error_code() );
+$trashed_home = wp_insert_post( [ 'post_type' => 'home', 'post_status' => 'trash', 'post_title' => 'Portfolio test trashed home' ] );
+$GLOBALS['ketunkoti_test_posts'][] = (int) $trashed_home;
+check( 'trashed home refused', 'ketunkoti_portfolio_invalid_value', validate_portfolio_fields( [ 'portfolio_home_id' => $trashed_home ] )->get_error_code() );
+
 // Checks: owner.
 $term = set_portfolio_owner( $id, 'Testiomistaja' );
 check( 'owner created', true, is_int( $term ) );
@@ -275,14 +287,35 @@ check( 'editor cannot save', 46.5, get_portfolio_field_values( $id )['portfolio_
 
 wp_set_current_user( $admin );
 $revision_id = wp_save_post_revision( $id );
-$_POST       = [
+check( 'revision exists', true, (bool) $revision_id );
+$_POST = [
     'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
     'portfolio_area'            => '3',
 ];
-if ( $revision_id ) {
-    save_portfolio_meta_box( (int) $revision_id );
-    check( 'revision not written', '', (string) get_post_meta( (int) $revision_id, 'portfolio_area', true ) );
-}
+save_portfolio_meta_box( (int) $revision_id );
+check( 'revision not written', '', (string) get_post_meta( (int) $revision_id, 'portfolio_area', true ) );
+
+// An invalid save leaves both the fields and the owner untouched.
+$_POST = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_bank_loan'       => 'paljon',
+    'portfolio_owner_new'       => 'Kolmas omistaja',
+];
+save_portfolio_meta_box( $id );
+check( 'invalid save keeps owner', 'Toinen omistaja', wp_get_object_terms( $id, 'portfolio-owner' )[0]->name );
+check( 'invalid save creates no owner term', false, (bool) get_term_by( 'name', 'Kolmas omistaja', 'portfolio-owner' ) );
+delete_transient( 'ketunkoti_portfolio_error_' . $admin );
+
+// A tampered non-scalar value refuses the whole save.
+$_POST = [
+    'ketunkoti_portfolio_nonce' => wp_create_nonce( 'ketunkoti_portfolio_save' ),
+    'portfolio_area'            => '77',
+    'portfolio_address'         => [ 'x' ],
+];
+save_portfolio_meta_box( $id );
+check( 'tampered array writes nothing', 46.5, get_portfolio_field_values( $id )['portfolio_area'] );
+check( 'tampered array leaves notice', true, (bool) get_transient( 'ketunkoti_portfolio_error_' . $admin ) );
+delete_transient( 'ketunkoti_portfolio_error_' . $admin );
 $_POST = [];
 
 // Checks: meta box markup.
@@ -306,6 +339,12 @@ check( 'number input is text decimal', true, str_contains( $html, 'inputmode="de
 check( 'owner radios in fieldset', true, str_contains( $html, '<fieldset' ) && str_contains( $html, '<legend' ) && str_contains( $html, 'type="radio"' ) );
 check( 'new owner input', true, str_contains( $html, 'name="portfolio_owner_new"' ) );
 check( 'home select with none option', true, str_contains( $html, '<select' ) && str_contains( $html, 'Ei ilmoitusta' ) );
+wp_update_post( [ 'ID' => $home_id, 'post_status' => 'trash' ] );
+ob_start();
+render_portfolio_meta_box( get_post( $id ) );
+$trashed_html = ob_get_clean();
+check( 'trashed saved home stays selected', true, 1 === preg_match( '#<option value="' . $home_id . '"[^>]* selected[^>]*>\s*Portfolio test home \(roskakorissa\)#', $trashed_html ) );
+wp_update_post( [ 'ID' => $home_id, 'post_status' => 'draft' ] );
 check( 'home select preselected', true, 1 === preg_match( '#<option value="' . $home_id . '"[^>]* selected#', $html ) );
 check( 'finnish formatted value', true, str_contains( $html, 'value="46,5"' ) );
 check( 'calculated line', true, str_contains( $html, 'Nettoarvo' ) && str_contains( $html, 'Vakuusarvo' ) && str_contains( $html, 'Vapaata vakuutta' ) );

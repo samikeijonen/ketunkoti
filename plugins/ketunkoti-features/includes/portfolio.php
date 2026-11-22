@@ -351,7 +351,12 @@ function validate_portfolio_value( string $meta_key, string $type, $value ) {
         ? str_replace( [ ' ', "\xc2\xa0", "\xe2\x80\xaf" ], '', str_replace( ',', '.', $value ) )
         : $value;
 
-    if ( ! is_numeric( $normalised ) || (float) $normalised < 0 ) {
+    // Plain decimal numbers only: no exponent notation, signs or non-finite values.
+    $is_plain = is_string( $normalised )
+        ? 1 === preg_match( '/^\d+(\.\d+)?$/', $normalised )
+        : is_finite( (float) $normalised ) && (float) $normalised >= 0;
+
+    if ( ! $is_plain || ! is_finite( (float) $normalised ) ) {
         return get_portfolio_invalid_value_error( $meta_key );
     }
 
@@ -381,7 +386,7 @@ function validate_portfolio_value( string $meta_key, string $type, $value ) {
             return null;
         }
 
-        return PORTFOLIO_HOME_POST_TYPE === get_post_type( (int) $number )
+        return PORTFOLIO_HOME_POST_TYPE === get_post_type( (int) $number ) && 'trash' !== get_post_status( (int) $number )
             ? (int) $number
             : get_portfolio_invalid_value_error( $meta_key );
     }
@@ -422,6 +427,11 @@ function validate_portfolio_fields( array $raw ) {
         if ( null === $value || '' === $value ) {
             $clean[ $meta_key ] = null;
             continue;
+        }
+
+        // Arrays, objects and booleans are refused on every field type, never cast.
+        if ( ! is_string( $value ) && ! is_int( $value ) && ! is_float( $value ) ) {
+            return get_portfolio_invalid_value_error( $meta_key );
         }
 
         $result = validate_portfolio_value( $meta_key, $fields[ $meta_key ]['type'], $value );

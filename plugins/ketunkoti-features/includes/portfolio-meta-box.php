@@ -75,6 +75,8 @@ function render_portfolio_field( string $meta_key, array $field, $value ): void 
                 'order'          => 'ASC',
             ]
         );
+        $offered = wp_list_pluck( $homes, 'ID' );
+        $saved   = get_post( (int) $value );
         ?>
         <select name="<?php echo esc_attr( $meta_key ); ?>" id="<?php echo esc_attr( $meta_key ); ?>">
             <option value="0"><?php esc_html_e( 'Ei ilmoitusta', 'ketunkoti-features' ); ?></option>
@@ -83,6 +85,11 @@ function render_portfolio_field( string $meta_key, array $field, $value ): void 
                     <?php echo esc_html( get_the_title( $home ) ); ?>
                 </option>
             <?php endforeach; ?>
+            <?php if ( (int) $value > 0 && ! in_array( (int) $value, $offered, true ) && $saved ) : ?>
+                <option value="<?php echo esc_attr( (string) $saved->ID ); ?>" selected>
+                    <?php echo esc_html( get_the_title( $saved ) . ' ' . __( '(roskakorissa)', 'ketunkoti-features' ) ); ?>
+                </option>
+            <?php endif; ?>
         </select>
         <?php
         return;
@@ -217,7 +224,7 @@ function save_portfolio_meta_box( int $post_id ): void {
     $raw = [];
 
     foreach ( array_keys( get_portfolio_fields() ) as $meta_key ) {
-        if ( isset( $_POST[ $meta_key ] ) && is_scalar( $_POST[ $meta_key ] ) ) {
+        if ( isset( $_POST[ $meta_key ] ) ) {
             $raw[ $meta_key ] = wp_unslash( $_POST[ $meta_key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated by validate_portfolio_fields().
         }
     }
@@ -226,8 +233,18 @@ function save_portfolio_meta_box( int $post_id ): void {
     $owner  = '';
 
     foreach ( [ 'portfolio_owner_new', 'portfolio_owner' ] as $owner_key ) {
-        if ( '' === $owner && isset( $_POST[ $owner_key ] ) && is_scalar( $_POST[ $owner_key ] ) ) {
-            $owner = sanitize_text_field( wp_unslash( (string) $_POST[ $owner_key ] ) );
+        if ( ! isset( $_POST[ $owner_key ] ) ) {
+            continue;
+        }
+
+        // A tampered non-scalar owner refuses the whole save.
+        if ( ! is_string( $_POST[ $owner_key ] ) ) {
+            $values = new \WP_Error( 'ketunkoti_portfolio_invalid_owner', __( 'Omistajan arvo ei kelpaa.', 'ketunkoti-features' ) );
+            break;
+        }
+
+        if ( '' === $owner ) {
+            $owner = sanitize_text_field( wp_unslash( $_POST[ $owner_key ] ) );
         }
     }
 
