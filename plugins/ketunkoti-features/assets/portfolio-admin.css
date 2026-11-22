@@ -71,3 +71,19 @@
     outline: 2px solid #2271b1;
     outline-offset: 2px;
 }
+
+/* #50575e on white is about 7.5:1; the sign carries the meaning, not the colour. */
+.ketunkoti-portfolio-change {
+    margin-left: 4px;
+    color: #50575e;
+    font-size: 12px;
+}
+
+.ketunkoti-portfolio-snapshot-form {
+    margin: 0 0 24px;
+}
+
+.ketunkoti-portfolio-snapshot-form .button:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}

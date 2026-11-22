@@ -22,9 +22,13 @@ use WP_REST_Request;
 use function Ketunkoti\build_portfolio_snapshot_data;
 use function Ketunkoti\get_next_portfolio_snapshot_time;
 use function Ketunkoti\get_portfolio_overview;
+use function Ketunkoti\get_portfolio_history_html;
+use function Ketunkoti\get_portfolio_overview_html;
+use function Ketunkoti\get_portfolio_snapshot_form_html;
 use function Ketunkoti\get_portfolio_snapshot_id;
 use function Ketunkoti\get_portfolio_snapshot_month;
 use function Ketunkoti\get_portfolio_snapshots;
+use function Ketunkoti\handle_portfolio_snapshot_request;
 use function Ketunkoti\run_portfolio_snapshot_cron;
 use function Ketunkoti\save_portfolio_snapshot;
 
@@ -113,6 +117,59 @@ function create_test_portfolio( string $title = 'Testi' ): int {
     $GLOBALS['ketunkoti_test_posts'][] = (int) $id;
 
     return (int) $id;
+}
+
+/**
+ * Runs a callable with `wp_die()` turned into an exception.
+ *
+ * @param callable $callback Code that is expected to call `wp_die()`.
+ * @return bool True when `wp_die()` was called.
+ */
+function portfolio_test_dies( callable $callback ): bool {
+    $handler = static fn () => static function () {
+        throw new \RuntimeException( 'wp_die called' );
+    };
+
+    add_filter( 'wp_die_handler', $handler );
+    add_filter( 'wp_die_ajax_handler', $handler );
+
+    try {
+        $callback();
+        $died = false;
+    } catch ( \RuntimeException $e ) {
+        $died = 'wp_die called' === $e->getMessage();
+    }
+
+    remove_filter( 'wp_die_handler', $handler );
+    remove_filter( 'wp_die_ajax_handler', $handler );
+
+    return $died;
+}
+
+/**
+ * Builds an invented snapshot data array for the history table tests.
+ *
+ * @param string     $month    Month as `YYYY-MM`.
+ * @param float      $value    Combined apartment value.
+ * @param float|null $leverage Combined leverage, or null.
+ * @return array<string, mixed> Snapshot data.
+ */
+function make_history_snapshot( string $month, float $value, ?float $leverage ): array {
+    return [
+        'month'      => $month,
+        'taken_at'   => $month . '-01 00:30:00',
+        'trigger'    => 'cron',
+        'combined'   => [
+            'count'           => 2,
+            'value'           => $value,
+            'debts'           => 100000.0,
+            'net_worth'       => $value - 100000.0,
+            'free_collateral' => 5000.0,
+            'leverage'        => $leverage,
+        ],
+        'groups'     => [],
+        'apartments' => [],
+    ];
 }
 
 /**
@@ -392,6 +449,71 @@ check( 'unfindable save retries in an hour', $orphan_ts + HOUR_IN_SECONDS, wp_ne
 foreach ( get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => -1 ] ) as $leftover_id ) {
     $GLOBALS['ketunkoti_test_posts'][] = (int) $leftover_id;
 }
+
+// Checks: Kehitys table.
+$snap_oct = make_history_snapshot( '2026-10', 300000.0, 40.0 );
+$snap_nov = make_history_snapshot( '2026-11', 310000.0, 41.2 );
+$snap_dec = make_history_snapshot( '2026-12', 310000.0, 41.2 );
+$snap_low = make_history_snapshot( '2027-01', 295000.0, 39.0 );
+$html     = get_portfolio_history_html( [] );
+check( 'empty message', true, str_contains( $html, 'Ei vielä tilannekuvia.' ) );
+check( 'heading', true, str_contains( $html, '<h2>Kehitys</h2>' ) );
+$html = get_portfolio_history_html( [ $snap_oct, $snap_nov, $snap_dec, $snap_low ] );
+check( 'newest first', true, strpos( $html, '2027-01' ) < strpos( $html, '2026-11' ) && strpos( $html, '2026-11' ) < strpos( $html, '2026-10' ) );
+check( 'positive change', true, str_contains( $html, "+10\u{00A0}000\u{00A0}€" ) );
+check( 'negative change uses minus sign', true, str_contains( $html, "\u{2212}15\u{00A0}000\u{00A0}€" ) );
+check( 'unchanged shows zero', true, str_contains( $html, "±0\u{00A0}€" ) );
+check( 'leverage change in points', true, str_contains( $html, "+1,2\u{00A0}%-yks." ) );
+check( 'leverage decrease in points', true, str_contains( $html, "\u{2212}2,2\u{00A0}%-yks." ) );
+check( 'change span class', true, str_contains( $html, '<span class="ketunkoti-portfolio-change">' ) );
+check( 'caption', true, str_contains( $html, '<caption' ) );
+check( 'keyboard region', true, str_contains( $html, 'tabindex="0" role="region" aria-labelledby="ketunkoti-portfolio-caption-history"' ) );
+check( 'month row header', true, str_contains( $html, '<th scope="row">2026-10</th>' ) );
+check( 'oldest row has no change', 1, preg_match_all( '/2026-10<\/th>(.*?)<\/tr>/s', $html, $oldest ) && ! str_contains( $oldest[1][0], 'ketunkoti-portfolio-change' ) ? 1 : 0 );
+$null_html = get_portfolio_history_html( [ make_history_snapshot( '2026-08', 0.0, null ), make_history_snapshot( '2026-09', 0.0, null ) ] );
+check( 'null leverage dash', true, str_contains( $null_html, '<td>–</td>' ) );
+$mixed_html = get_portfolio_history_html( [ make_history_snapshot( '2026-08', 100000.0, null ), make_history_snapshot( '2026-09', 100000.0, 30.0 ) ] );
+check( 'no leverage change when previous is null', false, str_contains( $mixed_html, '%-yks.' ) );
+
+// Checks: save-now form.
+$form_html = get_portfolio_snapshot_form_html();
+check( 'form posts to admin-post', true, str_contains( $form_html, 'method="post"' ) && str_contains( $form_html, 'admin-post.php' ) );
+check( 'form action field', true, str_contains( $form_html, 'name="action" value="ketunkoti_portfolio_snapshot"' ) );
+check( 'form nonce', true, str_contains( $form_html, 'name="_wpnonce"' ) );
+check( 'form button label', true, str_contains( $form_html, 'Tallenna tilannekuva nyt' ) );
+check( 'form explanation', true, str_contains( $form_html, 'Painike korvaa kuluvan kuukauden tilannekuvan.' ) );
+
+// Checks: save-now handler.
+$admin_id = create_test_user( 'administrator' );
+wp_set_current_user( $admin_id );
+$_REQUEST['_wpnonce'] = 'bad';
+check( 'bad nonce refused', true, portfolio_test_dies( static fn() => handle_portfolio_snapshot_request() ) );
+$_REQUEST['_wpnonce'] = wp_create_nonce( 'ketunkoti_portfolio_snapshot' );
+wp_set_current_user( create_test_user( 'editor' ) );
+$_REQUEST['_wpnonce'] = wp_create_nonce( 'ketunkoti_portfolio_snapshot' );
+check( 'non-admin refused', true, portfolio_test_dies( static fn() => handle_portfolio_snapshot_request() ) );
+wp_set_current_user( $admin_id );
+$_REQUEST['_wpnonce'] = wp_create_nonce( 'ketunkoti_portfolio_snapshot' );
+$redirect_to = '';
+$catch_redirect = static function ( $location ) {
+    $GLOBALS['ketunkoti_test_redirect'] = $location;
+    throw new \RuntimeException( 'redirect caught' );
+};
+add_filter( 'wp_redirect', $catch_redirect, 0 );
+try {
+    handle_portfolio_snapshot_request();
+} catch ( \RuntimeException $e ) {
+    $redirect_to = (string) ( $GLOBALS['ketunkoti_test_redirect'] ?? '' );
+}
+remove_filter( 'wp_redirect', $catch_redirect, 0 );
+check( 'handler redirects to overview', true, str_contains( $redirect_to, 'page=portfolio-overview' ) );
+$GLOBALS['ketunkoti_test_posts'] = array_merge( $GLOBALS['ketunkoti_test_posts'], get_posts( [ 'post_type' => 'portfolio_snapshot', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => -1 ] ) );
+$notice_html = get_portfolio_overview_html( get_portfolio_overview() );
+check( 'success notice shown', true, str_contains( $notice_html, 'Tilannekuva tallennettu kuukaudelle ' . get_portfolio_snapshot_month( time() ) . '.' ) );
+check( 'overview has form and history', true, str_contains( $notice_html, 'Tallenna tilannekuva nyt' ) && str_contains( $notice_html, '<h2>Kehitys</h2>' ) );
+$again_html = get_portfolio_overview_html( get_portfolio_overview() );
+check( 'notice shown only once', false, str_contains( $again_html, 'Tilannekuva tallennettu' ) );
+wp_set_current_user( 0 );
 
 // Teardown.
 teardown_test_data();

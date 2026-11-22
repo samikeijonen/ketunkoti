@@ -379,17 +379,168 @@ function get_portfolio_group_html( array $group, int $index = 0 ): string {
  * @return string Escaped HTML.
  */
 function get_portfolio_overview_html( array $overview ): string {
-    $html = get_portfolio_summary_html( $overview );
+    $html = get_portfolio_snapshot_notice_html() . get_portfolio_summary_html( $overview );
 
     if ( empty( $overview['groups'] ) ) {
-        return $html . '<p>' . esc_html__( 'Salkussa ei ole vielä asuntoja.', 'ketunkoti-features' ) . '</p>';
+        $html .= '<p>' . esc_html__( 'Salkussa ei ole vielä asuntoja.', 'ketunkoti-features' ) . '</p>';
     }
 
     foreach ( $overview['groups'] as $index => $group ) {
         $html .= get_portfolio_group_html( $group, (int) $index );
     }
 
-    return $html;
+    return $html . get_portfolio_snapshot_form_html() . get_portfolio_history_html( get_portfolio_snapshots() );
+}
+
+/**
+ * Returns the one-time notice of the last "save now" and deletes it.
+ *
+ * @return string Escaped notice HTML, or an empty string when there is none.
+ */
+function get_portfolio_snapshot_notice_html(): string {
+    $key    = 'ketunkoti_portfolio_snapshot_notice_' . get_current_user_id();
+    $notice = get_transient( $key );
+
+    if ( ! is_array( $notice ) || empty( $notice['message'] ) ) {
+        return '';
+    }
+
+    delete_transient( $key );
+
+    $class = 'error' === ( $notice['type'] ?? '' ) ? 'notice-error' : 'notice-success';
+
+    return '<div class="notice ' . esc_attr( $class ) . '"><p>' . esc_html( (string) $notice['message'] ) . '</p></div>';
+}
+
+/**
+ * Returns the "save snapshot now" form with its explanation line.
+ *
+ * @return string Escaped HTML.
+ */
+function get_portfolio_snapshot_form_html(): string {
+    $html  = '<form class="ketunkoti-portfolio-snapshot-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+    $html .= '<input type="hidden" name="action" value="ketunkoti_portfolio_snapshot" />';
+    $html .= wp_nonce_field( 'ketunkoti_portfolio_snapshot', '_wpnonce', true, false );
+    $html .= '<button type="submit" class="button button-primary">' . esc_html__( 'Tallenna tilannekuva nyt', 'ketunkoti-features' ) . '</button>';
+    $html .= '<p class="description">' . esc_html__( 'Kuukauden tilannekuva tallentuu automaattisesti kuun 1. päivänä. Painike korvaa kuluvan kuukauden tilannekuvan.', 'ketunkoti-features' ) . '</p>';
+
+    return $html . '</form>';
+}
+
+/**
+ * Formats the change of a euro amount with a sign.
+ *
+ * @param float $delta Current minus previous amount.
+ * @return string `+x €`, `−x €` or `±0 €`.
+ */
+function format_portfolio_euro_change( float $delta ): string {
+    if ( 0.0 === round( $delta ) ) {
+        return "±0\u{00A0}€";
+    }
+
+    return ( $delta > 0 ? '+' : '' ) . format_portfolio_euros( $delta );
+}
+
+/**
+ * Formats the change of a percentage as percentage points.
+ *
+ * @param float $delta Current minus previous percentage.
+ * @return string `+x,y %-yks.`, `−x,y %-yks.` or `±0 %-yks.`.
+ */
+function format_portfolio_points_change( float $delta ): string {
+    $rounded = round( $delta, 1 );
+
+    if ( 0.0 === $rounded ) {
+        return "±0\u{00A0}%-yks.";
+    }
+
+    $sign = $rounded > 0 ? '+' : "\u{2212}";
+
+    return $sign . format_portfolio_cell_number( abs( $rounded ) ) . "\u{00A0}%-yks.";
+}
+
+/**
+ * Returns a money cell of the history table: value and change from the previous row.
+ *
+ * @param float      $value    Current value.
+ * @param float|null $previous Previous snapshot's value, or null for the oldest row.
+ * @return string Escaped cell HTML.
+ */
+function get_portfolio_history_money_cell_html( float $value, ?float $previous ): string {
+    $html = '<td>' . esc_html( format_portfolio_euros( $value ) );
+
+    if ( null !== $previous ) {
+        $html .= ' <span class="ketunkoti-portfolio-change">(' . esc_html( format_portfolio_euro_change( $value - $previous ) ) . ')</span>';
+    }
+
+    return $html . '</td>';
+}
+
+/**
+ * Returns the "Kehitys" section: heading and the table of snapshots, newest first.
+ *
+ * @param array<int, array<string, mixed>> $snapshots Snapshot data arrays, oldest first.
+ * @return string Escaped HTML.
+ */
+function get_portfolio_history_html( array $snapshots ): string {
+    $html = '<h2>' . esc_html__( 'Kehitys', 'ketunkoti-features' ) . '</h2>';
+
+    if ( empty( $snapshots ) ) {
+        return $html . '<p>' . esc_html__( 'Ei vielä tilannekuvia. Ensimmäinen tallentuu kuun 1. päivänä, tai tallenna se nyt painikkeesta.', 'ketunkoti-features' ) . '</p>';
+    }
+
+    $header = [
+        __( 'Kuukausi', 'ketunkoti-features' ),
+        __( 'Asuntoja', 'ketunkoti-features' ),
+        __( 'Asuntojen arvo', 'ketunkoti-features' ),
+        __( 'Velat', 'ketunkoti-features' ),
+        __( 'Nettovarallisuus', 'ketunkoti-features' ),
+        __( 'Vapaata vakuutta', 'ketunkoti-features' ),
+        __( 'Velkavipu', 'ketunkoti-features' ),
+    ];
+
+    $html .= '<div class="ketunkoti-portfolio-scroll" style="overflow-x: auto;" tabindex="0" role="region" aria-labelledby="ketunkoti-portfolio-caption-history">';
+    $html .= '<table class="ketunkoti-portfolio-table ketunkoti-portfolio-history">';
+    $html .= '<caption id="ketunkoti-portfolio-caption-history">' . esc_html__( 'Salkun kehitys kuukausittain', 'ketunkoti-features' ) . '</caption>';
+    $html .= '<thead><tr>';
+
+    foreach ( $header as $label ) {
+        $html .= '<th scope="col">' . esc_html( $label ) . '</th>';
+    }
+
+    $html .= '</tr></thead><tbody>';
+
+    // Newest first; the change compares each row to the previous snapshot in the list.
+    for ( $i = count( $snapshots ) - 1; $i >= 0; $i-- ) {
+        // Stored data may be incomplete (malformed): missing figures read as zero.
+        $totals   = (array) $snapshots[ $i ]['combined'];
+        $previous = $i > 0 ? (array) $snapshots[ $i - 1 ]['combined'] : null;
+
+        $html .= '<tr><th scope="row">' . esc_html( (string) $snapshots[ $i ]['month'] ) . '</th>';
+        $html .= '<td>' . esc_html( (string) (int) ( $totals['count'] ?? 0 ) ) . '</td>';
+
+        foreach ( [ 'value', 'debts', 'net_worth', 'free_collateral' ] as $key ) {
+            $html .= get_portfolio_history_money_cell_html( (float) ( $totals[ $key ] ?? 0 ), null === $previous ? null : (float) ( $previous[ $key ] ?? 0 ) );
+        }
+
+        $leverage = $totals['leverage'] ?? null;
+
+        if ( null === $leverage ) {
+            $html .= '<td>–</td>';
+        } else {
+            $html .= '<td>' . esc_html( format_portfolio_percent( (float) $leverage ) );
+
+            if ( null !== $previous && null !== ( $previous['leverage'] ?? null ) ) {
+                $html .= ' <span class="ketunkoti-portfolio-change">(' . esc_html( format_portfolio_points_change( (float) $leverage - (float) $previous['leverage'] ) ) . ')</span>';
+            }
+
+            $html .= '</td>';
+        }
+
+        $html .= '</tr>';
+    }
+
+    return $html . '</tbody></table></div>';
 }
 
 /**

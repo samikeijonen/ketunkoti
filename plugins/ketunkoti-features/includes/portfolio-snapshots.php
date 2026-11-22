@@ -490,3 +490,41 @@ function run_portfolio_snapshot_cron( ?int $now = null ): string {
     return 'saved';
 }
 add_action( PORTFOLIO_SNAPSHOT_EVENT, __NAMESPACE__ . '\run_portfolio_snapshot_cron' );
+
+/**
+ * Handles the "save snapshot now" form post.
+ *
+ * Verifies the nonce and `manage_options`, saves a manual snapshot, stores a
+ * one-time notice for the current user and redirects back to the overview.
+ *
+ * @return void
+ */
+function handle_portfolio_snapshot_request(): void {
+    check_admin_referer( 'ketunkoti_portfolio_snapshot' );
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Ei oikeuksia tilannekuvan tallentamiseen.', 'ketunkoti-features' ), '', [ 'response' => 403 ] );
+    }
+
+    $result = save_portfolio_snapshot( 'manual' );
+
+    if ( is_wp_error( $result ) ) {
+        $notice = [
+            'type'    => 'error',
+            'message' => $result->get_error_message(),
+        ];
+    } else {
+        $month  = (string) get_post_meta( $result, PORTFOLIO_SNAPSHOT_MONTH_META, true );
+        $notice = [
+            'type'    => 'success',
+            /* translators: %s: month as YYYY-MM. */
+            'message' => sprintf( __( 'Tilannekuva tallennettu kuukaudelle %s.', 'ketunkoti-features' ), $month ),
+        ];
+    }
+
+    set_transient( 'ketunkoti_portfolio_snapshot_notice_' . get_current_user_id(), $notice, MINUTE_IN_SECONDS );
+
+    wp_safe_redirect( admin_url( 'edit.php?post_type=' . PORTFOLIO_POST_TYPE . '&page=' . PORTFOLIO_OVERVIEW_SLUG ) );
+    exit;
+}
+add_action( 'admin_post_ketunkoti_portfolio_snapshot', __NAMESPACE__ . '\handle_portfolio_snapshot_request' );
