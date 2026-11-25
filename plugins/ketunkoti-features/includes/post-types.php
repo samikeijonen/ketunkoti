@@ -30,6 +30,9 @@ function get_shared_post_type_args( array $labels, string $description, string $
 		'show_ui'            => true,
 		'show_in_menu'       => true,
 		'show_in_rest'       => true,
+		// Lets core's `core/content-query` ability (WordPress 7.2+) find
+		// listings; post types are left out of abilities unless they opt in.
+		'show_in_abilities'  => true,
 		'query_var'          => true,
 		'rewrite'            => [ 'slug' => $slug ],
 		'capability_type'    => 'post',
