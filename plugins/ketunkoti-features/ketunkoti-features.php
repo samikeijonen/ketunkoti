@@ -54,6 +54,7 @@ require_once KETUNKOTI_FEATURES_DIR . 'includes/organization-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/home-schema.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/contact-form.php';
 require_once KETUNKOTI_FEATURES_DIR . 'includes/security.php';
+require_once KETUNKOTI_FEATURES_DIR . 'includes/images.php';
 
 /**
  * Runs on plugin activation.
